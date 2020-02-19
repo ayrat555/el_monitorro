@@ -2,18 +2,25 @@
 
 #[macro_use] extern crate rocket;
 
+use rocket_contrib::json::Json;
+
 extern crate rake;
 
 mod keyword_tagger;
+
+use keyword_tagger::*;
 
 #[get("/")]
 fn index() -> &'static str {
     "Hello, world!"
 }
 
-#[get("/keywords/<text>")]
-fn keywords(text: String) -> String {
-    text
+#[post("/keywords", data = "<text>")]
+fn keywords(text: String) -> Json<Vec<Keyword>> {
+    let keyword_tagger = KeywordTagger { text, stop_words: None };
+    let keywords = keyword_tagger.process();
+
+    Json(keywords)
 }
 
 fn main() {

@@ -1,13 +1,27 @@
 use rake::*;
 
+use serde::ser::{Serialize, SerializeStruct, Serializer};
+
 #[derive(Debug)]
 pub struct KeywordTagger {
     pub text: String,
     pub stop_words: Option<StopWords>
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Keyword {
+    pub value: String,
+    pub score: f64
+}
+
+impl From<KeywordScore> for Keyword {
+    fn from(keyword_score: KeywordScore) -> Self {
+        Keyword { score: keyword_score.score, value: keyword_score.keyword }
+    }
+}
+
 impl KeywordTagger {
-    pub fn process(&self) -> Vec<KeywordScore> {
+    pub fn process(&self) -> Vec<Keyword> {
         let stop_words = match &self.stop_words {
             None => StopWords::from_file("./support/english_stopwords").unwrap(),
             Some(stop_words) => stop_words.clone()
@@ -15,14 +29,25 @@ impl KeywordTagger {
 
         let rake = Rake::new(stop_words);
 
-        rake.run(&self.text)
+        rake.run(&self.text).into_iter().map(|i| Keyword::from(i) ).collect::<Vec<Keyword>>()
+    }
+}
+
+impl Serialize for Keyword {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut s = serializer.serialize_struct("Keyword", 2)?;
+        s.serialize_field("keyword", &self.value)?;
+        s.serialize_field("score", &self.score)?;
+        s.end()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::KeywordTagger;
-    use rake::KeywordScore;
+    use super::{KeywordTagger, Keyword};
     use rake::StopWords;
 
     use std::fs;
@@ -39,9 +64,9 @@ mod tests {
             .collect();
 
         let expected_result = [
-            KeywordScore { keyword: "Ethereum based chains Life Balance".to_string(), score: 20.5 },
-            KeywordScore { keyword: "create feature requests".to_string(), score: 9.0 },
-            KeywordScore { keyword: "active user base".to_string(), score: 8.5 }
+            Keyword { value: "Ethereum based chains Life Balance".to_string(), score: 20.5 },
+            Keyword { value: "create feature requests".to_string(), score: 9.0 },
+            Keyword { value: "active user base".to_string(), score: 8.5 }
         ].to_vec();
 
         assert_eq!(result, expected_result);
@@ -60,11 +85,21 @@ mod tests {
             .collect();
 
         let expected_result = [
-            KeywordScore { keyword: "аккаунтах иранских официальных лиц появились изображения флагов Ирана".to_string(), score: 59.5 },
-            KeywordScore { keyword: "пишет The New York Times".to_string(), score: 25.0 },
-            KeywordScore { keyword: "официально подтверждена гибель Касема Сулеймани".to_string(), score: 22.5 }
+            Keyword { value: "аккаунтах иранских официальных лиц появились изображения флагов Ирана".to_string(), score: 59.5 },
+            Keyword { value: "пишет The New York Times".to_string(), score: 25.0 },
+            Keyword { value: "официально подтверждена гибель Касема Сулеймани".to_string(), score: 22.5 }
         ].to_vec();
 
         assert_eq!(result, expected_result);
+    }
+
+    #[test]
+    fn it_serializes_keyword() {
+        let keyword = Keyword { value: "value".to_string(), score: 5.0 };
+
+        let string_keyword = serde_json::to_string(&keyword).unwrap();
+
+        let expected_result = "{\"keyword\":\"value\",\"score\":5.0}";
+        assert_eq!(string_keyword, expected_result);
     }
 }
