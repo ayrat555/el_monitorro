@@ -116,6 +116,7 @@ dependencies = [
 name = "el_monitorro"
 version = "0.1.0"
 dependencies = [
+ "once_cell",
  "rake",
  "rocket",
  "rocket_contrib",
@@ -419,6 +420,12 @@ dependencies = [
  "hermit-abi",
  "libc",
 ]
+
+[[package]]
+name = "once_cell"
+version = "1.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1c601810575c99596d4afc46f78a678c80105117c379eb3650cf99b8a21ce5b"
 
 [[package]]
 name = "pear"
