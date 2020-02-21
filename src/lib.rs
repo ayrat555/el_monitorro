@@ -6,7 +6,7 @@ extern crate rake;
 
 use rocket_contrib::json::Json;
 
-mod keyword_tagger;
+pub mod keyword_tagger;
 
 use keyword_tagger::*;
 
@@ -27,5 +27,5 @@ fn keywords(text: String) -> Json<Vec<Keyword>> {
 }
 
 pub fn rocket() -> rocket::Rocket {
-    rocket::ignite().mount("/", routes![index, keywords])
+    rocket::ignite().mount("/api", routes![index, keywords])
 }
