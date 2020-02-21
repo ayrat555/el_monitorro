@@ -3,10 +3,12 @@
 #[macro_use]
 extern crate rocket;
 extern crate rake;
+extern crate rss;
 
 use rocket_contrib::json::Json;
 
 pub mod keyword_tagger;
+pub mod rss_reader;
 
 use keyword_tagger::*;
 
