@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate rocket;
+extern crate mockall;
 extern crate rake;
 extern crate rss;
 
