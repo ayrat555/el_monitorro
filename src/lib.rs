@@ -2,14 +2,18 @@
 
 #[macro_use]
 extern crate rocket;
+#[macro_use]
+extern crate diesel;
 extern crate mockall;
 extern crate rake;
 extern crate rss;
 
 use rocket_contrib::json::Json;
 
-pub mod keyword_tagger;
-pub mod rss_reader;
+mod db;
+mod keyword_tagger;
+mod rss_reader;
+mod schema;
 
 use keyword_tagger::*;
 
