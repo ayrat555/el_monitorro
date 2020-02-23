@@ -1,7 +1,9 @@
+use crate::db;
 use crate::models::feed::Feed;
 use crate::schema::feeds;
+use diesel::pg::upsert::excluded;
 use diesel::result::Error;
-use diesel::{PgConnection, RunQueryDsl};
+use diesel::{ExpressionMethods, PgConnection, RunQueryDsl};
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feeds"]
@@ -27,7 +29,12 @@ pub fn create(
         .values(new_feed)
         .on_conflict(feeds::link)
         .do_update()
-        .set(new_feed)
+        .set((
+            feeds::title.eq(new_feed.title),
+            feeds::description.eq(new_feed.description),
+            feeds::created_at.eq(excluded(feeds::created_at)),
+            feeds::updated_at.eq(db::current_time()),
+        ))
         .get_result(conn)
 }
 
@@ -37,6 +44,7 @@ mod tests {
     use crate::models::feed::Feed;
     use diesel::connection::Connection;
     use diesel::result::Error;
+    use std::{thread, time};
 
     #[test]
     fn it_creates_new_feed() {
@@ -79,20 +87,32 @@ mod tests {
 
         let connection = db::establish_connection();
 
-        let feed = connection.test_transaction::<Feed, Error, _>(|| {
-            super::create(&connection, &title, &link, &description)
+        connection.test_transaction::<_, Error, _>(|| {
+            let feed = super::create(&connection, &title, &link, &description).unwrap();
+
+            assert_eq!(feed.title, title);
+            assert_eq!(feed.link, link);
+            assert_eq!(feed.description, description);
+
+            let ten_millis = time::Duration::from_millis(10);
+            thread::sleep(ten_millis);
+
+            let updated_feed =
+                super::create(&connection, &updated_title, &link, &updated_description).unwrap();
+
+            assert_eq!(updated_feed.title, updated_title);
+            assert_eq!(updated_feed.link, link);
+            assert_eq!(updated_feed.description, updated_description);
+            assert_eq!(updated_feed.created_at, feed.created_at);
+
+            let updated_at_diff = updated_feed
+                .updated_at
+                .signed_duration_since(feed.updated_at)
+                .num_milliseconds();
+
+            assert!(updated_at_diff > 0);
+
+            Ok(())
         });
-
-        assert_eq!(feed.title, title);
-        assert_eq!(feed.link, link);
-        assert_eq!(feed.description, description);
-
-        let updated_feed = connection.test_transaction::<Feed, Error, _>(|| {
-            super::create(&connection, &updated_title, &link, &updated_description)
-        });
-
-        assert_eq!(updated_feed.title, updated_title);
-        assert_eq!(updated_feed.link, link);
-        assert_eq!(updated_feed.description, updated_description);
     }
 }
