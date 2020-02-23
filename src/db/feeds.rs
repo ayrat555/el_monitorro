@@ -44,7 +44,6 @@ mod tests {
     use crate::models::feed::Feed;
     use diesel::connection::Connection;
     use diesel::result::Error;
-    use std::{thread, time};
 
     #[test]
     fn it_creates_new_feed() {
@@ -63,15 +62,24 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn it_fails_to_create_feed_without_link() {
         let title = "Title";
         let link = "";
         let description = "Description";
         let connection = db::establish_connection();
 
-        connection.test_transaction::<Feed, Error, _>(|| {
-            super::create(&connection, &title, &link, &description)
+        connection.test_transaction::<_, Error, _>(|| {
+            let result = super::create(&connection, &title, &link, &description);
+
+            match result.err().unwrap() {
+                Error::DatabaseError(_, error_info) => assert_eq!(
+                    "new row for relation \"feeds\" violates check constraint \"feed_link_size\"",
+                    error_info.message()
+                ),
+                _ => panic!("Error doesn't match"),
+            };
+
+            Ok(())
         });
     }
 
@@ -94,9 +102,6 @@ mod tests {
             assert_eq!(feed.link, link);
             assert_eq!(feed.description, description);
 
-            let ten_millis = time::Duration::from_millis(10);
-            thread::sleep(ten_millis);
-
             let updated_feed =
                 super::create(&connection, &updated_title, &link, &updated_description).unwrap();
 
@@ -108,7 +113,8 @@ mod tests {
             let updated_at_diff = updated_feed
                 .updated_at
                 .signed_duration_since(feed.updated_at)
-                .num_milliseconds();
+                .num_microseconds()
+                .unwrap();
 
             assert!(updated_at_diff > 0);
 

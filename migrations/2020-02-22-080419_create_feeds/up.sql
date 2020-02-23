@@ -17,9 +17,11 @@ create TABLE feed_items(
    description TEXT NOT NULL,
    link TEXT NOT NULL,
    author TEXT NOT NULL,
-   guid TEXT NOT NULL UNIQUE,
+   guid TEXT NOT NULL,
    categories text[] NOT NULL DEFAULT '{}',
    publication_date TIMESTAMP WITH TIME ZONE NOT NULL,
    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX feed_items_guid_index ON feed_items(feed_id, guid);

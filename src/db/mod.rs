@@ -5,6 +5,7 @@ use dotenv::dotenv;
 use rocket_contrib::databases::diesel::PgConnection as RocketPgConnection;
 use std::env;
 
+pub mod feed_items;
 pub mod feeds;
 
 #[database("diesel_postgres_pool")]
