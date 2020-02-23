@@ -3,15 +3,20 @@
 #[macro_use]
 extern crate rocket;
 #[macro_use]
+extern crate rocket_contrib;
+#[macro_use]
 extern crate diesel;
+extern crate dotenv;
 extern crate mockall;
 extern crate rake;
 extern crate rss;
 
 use rocket_contrib::json::Json;
 
+mod config;
 mod db;
-mod keyword_tagger;
+pub mod keyword_tagger;
+mod models;
 mod rss_reader;
 mod schema;
 
@@ -34,5 +39,7 @@ fn keywords(text: String) -> Json<Vec<Keyword>> {
 }
 
 pub fn rocket() -> rocket::Rocket {
-    rocket::ignite().mount("/api", routes![index, keywords])
+    rocket::custom(config::from_env())
+        .mount("/api", routes![index, keywords])
+        .attach(db::Conn::fairing())
 }

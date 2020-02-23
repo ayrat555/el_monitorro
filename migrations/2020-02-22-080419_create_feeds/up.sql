@@ -7,6 +7,9 @@ CREATE TABLE feeds(
    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE feeds
+      ADD CONSTRAINT feed_link_size CHECK (char_length(link) > 0);
+
 create TABLE feed_items(
    id SERIAL PRIMARY KEY,
    feed_id INT NOT NULL references feeds(id) ON DELETE CASCADE,
