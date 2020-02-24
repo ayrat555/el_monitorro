@@ -1,7 +1,6 @@
 use crate::db;
 use crate::models::feed::Feed;
 use crate::schema::feeds;
-use diesel::pg::upsert::excluded;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, RunQueryDsl};
 
@@ -32,7 +31,6 @@ pub fn create(
         .set((
             feeds::title.eq(new_feed.title),
             feeds::description.eq(new_feed.description),
-            feeds::created_at.eq(excluded(feeds::created_at)),
             feeds::updated_at.eq(db::current_time()),
         ))
         .get_result(conn)
