@@ -6,10 +6,16 @@ extern crate rocket;
 extern crate rocket_contrib;
 #[macro_use]
 extern crate diesel;
+extern crate actix;
+extern crate background_jobs;
 extern crate dotenv;
+extern crate failure;
+extern crate futures;
 extern crate mockall;
 extern crate rake;
 extern crate rss;
+extern crate serde_derive;
+extern crate sled;
 
 use rocket_contrib::json::Json;
 
@@ -17,8 +23,8 @@ mod config;
 mod db;
 pub mod keyword_tagger;
 mod models;
-mod rss_reader;
 mod schema;
+mod sync;
 
 use keyword_tagger::*;
 

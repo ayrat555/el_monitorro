@@ -2,7 +2,7 @@ use crate::db;
 use crate::models::feed::Feed;
 use crate::schema::feeds;
 use diesel::result::Error;
-use diesel::{ExpressionMethods, PgConnection, RunQueryDsl};
+use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feeds"]
@@ -34,6 +34,13 @@ pub fn create(
             feeds::updated_at.eq(db::current_time()),
         ))
         .get_result(conn)
+}
+
+pub fn find_one(conn: &PgConnection, id: i32) -> Option<Feed> {
+    match feeds::table.filter(feeds::id.eq(id)).first::<Feed>(conn) {
+        Ok(record) => Some(record),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
