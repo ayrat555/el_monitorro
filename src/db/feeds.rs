@@ -33,8 +33,14 @@ pub fn create(
             feeds::description.eq(new_feed.description),
             feeds::updated_at.eq(db::current_time()),
         ))
-        .get_result(conn)
+        .get_result::<Feed>(conn)
 }
+
+// pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
+//     diesel::update(feed)
+//         .set(feeds::error.eq(error))
+//         .get_result::<Feed>(conn)
+// }
 
 pub fn find_one(conn: &PgConnection, id: i32) -> Option<Feed> {
     match feeds::table.filter(feeds::id.eq(id)).first::<Feed>(conn) {
@@ -122,6 +128,40 @@ mod tests {
                 .unwrap();
 
             assert!(updated_at_diff > 0);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn it_finds_feed() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let title = "Title";
+            let link = "Link";
+            let description = "Description";
+            let feed = super::create(&connection, &title, &link, &description).unwrap();
+
+            let found_feed = super::find_one(&connection, feed.id).unwrap();
+
+            assert_eq!(feed.id, found_feed.id);
+            assert_eq!(found_feed.title, title);
+            assert_eq!(found_feed.link, link);
+            assert_eq!(found_feed.description, description);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn it_cant_find_feed() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let found_feed = super::find_one(&connection, 42);
+
+            assert_eq!(found_feed, None);
 
             Ok(())
         });

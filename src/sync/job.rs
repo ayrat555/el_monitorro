@@ -1,6 +1,11 @@
+use crate::models::feed::Feed;
+use crate::sync::rss_reader::ReadRSS;
 use background_jobs::{Backoff, Job, MaxRetries, Processor};
 use failure::Error;
 use serde_derive::{Deserialize, Serialize};
+
+use crate::db;
+use crate::db::feeds;
 
 const DEFAULT_QUEUE: &'static str = "default";
 
@@ -17,7 +22,18 @@ impl SyncJob {
         SyncJob { feed_id }
     }
 
-    pub fn execute() {}
+    pub fn execute(&self) -> Feed {
+        let connection = db::establish_connection();
+        feeds::find_one(&connection, self.feed_id).unwrap()
+        // let rss_reader = RssReader { url: feed.link };
+
+        // let result = rss_reader.read_rss();
+
+        // match result {
+        //     Ok(data) ->
+
+        // }
+    }
 }
 
 impl Job for SyncJob {
