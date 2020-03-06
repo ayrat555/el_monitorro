@@ -1,6 +1,7 @@
 use crate::db;
 use crate::models::feed::Feed;
 use crate::schema::feeds;
+use chrono::offset::Utc;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
@@ -36,11 +37,17 @@ pub fn create(
         .get_result::<Feed>(conn)
 }
 
-// pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
-//     diesel::update(feed)
-//         .set(feeds::error.eq(error))
-//         .get_result::<Feed>(conn)
-// }
+pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
+    diesel::update(feed)
+        .set(feeds::error.eq(error))
+        .get_result::<Feed>(conn)
+}
+
+pub fn set_synced_at(conn: &PgConnection, feed: &Feed) -> Result<Feed, Error> {
+    diesel::update(feed)
+        .set(feeds::synced_at.eq(Utc::now()))
+        .get_result::<Feed>(conn)
+}
 
 pub fn find_one(conn: &PgConnection, id: i32) -> Option<Feed> {
     match feeds::table.filter(feeds::id.eq(id)).first::<Feed>(conn) {
@@ -165,5 +172,44 @@ mod tests {
 
             Ok(())
         });
+    }
+
+    #[test]
+    fn it_sets_error_message_to_feed() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let title = "Title";
+            let link = "Link";
+            let description = "Description";
+            let feed = super::create(&connection, &title, &link, &description).unwrap();
+            let error = "Error syncing feed";
+
+            let updated_feed = super::set_error(&connection, &feed, error).unwrap();
+
+            assert_eq!(updated_feed.error.unwrap(), error);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn it_sets_current_time_to_synced_at() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let title = "Title";
+            let link = "Link";
+            let description = "Description";
+            let feed = super::create(&connection, &title, &link, &description).unwrap();
+
+            assert!(feed.synced_at.is_none());
+
+            let updated_feed = super::set_synced_at(&connection, &feed).unwrap();
+
+            assert!(updated_feed.synced_at.is_some());
+
+            Ok(())
+        })
     }
 }
