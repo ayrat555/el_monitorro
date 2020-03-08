@@ -1,11 +1,17 @@
-use crate::models::feed::Feed;
-use crate::sync::rss_reader::ReadRSS;
-use background_jobs::{Backoff, Job, MaxRetries, Processor};
-use failure::Error;
-use serde_derive::{Deserialize, Serialize};
-
 use crate::db;
-use crate::db::feeds;
+use crate::db::feed_items::NewFeedItem;
+use crate::db::{feed_items, feeds};
+use crate::models::feed::Feed;
+use crate::sync::rss_reader::{FetchedFeed, ReadRSS, RssReader};
+use background_jobs::{Backoff, Job, MaxRetries, Processor};
+use chrono::offset::Utc;
+use chrono::prelude::DateTime;
+use diesel::result::Error as DieselError;
+use diesel::Connection;
+use diesel::PgConnection;
+use failure::Error;
+use rss::Channel;
+use serde_derive::{Deserialize, Serialize};
 
 const DEFAULT_QUEUE: &'static str = "default";
 
@@ -22,17 +28,23 @@ impl SyncJob {
         SyncJob { feed_id }
     }
 
-    pub fn execute(&self) -> Feed {
-        let connection = db::establish_connection();
-        feeds::find_one(&connection, self.feed_id).unwrap()
-        // let rss_reader = RssReader { url: feed.link };
+    pub fn execute(&self) {
+        let db_connection = db::establish_connection();
+        let feed = feeds::find_one(&db_connection, self.feed_id).unwrap();
+        let rss_reader = RssReader {
+            url: feed.link.clone(),
+        };
 
-        // let result = rss_reader.read_rss();
-
-        // match result {
-        //     Ok(data) ->
-
-        // }
+        match rss_reader.read_rss() {
+            Ok(fetched_feed) => {
+                feed_items::create(&db_connection, feed.id, fetched_feed.items);
+                ()
+            }
+            Err(err) => {
+                feeds::set_error(&db_connection, &feed, &format!("{:?}", err));
+                ()
+            }
+        };
     }
 }
 
