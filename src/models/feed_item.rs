@@ -4,12 +4,11 @@ use chrono::{DateTime, Utc};
 pub struct FeedItem {
     pub id: i32,
     pub feed_id: i32,
-    pub title: String,
-    pub description: String,
-    pub link: String,
-    pub author: String,
-    pub guid: String,
-    pub categories: Vec<String>,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub link: Option<String>,
+    pub author: Option<String>,
+    pub guid: Option<String>,
 
     pub publication_date: DateTime<Utc>,
     pub created_at: DateTime<Utc>,

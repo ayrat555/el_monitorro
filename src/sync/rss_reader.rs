@@ -8,14 +8,13 @@ pub struct RssReader {
     pub url: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FetchedFeedItem {
-    pub title: String,
-    pub description: String,
-    pub link: String,
-    pub author: String,
-    pub guid: String,
-    pub categories: Vec<String>,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub link: Option<String>,
+    pub author: Option<String>,
+    pub guid: Option<String>,
     pub publication_date: DateTime<Utc>,
 }
 
@@ -43,8 +42,6 @@ impl ReadRSS for RssReader {
 
 impl From<Channel> for FetchedFeed {
     fn from(channel: Channel) -> Self {
-        let categories: Vec<String> = Vec::new();
-
         let items = channel
             .items()
             .into_iter()
@@ -52,12 +49,11 @@ impl From<Channel> for FetchedFeed {
                 let pub_date: DateTime<Utc> =
                     DateTime::from(DateTime::parse_from_rfc2822(item.pub_date().unwrap()).unwrap());
                 FetchedFeedItem {
-                    title: item.title().unwrap().to_string(),
-                    description: item.description().unwrap().to_string(),
-                    link: item.link().unwrap().to_string(),
-                    author: item.author().unwrap().to_string(),
-                    guid: item.guid().unwrap().value().to_string(),
-                    categories: categories.clone(),
+                    title: item.title().map(|s| s.to_string()),
+                    description: item.description().map(|s| s.to_string()),
+                    link: item.link().map(|s| s.to_string()),
+                    author: item.author().map(|s| s.to_string()),
+                    guid: item.guid().map(|s| s.value().to_string()),
                     publication_date: pub_date,
                 }
             })

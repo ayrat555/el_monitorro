@@ -1,16 +1,16 @@
 use crate::db;
-use crate::db::feed_items::NewFeedItem;
+// use crate::db::feed_items::NewFeedItem;
 use crate::db::{feed_items, feeds};
-use crate::models::feed::Feed;
-use crate::sync::rss_reader::{FetchedFeed, ReadRSS, RssReader};
+// use crate::models::feed::Feed;
+use crate::sync::rss_reader::{ReadRSS, RssReader};
 use background_jobs::{Backoff, Job, MaxRetries, Processor};
-use chrono::offset::Utc;
-use chrono::prelude::DateTime;
-use diesel::result::Error as DieselError;
-use diesel::Connection;
-use diesel::PgConnection;
+// use chrono::offset::Utc;
+// use chrono::prelude::DateTime;
+// use diesel::result::Error as DieselError;
+// use diesel::Connection;
+// use diesel::PgConnection;
 use failure::Error;
-use rss::Channel;
+// use rss::Channel;
 use serde_derive::{Deserialize, Serialize};
 
 const DEFAULT_QUEUE: &'static str = "default";
