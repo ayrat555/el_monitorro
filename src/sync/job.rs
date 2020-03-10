@@ -10,7 +10,8 @@ use background_jobs::{Backoff, Job, MaxRetries, Processor};
 // use diesel::Connection;
 // use diesel::PgConnection;
 use failure::Error;
-// use rss::Channel;
+// use rss::Channel.
+use log::error;
 use serde_derive::{Deserialize, Serialize};
 
 const DEFAULT_QUEUE: &'static str = "default";
@@ -23,12 +24,20 @@ pub struct SyncJob {
 #[derive(Clone, Debug)]
 pub struct JobProcessor;
 
+#[derive(Debug, Fail)]
+enum SyncError {
+    #[fail(display = "failed to sync a feed: {}", msg)]
+    FeedError { msg: String },
+    #[fail(display = "failed to insert data: {}", msg)]
+    DbError { msg: String },
+}
+
 impl SyncJob {
     pub fn new(feed_id: i32) -> Self {
         SyncJob { feed_id }
     }
 
-    pub fn execute(&self) {
+    pub fn execute(&self) -> Result<(), Error> {
         let db_connection = db::establish_connection();
         let feed = feeds::find_one(&db_connection, self.feed_id).unwrap();
         let rss_reader = RssReader {
@@ -37,14 +46,33 @@ impl SyncJob {
 
         match rss_reader.read_rss() {
             Ok(fetched_feed) => {
-                feed_items::create(&db_connection, feed.id, fetched_feed.items);
-                ()
+                match feed_items::create(&db_connection, feed.id, fetched_feed.items) {
+                    Err(err) => {
+                        error!("Error: failed to create feed items {:?}", err);
+                        let error = SyncError::DbError {
+                            msg: format!("Error: failed to create feed items {:?}", err),
+                        };
+                        Err(error.into())
+                    }
+                    _ => Ok(()),
+                }
             }
-            Err(err) => {
-                feeds::set_error(&db_connection, &feed, &format!("{:?}", err));
-                ()
-            }
-        };
+            Err(err) => match feeds::set_error(&db_connection, &feed, &format!("{:?}", err)) {
+                Err(err) => {
+                    error!("Error: failed to set a sync error to feed {:?}", err);
+                    let error = SyncError::DbError {
+                        msg: format!("Error: failed to set a sync error to feed {:?}", err),
+                    };
+                    Err(error.into())
+                }
+                _ => {
+                    let error = SyncError::FeedError {
+                        msg: format!("Error: failed to fetch feed items {:?}", err),
+                    };
+                    Err(error.into())
+                }
+            },
+        }
     }
 }
 
@@ -54,7 +82,7 @@ impl Job for SyncJob {
     type Future = Result<(), Error>;
 
     fn run(self, _: Self::State) -> Self::Future {
-        Ok(())
+        self.execute()
     }
 }
 

@@ -6,10 +6,13 @@ extern crate rocket;
 extern crate rocket_contrib;
 #[macro_use]
 extern crate diesel;
+extern crate log;
+#[macro_use]
+extern crate failure;
+
 extern crate actix;
 extern crate background_jobs;
 extern crate dotenv;
-extern crate failure;
 extern crate futures;
 extern crate mockall;
 extern crate rake;

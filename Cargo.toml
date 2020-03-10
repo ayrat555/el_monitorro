@@ -17,6 +17,8 @@ dotenv = "0.15.0"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.4", features = ["postgres", "chrono"] }
 clokwerk = "0.3"
+log = "0.4.0"
+env_logger = "0.7.1"
 
 # background-jobs deps
 actix = "0.8"

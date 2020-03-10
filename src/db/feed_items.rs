@@ -59,7 +59,6 @@ pub fn create(
 
 #[cfg(test)]
 mod tests {
-    use super::NewFeedItem;
     use crate::db;
     use crate::db::feeds;
     use crate::sync::rss_reader::FetchedFeedItem;
@@ -123,7 +122,6 @@ mod tests {
 
         connection.test_transaction::<_, Error, _>(|| {
             let feed = feeds::create(&connection, "Feed Title", "Link", "Description").unwrap();
-            let categories = vec!["1".to_string(), "2".to_string()];
             let publication_date = db::current_time();
             let feed_items = vec![FetchedFeedItem {
                 title: Some("FeedItem1".to_string()),
