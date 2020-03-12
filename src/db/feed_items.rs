@@ -5,7 +5,7 @@ use crate::sync::rss_reader::FetchedFeedItem;
 use chrono::prelude::{DateTime, Utc};
 use diesel::pg::upsert::excluded;
 use diesel::result::Error;
-use diesel::{ExpressionMethods, PgConnection, RunQueryDsl};
+use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feed_items"]
@@ -55,6 +55,16 @@ pub fn create(
             feed_items::updated_at.eq(db::current_time()),
         ))
         .get_results(conn)
+}
+
+pub fn find(conn: &PgConnection, feed_id: i32) -> Option<Vec<FeedItem>> {
+    match feed_items::table
+        .filter(feed_items::feed_id.eq(feed_id))
+        .get_results::<FeedItem>(conn)
+    {
+        Ok(record) => Some(record),
+        _ => None,
+    }
 }
 
 #[cfg(test)]

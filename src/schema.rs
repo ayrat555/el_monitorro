@@ -16,10 +16,10 @@ table! {
 table! {
     feeds (id) {
         id -> Int4,
-        title -> Text,
+        title -> Nullable<Text>,
         link -> Text,
         error -> Nullable<Text>,
-        description -> Text,
+        description -> Nullable<Text>,
         synced_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,

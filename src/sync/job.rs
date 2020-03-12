@@ -1,16 +1,8 @@
 use crate::db;
-// use crate::db::feed_items::NewFeedItem;
 use crate::db::{feed_items, feeds};
-// use crate::models::feed::Feed;
 use crate::sync::rss_reader::{ReadRSS, RssReader};
 use background_jobs::{Backoff, Job, MaxRetries, Processor};
-// use chrono::offset::Utc;
-// use chrono::prelude::DateTime;
-// use diesel::result::Error as DieselError;
-// use diesel::Connection;
-// use diesel::PgConnection;
 use failure::Error;
-// use rss::Channel.
 use log::error;
 use serde_derive::{Deserialize, Serialize};
 
@@ -54,7 +46,15 @@ impl SyncJob {
                         };
                         Err(error.into())
                     }
-                    _ => Ok(()),
+                    _ => match feeds::set_synced_at(&db_connection, &feed) {
+                        Err(err) => {
+                            let error = SyncError::DbError {
+                                msg: format!("Error: failed to update synced_at {:?}", err),
+                            };
+                            Err(error.into())
+                        }
+                        _ => Ok(()),
+                    },
                 }
             }
             Err(err) => match feeds::set_error(&db_connection, &feed, &format!("{:?}", err)) {
@@ -92,4 +92,31 @@ impl Processor for JobProcessor {
     const QUEUE: &'static str = DEFAULT_QUEUE;
     const MAX_RETRIES: MaxRetries = MaxRetries::Count(2);
     const BACKOFF_STRATEGY: Backoff = Backoff::Exponential(2);
+}
+
+mod tests {
+    use super::SyncJob;
+    use crate::db;
+    use crate::db::{feed_items, feeds};
+
+    #[test]
+    #[ignore]
+    fn it_saves_rss_items() {
+        let connection = db::establish_connection();
+        let title = "Title";
+        let link = "https://www.feedforall.com/sample-feed.xml";
+        let description = "Description";
+
+        let feed = feeds::create(&connection, &title, &link, &description).unwrap();
+        let sync_job = SyncJob { feed_id: feed.id };
+
+        sync_job.execute().unwrap();
+
+        let created_items = feed_items::find(&connection, feed.id).unwrap();
+
+        assert_eq!(created_items.len(), 3);
+
+        let updated_feed = feeds::find_one(&connection, feed.id).unwrap();
+        assert!(updated_feed.synced_at.is_some());
+    }
 }

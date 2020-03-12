@@ -15,13 +15,13 @@ struct NewFeed<'a> {
 
 pub fn create(
     conn: &PgConnection,
-    title: &str,
     link: &str,
-    description: &str,
+    title: Option<&str>,
+    description: Option<&str>,
 ) -> Result<Feed, Error> {
     let new_feed = &NewFeed {
-        title,
         link,
+        title,
         description,
     };
 

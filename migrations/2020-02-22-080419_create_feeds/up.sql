@@ -1,9 +1,9 @@
 CREATE TABLE feeds(
    id SERIAL PRIMARY KEY,
-   title TEXT NOT NULL,
+   title TEXT,
    link TEXT NOT NULL UNIQUE,
    error TEXT,
-   description TEXT NOT NULL,
+   description TEXT,
    synced_at TIMESTAMP WITH TIME ZONE,
    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

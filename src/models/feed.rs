@@ -5,10 +5,10 @@ use chrono::{DateTime, Utc};
 #[table_name = "feeds"]
 pub struct Feed {
     pub id: i32,
-    pub title: String,
+    pub title: Option<String>,
     pub link: String,
     pub error: Option<String>,
-    pub description: String,
+    pub description: Option<String>,
 
     pub synced_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
