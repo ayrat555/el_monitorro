@@ -46,7 +46,12 @@ impl SyncJob {
                         };
                         Err(error.into())
                     }
-                    _ => match feeds::set_synced_at(&db_connection, &feed) {
+                    _ => match feeds::set_synced_at(
+                        &db_connection,
+                        &feed,
+                        Some(fetched_feed.title),
+                        Some(fetched_feed.description),
+                    ) {
                         Err(err) => {
                             let error = SyncError::DbError {
                                 msg: format!("Error: failed to update synced_at {:?}", err),
@@ -103,11 +108,9 @@ mod tests {
     #[ignore]
     fn it_saves_rss_items() {
         let connection = db::establish_connection();
-        let title = "Title";
-        let link = "https://www.feedforall.com/sample-feed.xml";
-        let description = "Description";
+        let link = "https://www.feedforall.com/sample-feed.xml".to_string();
 
-        let feed = feeds::create(&connection, &title, &link, &description).unwrap();
+        let feed = feeds::create(&connection, link).unwrap();
         let sync_job = SyncJob { feed_id: feed.id };
 
         sync_job.execute().unwrap();
@@ -118,5 +121,7 @@ mod tests {
 
         let updated_feed = feeds::find_one(&connection, feed.id).unwrap();
         assert!(updated_feed.synced_at.is_some());
+        assert!(updated_feed.title.is_some());
+        assert!(updated_feed.description.is_some());
     }
 }

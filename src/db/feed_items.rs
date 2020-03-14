@@ -80,7 +80,7 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let feed = feeds::create(&connection, "Feed Title", "Link", "Description").unwrap();
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
             let publication_date = db::current_time();
             let feed_items = vec![
                 FetchedFeedItem {
@@ -131,7 +131,7 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let feed = feeds::create(&connection, "Feed Title", "Link", "Description").unwrap();
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
             let publication_date = db::current_time();
             let feed_items = vec![FetchedFeedItem {
                 title: Some("FeedItem1".to_string()),

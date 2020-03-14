@@ -7,33 +7,18 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feeds"]
-struct NewFeed<'a> {
-    title: &'a str,
-    link: &'a str,
-    description: &'a str,
+struct NewFeed {
+    link: String,
 }
 
-pub fn create(
-    conn: &PgConnection,
-    link: &str,
-    title: Option<&str>,
-    description: Option<&str>,
-) -> Result<Feed, Error> {
-    let new_feed = &NewFeed {
-        link,
-        title,
-        description,
-    };
+pub fn create(conn: &PgConnection, link: String) -> Result<Feed, Error> {
+    let new_feed = &NewFeed { link: link };
 
     diesel::insert_into(feeds::table)
         .values(new_feed)
         .on_conflict(feeds::link)
         .do_update()
-        .set((
-            feeds::title.eq(new_feed.title),
-            feeds::description.eq(new_feed.description),
-            feeds::updated_at.eq(db::current_time()),
-        ))
+        .set(feeds::updated_at.eq(db::current_time()))
         .get_result::<Feed>(conn)
 }
 
@@ -43,9 +28,19 @@ pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, 
         .get_result::<Feed>(conn)
 }
 
-pub fn set_synced_at(conn: &PgConnection, feed: &Feed) -> Result<Feed, Error> {
+pub fn set_synced_at(
+    conn: &PgConnection,
+    feed: &Feed,
+    title: Option<String>,
+    description: Option<String>,
+) -> Result<Feed, Error> {
     diesel::update(feed)
-        .set(feeds::synced_at.eq(Utc::now()))
+        .set((
+            feeds::synced_at.eq(Utc::now()),
+            feeds::title.eq(title),
+            feeds::description.eq(description),
+            feeds::updated_at.eq(db::current_time()),
+        ))
         .get_result::<Feed>(conn)
 }
 
@@ -65,29 +60,24 @@ mod tests {
 
     #[test]
     fn it_creates_new_feed() {
-        let title = "Title";
         let link = "Link";
-        let description = "Description";
         let connection = db::establish_connection();
 
-        let result = connection.test_transaction::<Feed, Error, _>(|| {
-            super::create(&connection, &title, &link, &description)
-        });
+        let result = connection
+            .test_transaction::<Feed, Error, _>(|| super::create(&connection, link.to_string()));
 
-        assert_eq!(result.title, title);
+        assert_eq!(result.title, None);
         assert_eq!(result.link, link);
-        assert_eq!(result.description, description);
+        assert_eq!(result.description, None);
     }
 
     #[test]
     fn it_fails_to_create_feed_without_link() {
-        let title = "Title";
-        let link = "";
-        let description = "Description";
+        let link = "".to_string();
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let result = super::create(&connection, &title, &link, &description);
+            let result = super::create(&connection, link);
 
             match result.err().unwrap() {
                 Error::DatabaseError(_, error_info) => assert_eq!(
@@ -102,39 +92,33 @@ mod tests {
     }
 
     #[test]
-    fn it_updates_feed_if_it_already_exists() {
-        let title = "Title";
-        let updated_title = "NewTitle";
+    fn it_sets_description_and_title_to_feed() {
+        let link = "Link".to_string();
 
-        let link = "Link";
-
-        let description = "Description";
-        let updated_description = "NewDescripton";
+        let title = "Title".to_string();
+        let description = "Description".to_string();
 
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let feed = super::create(&connection, &title, &link, &description).unwrap();
+            let feed = super::create(&connection, link.clone()).unwrap();
 
-            assert_eq!(feed.title, title);
+            assert_eq!(feed.title, None);
             assert_eq!(feed.link, link);
-            assert_eq!(feed.description, description);
+            assert_eq!(feed.description, None);
 
-            let updated_feed =
-                super::create(&connection, &updated_title, &link, &updated_description).unwrap();
+            let updated_feed = super::set_synced_at(
+                &connection,
+                &feed,
+                Some(title.clone()),
+                Some(description.clone()),
+            )
+            .unwrap();
 
-            assert_eq!(updated_feed.title, updated_title);
+            assert_eq!(updated_feed.title, Some(title));
             assert_eq!(updated_feed.link, link);
-            assert_eq!(updated_feed.description, updated_description);
-            assert_eq!(updated_feed.created_at, feed.created_at);
-
-            let updated_at_diff = updated_feed
-                .updated_at
-                .signed_duration_since(feed.updated_at)
-                .num_microseconds()
-                .unwrap();
-
-            assert!(updated_at_diff > 0);
+            assert_eq!(updated_feed.description, Some(description));
+            assert!(updated_feed.synced_at.is_some());
 
             Ok(())
         });
@@ -145,17 +129,15 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let title = "Title";
-            let link = "Link";
-            let description = "Description";
-            let feed = super::create(&connection, &title, &link, &description).unwrap();
+            let link = "Link".to_string();
+            let feed = super::create(&connection, link.clone()).unwrap();
 
             let found_feed = super::find_one(&connection, feed.id).unwrap();
 
             assert_eq!(feed.id, found_feed.id);
-            assert_eq!(found_feed.title, title);
+            assert_eq!(found_feed.title, None);
             assert_eq!(found_feed.link, link);
-            assert_eq!(found_feed.description, description);
+            assert_eq!(found_feed.description, None);
 
             Ok(())
         });
@@ -179,10 +161,8 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let title = "Title";
-            let link = "Link";
-            let description = "Description";
-            let feed = super::create(&connection, &title, &link, &description).unwrap();
+            let link = "Link".to_string();
+            let feed = super::create(&connection, link).unwrap();
             let error = "Error syncing feed";
 
             let updated_feed = super::set_error(&connection, &feed, error).unwrap();
@@ -198,16 +178,19 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let title = "Title";
-            let link = "Link";
-            let description = "Description";
-            let feed = super::create(&connection, &title, &link, &description).unwrap();
+            let link = "Link".to_string();
+            let description = Some("Description".to_string());
+            let title = Some("Title".to_string());
+            let feed = super::create(&connection, link).unwrap();
 
             assert!(feed.synced_at.is_none());
 
-            let updated_feed = super::set_synced_at(&connection, &feed).unwrap();
+            let updated_feed =
+                super::set_synced_at(&connection, &feed, description, title).unwrap();
 
             assert!(updated_feed.synced_at.is_some());
+            assert!(updated_feed.title.is_some());
+            assert!(updated_feed.description.is_some());
 
             Ok(())
         })
