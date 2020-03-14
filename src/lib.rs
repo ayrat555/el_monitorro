@@ -15,10 +15,10 @@ extern crate background_jobs;
 extern crate dotenv;
 extern crate futures;
 extern crate mockall;
+extern crate once_cell;
 extern crate rake;
 extern crate rss;
 extern crate serde_derive;
-extern crate sled;
 
 use rocket_contrib::json::Json;
 
@@ -27,7 +27,7 @@ mod db;
 pub mod keyword_tagger;
 mod models;
 mod schema;
-mod sync;
+pub mod sync;
 
 use keyword_tagger::*;
 

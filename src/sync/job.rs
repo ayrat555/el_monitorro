@@ -6,7 +6,7 @@ use failure::Error;
 use log::error;
 use serde_derive::{Deserialize, Serialize};
 
-const DEFAULT_QUEUE: &'static str = "default";
+pub const DEFAULT_QUEUE: &'static str = "default";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SyncJob {
