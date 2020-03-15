@@ -26,9 +26,28 @@ table! {
     }
 }
 
+table! {
+    tasks (id) {
+        id -> Int8,
+        job_uuid -> Text,
+        status -> Text,
+        result -> Nullable<Text>,
+        run_at -> Nullable<Int8>,
+        queue -> Nullable<Text>,
+        attempts -> Int4,
+        max_attempts -> Int4,
+        created_at -> Int8,
+        updated_at -> Int8,
+        cron -> Nullable<Text>,
+        interval -> Nullable<Int8>,
+        job -> Text,
+    }
+}
+
 joinable!(feed_items -> feeds (feed_id));
 
 allow_tables_to_appear_in_same_query!(
     feed_items,
     feeds,
+    tasks,
 );

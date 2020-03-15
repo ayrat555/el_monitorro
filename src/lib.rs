@@ -9,16 +9,11 @@ extern crate diesel;
 extern crate log;
 #[macro_use]
 extern crate failure;
-
-extern crate actix;
-extern crate background_jobs;
 extern crate dotenv;
-extern crate futures;
 extern crate mockall;
 extern crate once_cell;
 extern crate rake;
 extern crate rss;
-extern crate serde_derive;
 
 use rocket_contrib::json::Json;
 

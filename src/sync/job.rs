@@ -1,20 +1,15 @@
 use crate::db;
 use crate::db::{feed_items, feeds};
 use crate::sync::rss_reader::{ReadRSS, RssReader};
-use background_jobs::{Backoff, Job, MaxRetries, Processor};
 use failure::Error;
 use log::error;
-use serde_derive::{Deserialize, Serialize};
 
 pub const DEFAULT_QUEUE: &'static str = "default";
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Debug)]
 pub struct SyncJob {
     feed_id: i32,
 }
-
-#[derive(Clone, Debug)]
-pub struct JobProcessor;
 
 #[derive(Debug, Fail)]
 enum SyncError {
@@ -30,6 +25,8 @@ impl SyncJob {
     }
 
     pub fn execute(&self) -> Result<(), Error> {
+        log::info!("Started processing a feed with id {}", self.feed_id);
+
         let db_connection = db::establish_connection();
         let feed = feeds::find_one(&db_connection, self.feed_id).unwrap();
         let rss_reader = RssReader {
@@ -40,7 +37,11 @@ impl SyncJob {
             Ok(fetched_feed) => {
                 match feed_items::create(&db_connection, feed.id, fetched_feed.items) {
                     Err(err) => {
-                        error!("Error: failed to create feed items {:?}", err);
+                        error!(
+                            "Error: failed to create feed items for feed with id {}: {:?}",
+                            self.feed_id, err
+                        );
+
                         let error = SyncError::DbError {
                             msg: format!("Error: failed to create feed items {:?}", err),
                         };
@@ -53,18 +54,28 @@ impl SyncJob {
                         Some(fetched_feed.description),
                     ) {
                         Err(err) => {
+                            error!(
+                                "Error: failed to update synced_at for feed with id {}: {:?}",
+                                self.feed_id, err
+                            );
                             let error = SyncError::DbError {
                                 msg: format!("Error: failed to update synced_at {:?}", err),
                             };
                             Err(error.into())
                         }
-                        _ => Ok(()),
+                        _ => {
+                            log::info!("Successfully processed feed with id {}", self.feed_id);
+                            Ok(())
+                        }
                     },
                 }
             }
             Err(err) => match feeds::set_error(&db_connection, &feed, &format!("{:?}", err)) {
                 Err(err) => {
-                    error!("Error: failed to set a sync error to feed {:?}", err);
+                    error!(
+                        "Error: failed to set a sync error to feed with id {} {:?}",
+                        self.feed_id, err
+                    );
                     let error = SyncError::DbError {
                         msg: format!("Error: failed to set a sync error to feed {:?}", err),
                     };
@@ -79,24 +90,6 @@ impl SyncJob {
             },
         }
     }
-}
-
-impl Job for SyncJob {
-    type Processor = JobProcessor;
-    type State = ();
-    type Future = Result<(), Error>;
-
-    fn run(self, _: Self::State) -> Self::Future {
-        self.execute()
-    }
-}
-
-impl Processor for JobProcessor {
-    type Job = SyncJob;
-    const NAME: &'static str = "JobProcessor";
-    const QUEUE: &'static str = DEFAULT_QUEUE;
-    const MAX_RETRIES: MaxRetries = MaxRetries::Count(2);
-    const BACKOFF_STRATEGY: Backoff = Backoff::Exponential(2);
 }
 
 mod tests {
