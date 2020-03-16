@@ -1,18 +1,18 @@
 use crate::db;
 use crate::db::{feed_items, feeds};
 use crate::sync::rss_reader::{ReadRSS, RssReader};
-use failure::Error;
 use log::error;
+use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_QUEUE: &'static str = "default";
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SyncJob {
     feed_id: i32,
 }
 
-#[derive(Debug, Fail)]
-enum SyncError {
+#[derive(Debug, Fail, Serialize, Deserialize)]
+pub enum SyncError {
     #[fail(display = "failed to sync a feed: {}", msg)]
     FeedError { msg: String },
     #[fail(display = "failed to insert data: {}", msg)]
@@ -24,7 +24,7 @@ impl SyncJob {
         SyncJob { feed_id }
     }
 
-    pub fn execute(&self) -> Result<(), Error> {
+    pub fn execute(&self) -> Result<(), SyncError> {
         log::info!("Started processing a feed with id {}", self.feed_id);
 
         let db_connection = db::establish_connection();
@@ -45,7 +45,7 @@ impl SyncJob {
                         let error = SyncError::DbError {
                             msg: format!("Error: failed to create feed items {:?}", err),
                         };
-                        Err(error.into())
+                        Err(error)
                     }
                     _ => match feeds::set_synced_at(
                         &db_connection,
@@ -61,7 +61,7 @@ impl SyncJob {
                             let error = SyncError::DbError {
                                 msg: format!("Error: failed to update synced_at {:?}", err),
                             };
-                            Err(error.into())
+                            Err(error)
                         }
                         _ => {
                             log::info!("Successfully processed feed with id {}", self.feed_id);
@@ -79,13 +79,13 @@ impl SyncJob {
                     let error = SyncError::DbError {
                         msg: format!("Error: failed to set a sync error to feed {:?}", err),
                     };
-                    Err(error.into())
+                    Err(error)
                 }
                 _ => {
                     let error = SyncError::FeedError {
                         msg: format!("Error: failed to fetch feed items {:?}", err),
                     };
-                    Err(error.into())
+                    Err(error)
                 }
             },
         }
