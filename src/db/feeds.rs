@@ -2,6 +2,7 @@ use crate::db;
 use crate::models::feed::Feed;
 use crate::schema::feeds;
 use chrono::offset::Utc;
+use chrono::DateTime;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
@@ -49,6 +50,22 @@ pub fn find_one(conn: &PgConnection, id: i32) -> Option<Feed> {
         Ok(record) => Some(record),
         _ => None,
     }
+}
+
+pub fn find_unsynced_feeds(
+    conn: &PgConnection,
+    last_updated_at: DateTime<Utc>,
+    page: i64,
+    count: i64,
+) -> Result<Vec<Feed>, Error> {
+    let offset = page * count;
+
+    feeds::table
+        .filter(feeds::synced_at.gt(last_updated_at))
+        .order(feeds::id)
+        .limit(count)
+        .offset(offset)
+        .get_results(conn)
 }
 
 #[cfg(test)]
