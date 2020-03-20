@@ -58,10 +58,11 @@ pub fn find_unsynced_feeds(
     page: i64,
     count: i64,
 ) -> Result<Vec<Feed>, Error> {
-    let offset = page * count;
+    let offset = (page - 1) * count;
 
     feeds::table
-        .filter(feeds::synced_at.gt(last_updated_at))
+        .filter(feeds::synced_at.lt(last_updated_at))
+        .or_filter(feeds::synced_at.is_null())
         .order(feeds::id)
         .limit(count)
         .offset(offset)
@@ -72,8 +73,12 @@ pub fn find_unsynced_feeds(
 mod tests {
     use crate::db;
     use crate::models::feed::Feed;
+    use crate::schema::feeds;
+    use chrono::offset::Utc;
+    use chrono::Duration;
     use diesel::connection::Connection;
     use diesel::result::Error;
+    use diesel::{ExpressionMethods, RunQueryDsl};
 
     #[test]
     fn it_creates_new_feed() {
@@ -208,6 +213,90 @@ mod tests {
             assert!(updated_feed.synced_at.is_some());
             assert!(updated_feed.title.is_some());
             assert!(updated_feed.description.is_some());
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn it_fetches_unsynced_feeds_without_synced_at() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let link = "Link".to_string();
+            let feed_without_synced_at = super::create(&connection, link).unwrap();
+            assert!(feed_without_synced_at.synced_at.is_none());
+
+            let found_unsynced_feeds =
+                super::find_unsynced_feeds(&connection, Utc::now(), 1, 1).unwrap();
+
+            assert_eq!(found_unsynced_feeds.len(), 1);
+            assert_eq!(found_unsynced_feeds[0].id, feed_without_synced_at.id);
+
+            let found_unsynced_feeds_page2 =
+                super::find_unsynced_feeds(&connection, Utc::now(), 2, 1).unwrap();
+
+            assert_eq!(found_unsynced_feeds_page2.len(), 0);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn it_fetches_unsynced_feeds_with_expired_synced_at() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let link = "Link".to_string();
+            let mut feed = super::create(&connection, link).unwrap();
+
+            let expired_synced_at = Utc::now() - Duration::hours(40);
+
+            feed = diesel::update(&feed)
+                .set(feeds::synced_at.eq(expired_synced_at))
+                .get_result::<Feed>(&connection)
+                .unwrap();
+
+            assert!(feed.synced_at.is_some());
+
+            let found_unsynced_feeds =
+                super::find_unsynced_feeds(&connection, Utc::now() - Duration::hours(24), 1, 1)
+                    .unwrap();
+
+            assert_eq!(found_unsynced_feeds.len(), 1);
+            assert_eq!(found_unsynced_feeds[0].id, feed.id);
+
+            let found_unsynced_feeds_page2 =
+                super::find_unsynced_feeds(&connection, Utc::now(), 2, 1).unwrap();
+
+            assert_eq!(found_unsynced_feeds_page2.len(), 0);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn it_doesnt_fetch_synced_feeds() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let link = "Link".to_string();
+            let mut feed = super::create(&connection, link).unwrap();
+
+            let expired_synced_at = Utc::now() - Duration::hours(10);
+
+            feed = diesel::update(&feed)
+                .set(feeds::synced_at.eq(expired_synced_at))
+                .get_result::<Feed>(&connection)
+                .unwrap();
+
+            assert!(feed.synced_at.is_some());
+
+            let found_unsynced_feeds =
+                super::find_unsynced_feeds(&connection, Utc::now() - Duration::hours(24), 1, 1)
+                    .unwrap();
+
+            assert_eq!(found_unsynced_feeds.len(), 0);
 
             Ok(())
         })
