@@ -1,3 +1,3 @@
-pub mod job;
+pub mod feed_sync_job;
 pub mod rss_reader;
-pub mod runner;
+pub mod sync_job;

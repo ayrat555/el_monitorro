@@ -1,10 +1,9 @@
 use el_monitorro;
-use el_monitorro::sync::runner::{enqueue_job, start_runners};
+use el_monitorro::sync::feed_sync_job;
 
 fn main() {
     env_logger::init();
-    start_runners(1);
-    enqueue_job(1);
+    feed_sync_job::start_runners(1);
 
     el_monitorro::rocket().launch();
 }
