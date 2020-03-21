@@ -26,3 +26,4 @@ create TABLE feed_items(
 );
 
 CREATE UNIQUE INDEX feed_items_title_description_index ON feed_items(feed_id, title, description);
+CREATE INDEX feeds_synced_at_index ON feeds(synced_at);

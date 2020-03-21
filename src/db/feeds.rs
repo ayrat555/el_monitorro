@@ -25,7 +25,11 @@ pub fn create(conn: &PgConnection, link: String) -> Result<Feed, Error> {
 
 pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
     diesel::update(feed)
-        .set(feeds::error.eq(error))
+        .set((
+            feeds::error.eq(error),
+            feeds::synced_at.eq(db::current_time()),
+            feeds::updated_at.eq(db::current_time()),
+        ))
         .get_result::<Feed>(conn)
 }
 
@@ -37,7 +41,7 @@ pub fn set_synced_at(
 ) -> Result<Feed, Error> {
     diesel::update(feed)
         .set((
-            feeds::synced_at.eq(Utc::now()),
+            feeds::synced_at.eq(db::current_time()),
             feeds::title.eq(title),
             feeds::description.eq(description),
             feeds::updated_at.eq(db::current_time()),
@@ -190,6 +194,7 @@ mod tests {
             let updated_feed = super::set_error(&connection, &feed, error).unwrap();
 
             assert_eq!(updated_feed.error.unwrap(), error);
+            assert!(updated_feed.synced_at.is_some());
 
             Ok(())
         })
