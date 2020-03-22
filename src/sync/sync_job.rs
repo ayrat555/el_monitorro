@@ -2,27 +2,35 @@ use crate::db;
 use crate::db::feeds;
 use crate::models::feed::Feed;
 use crate::sync::feed_sync_job;
-use chrono::offset::Utc;
-use chrono::DateTime;
+use chrono::Duration;
 use diesel::result::Error;
+use dotenv::dotenv;
 use izta::job::Job;
 use izta::process_jobs;
 use izta::runner::Runner;
 use izta::task::task_req::TaskReq;
 use serde::{Deserialize, Serialize};
+use std::env;
 
-pub struct SyncJob {
-    last_synced_at: DateTime<Utc>,
-}
+#[derive(Serialize, Deserialize)]
+pub struct SyncJob {}
 
 #[derive(Serialize, Deserialize)]
 pub struct SyncError {
     msg: String,
 }
 
+impl From<Error> for SyncError {
+    fn from(error: Error) -> Self {
+        let msg = format!("{:?}", error);
+
+        SyncError { msg }
+    }
+}
+
 impl SyncJob {
-    pub fn new(last_synced_at: DateTime<Utc>) -> Self {
-        SyncJob { last_synced_at }
+    pub fn new() -> Self {
+        SyncJob {}
     }
 
     pub fn execute(&self) -> Result<usize, SyncError> {
@@ -35,9 +43,9 @@ impl SyncJob {
 
         let mut total_number = 0;
 
+        let last_synced_at = db::current_time() - Duration::seconds(1);
         loop {
-            unsynced_feeds =
-                feeds::find_unsynced_feeds(&db_connection, self.last_synced_at, page, 100)?;
+            unsynced_feeds = feeds::find_unsynced_feeds(&db_connection, last_synced_at, page, 100)?;
 
             page += 1;
 
@@ -59,6 +67,19 @@ impl SyncJob {
 
         Ok(total_number)
     }
+}
+
+pub fn start_runner() {
+    dotenv().ok();
+    let database_url =
+        env::var("DATABASE_URL").expect("No DATABASE_URL environment variable found");
+    let runner = Runner::new(process_jobs!(SyncJob), &database_url, "tasks", vec![]);
+
+    runner.start();
+
+    let task_req = TaskReq::new(SyncJob::new());
+    let periodic_req = TaskReq::run_every(task_req, Duration::hours(1));
+    runner.add_task(&periodic_req);
 }
 
 impl Job for SyncJob {

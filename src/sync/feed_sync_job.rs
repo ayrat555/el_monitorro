@@ -121,17 +121,16 @@ impl Job for FeedSyncJob {
     }
 }
 
-pub fn start_runners(number: i32) {
+pub fn start_runner() {
     dotenv().ok();
     let database_url =
         env::var("DATABASE_URL").expect("No DATABASE_URL environment variable found");
     let runner = Runner::new(process_jobs!(FeedSyncJob), &database_url, "tasks", vec![]);
 
-    for _ in 0..number {
-        runner.start();
-    }
+    runner.start();
 }
 
+#[cfg(test)]
 mod tests {
     use super::FeedSyncJob;
     use crate::db;
