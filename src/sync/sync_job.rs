@@ -1,7 +1,7 @@
 use crate::db;
 use crate::db::feeds;
 use crate::models::feed::Feed;
-use crate::sync::feed_sync_job;
+use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
 use chrono::Duration;
 use diesel::result::Error;
 use dotenv::dotenv;
@@ -43,14 +43,14 @@ impl SyncJob {
 
         let mut total_number = 0;
 
-        let last_synced_at = db::current_time() - Duration::seconds(1);
+        let last_synced_at = db::current_time() - Duration::hours(24);
         loop {
             unsynced_feeds = feeds::find_unsynced_feeds(&db_connection, last_synced_at, page, 100)?;
 
             page += 1;
 
             for feed in &unsynced_feeds {
-                feed_sync_job::enqueue_job(feed.id);
+                enqueue_job(feed.id);
             }
 
             if unsynced_feeds == [] {
@@ -69,11 +69,46 @@ impl SyncJob {
     }
 }
 
+pub fn enqueue_job(number: i32) {
+    dotenv().ok();
+    let database_url =
+        env::var("DATABASE_URL").expect("No DATABASE_URL environment variable found");
+    let runner = Runner::new(
+        process_jobs!(FeedSyncJob),
+        &database_url,
+        "tasks",
+        vec!["feed_sync_jobs".to_string()],
+    );
+
+    let task_req = TaskReq::new(FeedSyncJob::new(number));
+    runner.add_task(&task_req);
+}
+
+impl Job for FeedSyncJob {
+    type R = ();
+    type E = FeedSyncError;
+
+    // All jobs must have a UUID
+    const UUID: &'static str = "74f3a15b-75c0-4889-9546-63b02ff304e4";
+
+    const MAX_ATTEMPTS: usize = 3;
+
+    // Job logic - return an `Err` for errors and `Ok` if successful.
+    fn run(&self) -> Result<Self::R, Self::E> {
+        self.execute()
+    }
+}
+
 pub fn start_runner() {
     dotenv().ok();
     let database_url =
         env::var("DATABASE_URL").expect("No DATABASE_URL environment variable found");
-    let runner = Runner::new(process_jobs!(SyncJob), &database_url, "tasks", vec![]);
+    let runner = Runner::new(
+        process_jobs!(FeedSyncJob, SyncJob),
+        &database_url,
+        "tasks",
+        vec![],
+    );
 
     runner.start();
 
@@ -87,7 +122,7 @@ impl Job for SyncJob {
     type E = SyncError;
 
     // All jobs must have a UUID
-    const UUID: &'static str = "74f3a15b-75c0-4889-9546-63b02ff304e3";
+    const UUID: &'static str = "74f3a15b-75c0-4889-9546-63b02ff304e2";
 
     const MAX_ATTEMPTS: usize = 3;
 

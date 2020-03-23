@@ -1,14 +1,8 @@
 use crate::db;
 use crate::db::{feed_items, feeds};
 use crate::sync::rss_reader::{ReadRSS, RssReader};
-use dotenv::dotenv;
-use izta::job::Job;
-use izta::process_jobs;
-use izta::runner::Runner;
-use izta::task::task_req::TaskReq;
 use log::error;
 use serde::{Deserialize, Serialize};
-use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeedSyncJob {
@@ -94,40 +88,6 @@ impl FeedSyncJob {
             },
         }
     }
-}
-
-pub fn enqueue_job(number: i32) {
-    dotenv().ok();
-    let database_url =
-        env::var("DATABASE_URL").expect("No DATABASE_URL environment variable found");
-    let runner = Runner::new(process_jobs!(FeedSyncJob), &database_url, "tasks", vec![]);
-
-    let task_req = TaskReq::new(FeedSyncJob::new(number));
-    runner.add_task(&task_req);
-}
-
-impl Job for FeedSyncJob {
-    type R = ();
-    type E = FeedSyncError;
-
-    // All jobs must have a UUID
-    const UUID: &'static str = "74f3a15b-75c0-4889-9546-63b02ff304e4";
-
-    const MAX_ATTEMPTS: usize = 3;
-
-    // Job logic - return an `Err` for errors and `Ok` if successful.
-    fn run(&self) -> Result<Self::R, Self::E> {
-        self.execute()
-    }
-}
-
-pub fn start_runner() {
-    dotenv().ok();
-    let database_url =
-        env::var("DATABASE_URL").expect("No DATABASE_URL environment variable found");
-    let runner = Runner::new(process_jobs!(FeedSyncJob), &database_url, "tasks", vec![]);
-
-    runner.start();
 }
 
 #[cfg(test)]
