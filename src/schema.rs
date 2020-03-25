@@ -44,10 +44,22 @@ table! {
     }
 }
 
+table! {
+    telegram_chats (id) {
+        id -> Int8,
+        kind -> Text,
+        title -> Nullable<Text>,
+        username -> Nullable<Text>,
+        first_name -> Nullable<Text>,
+        last_name -> Nullable<Text>,
+    }
+}
+
 joinable!(feed_items -> feeds (feed_id));
 
 allow_tables_to_appear_in_same_query!(
     feed_items,
     feeds,
     tasks,
+    telegram_chats,
 );

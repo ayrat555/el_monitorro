@@ -12,7 +12,9 @@ clokwerk = "0.3"
 diesel = { version = "1.4", features = ["postgres", "chrono"] }
 dotenv = "0.15.0"
 env_logger = "0.7.1"
+erased-serde = "0.3"
 failure = "0.1"
+futures = "0.1"
 izta = "0.1.2"
 log = "0.4.0"
 mockall = "0.6.0"
@@ -22,6 +24,8 @@ rocket = "0.4.2"
 rss = { version = "1.0", features = ["from_url"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+telebot = "0.3.1"
+
 
 [dependencies.rocket_contrib]
 version = "0.4.2"
