@@ -14,7 +14,7 @@ ALTER TABLE feeds
 
 create TABLE feed_items(
    id SERIAL PRIMARY KEY,
-   feed_id INT NOT NULL references feeds(id) ON DELETE CASCADE,
+   feed_id INTEGER NOT NULL references feeds(id) ON DELETE CASCADE,
    title TEXT,
    description TEXT,
    link TEXT,

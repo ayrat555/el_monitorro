@@ -12,7 +12,7 @@ pub fn start_bot() {
     let mut bot = Bot::new(&env::var("TELEGRAM_BOT_KEY").unwrap()).update_interval(200);
 
     let known = bot
-        .new_cmd("/known")
+        .new_cmd("/subscribe")
         .and_then(|(bot, msg)| {
             println!("{:?}", msg);
             bot.message(msg.chat.id, "This one is known".into()).send()

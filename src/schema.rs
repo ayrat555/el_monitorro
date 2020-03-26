@@ -46,7 +46,7 @@ table! {
 
 table! {
     telegram_chats (id) {
-        id -> Int8,
+        id -> Int4,
         kind -> Text,
         title -> Nullable<Text>,
         username -> Nullable<Text>,
@@ -55,11 +55,24 @@ table! {
     }
 }
 
+table! {
+    telegram_subscriptions (id) {
+        id -> Int4,
+        chat_id -> Int4,
+        feed_id -> Int4,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
 joinable!(feed_items -> feeds (feed_id));
+joinable!(telegram_subscriptions -> feeds (feed_id));
+joinable!(telegram_subscriptions -> telegram_chats (chat_id));
 
 allow_tables_to_appear_in_same_query!(
     feed_items,
     feeds,
     tasks,
     telegram_chats,
+    telegram_subscriptions,
 );
