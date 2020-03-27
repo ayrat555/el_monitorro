@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 
 #[derive(Queryable, Debug)]
 pub struct TelegramChat {
-    pub id: i32,
+    pub id: i64,
     pub kind: String,
     pub title: Option<String>,
     pub username: Option<String>,

@@ -7,6 +7,7 @@ use std::env;
 
 pub mod feed_items;
 pub mod feeds;
+pub mod telegram;
 
 #[database("diesel_postgres_pool")]
 pub struct Conn(RocketPgConnection);

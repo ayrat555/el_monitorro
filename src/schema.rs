@@ -46,19 +46,21 @@ table! {
 
 table! {
     telegram_chats (id) {
-        id -> Int4,
+        id -> Int8,
         kind -> Text,
         title -> Nullable<Text>,
         username -> Nullable<Text>,
         first_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 
 table! {
     telegram_subscriptions (id) {
         id -> Int4,
-        chat_id -> Int4,
+        chat_id -> Int8,
         feed_id -> Int4,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
