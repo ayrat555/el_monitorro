@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 #[derive(Queryable, Identifiable, Debug, Eq, PartialEq)]
 #[table_name = "feeds"]
 pub struct Feed {
-    pub id: i32,
+    pub id: i64,
     pub title: Option<String>,
     pub link: String,
     pub error: Option<String>,

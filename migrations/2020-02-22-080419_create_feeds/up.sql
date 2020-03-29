@@ -1,5 +1,5 @@
 CREATE TABLE feeds(
-   id SERIAL PRIMARY KEY,
+   id BIGSERIAL PRIMARY KEY,
    title TEXT,
    link TEXT NOT NULL UNIQUE,
    error TEXT,
@@ -13,8 +13,8 @@ ALTER TABLE feeds
       ADD CONSTRAINT feed_link_size CHECK (char_length(link) > 0);
 
 create TABLE feed_items(
-   id SERIAL PRIMARY KEY,
-   feed_id INTEGER NOT NULL references feeds(id) ON DELETE CASCADE,
+   id BIGSERIAL PRIMARY KEY,
+   feed_id BIGINT NOT NULL references feeds(id) ON DELETE CASCADE,
    title TEXT,
    description TEXT,
    link TEXT,

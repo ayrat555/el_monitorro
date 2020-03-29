@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeedSyncJob {
-    feed_id: i32,
+    feed_id: i64,
 }
 
 #[derive(Debug, Fail, Serialize, Deserialize)]
@@ -18,7 +18,7 @@ pub enum FeedSyncError {
 }
 
 impl FeedSyncJob {
-    pub fn new(feed_id: i32) -> Self {
+    pub fn new(feed_id: i64) -> Self {
         FeedSyncJob { feed_id }
     }
 

@@ -10,7 +10,7 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feed_items"]
 pub struct NewFeedItem {
-    pub feed_id: i32,
+    pub feed_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
     pub link: Option<String>,
@@ -21,7 +21,7 @@ pub struct NewFeedItem {
 
 pub fn create(
     conn: &PgConnection,
-    feed_id: i32,
+    feed_id: i64,
     fetched_items: Vec<FetchedFeedItem>,
 ) -> Result<Vec<FeedItem>, Error> {
     let new_feed_items = fetched_items
@@ -57,7 +57,7 @@ pub fn create(
         .get_results(conn)
 }
 
-pub fn find(conn: &PgConnection, feed_id: i32) -> Option<Vec<FeedItem>> {
+pub fn find(conn: &PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
     match feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
         .get_results::<FeedItem>(conn)

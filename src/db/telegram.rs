@@ -21,7 +21,7 @@ pub struct NewTelegramChat {
 #[table_name = "telegram_subscriptions"]
 pub struct NewTelegramSubscription {
     pub chat_id: i64,
-    pub feed_id: i32,
+    pub feed_id: i64,
 }
 
 pub fn create_chat(conn: &PgConnection, new_chat: NewTelegramChat) -> Result<TelegramChat, Error> {
@@ -52,7 +52,9 @@ pub fn create_subscription(
 #[cfg(test)]
 mod tests {
     use super::NewTelegramChat;
+    use super::NewTelegramSubscription;
     use crate::db;
+    use crate::db::feeds;
     use crate::models::telegram_chat::TelegramChat;
     use diesel::connection::Connection;
     use diesel::result::Error;
@@ -120,5 +122,85 @@ mod tests {
         assert_eq!(new_result.username, updated_chat.username);
         assert_eq!(new_result.first_name, updated_chat.first_name);
         assert_eq!(new_result.last_name, updated_chat.last_name);
+    }
+
+    #[test]
+    fn it_creates_new_subscription() {
+        let connection = db::establish_connection();
+
+        let new_chat = NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            title: None,
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        };
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            let new_subscription =
+                super::create_subscription(&connection, new_subscription).unwrap();
+
+            assert_eq!(new_subscription.feed_id, feed.id);
+            assert_eq!(new_subscription.chat_id, chat.id);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn it_fails_to_create_new_subscription_if_it_already_exists() {
+        let connection = db::establish_connection();
+
+        let new_chat = NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            title: None,
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        };
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            let new_subscription =
+                super::create_subscription(&connection, new_subscription).unwrap();
+
+            assert_eq!(new_subscription.feed_id, feed.id);
+            assert_eq!(new_subscription.chat_id, chat.id);
+
+            let result = super::create_subscription(
+                &connection,
+                NewTelegramSubscription {
+                    feed_id: feed.id,
+                    chat_id: chat.id,
+                },
+            );
+
+            match result.err().unwrap() {
+                Error::DatabaseError(_, error_info) => assert_eq!(
+                    "duplicate key value violates unique constraint \"telegram_subscriptions_pkey\"",
+                    error_info.message()
+                ),
+                _ => panic!("Error doesn't match"),
+            };
+
+            Ok(())
+        });
     }
 }

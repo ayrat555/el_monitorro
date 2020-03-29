@@ -2,8 +2,8 @@ use chrono::{DateTime, Utc};
 
 #[derive(Queryable, Debug)]
 pub struct FeedItem {
-    pub id: i32,
-    pub feed_id: i32,
+    pub id: i64,
+    pub feed_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
     pub link: Option<String>,

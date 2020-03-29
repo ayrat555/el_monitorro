@@ -1,7 +1,7 @@
 table! {
     feed_items (id) {
-        id -> Int4,
-        feed_id -> Int4,
+        id -> Int8,
+        feed_id -> Int8,
         title -> Nullable<Text>,
         description -> Nullable<Text>,
         link -> Nullable<Text>,
@@ -15,7 +15,7 @@ table! {
 
 table! {
     feeds (id) {
-        id -> Int4,
+        id -> Int8,
         title -> Nullable<Text>,
         link -> Text,
         error -> Nullable<Text>,
@@ -58,10 +58,9 @@ table! {
 }
 
 table! {
-    telegram_subscriptions (id) {
-        id -> Int4,
+    telegram_subscriptions (chat_id, feed_id) {
         chat_id -> Int8,
-        feed_id -> Int4,
+        feed_id -> Int8,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }

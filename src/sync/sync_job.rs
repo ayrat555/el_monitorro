@@ -69,7 +69,7 @@ impl SyncJob {
     }
 }
 
-pub fn enqueue_job(number: i32) {
+pub fn enqueue_job(number: i64) {
     dotenv().ok();
     let database_url =
         env::var("DATABASE_URL").expect("No DATABASE_URL environment variable found");

@@ -49,7 +49,7 @@ pub fn set_synced_at(
         .get_result::<Feed>(conn)
 }
 
-pub fn find_one(conn: &PgConnection, id: i32) -> Option<Feed> {
+pub fn find_one(conn: &PgConnection, id: i64) -> Option<Feed> {
     match feeds::table.filter(feeds::id.eq(id)).first::<Feed>(conn) {
         Ok(record) => Some(record),
         _ => None,
