@@ -17,6 +17,7 @@ extern crate once_cell;
 extern crate rake;
 extern crate rss;
 extern crate telebot;
+extern crate url;
 
 use rocket_contrib::json::Json;
 

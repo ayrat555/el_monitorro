@@ -4,7 +4,7 @@ use crate::models::telegram_subscription::TelegramSubscription;
 use crate::schema::{telegram_chats, telegram_subscriptions};
 use diesel::pg::upsert::excluded;
 use diesel::result::Error;
-use diesel::{ExpressionMethods, PgConnection, RunQueryDsl};
+use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 #[derive(Insertable, Clone)]
 #[table_name = "telegram_chats"]
@@ -47,6 +47,28 @@ pub fn create_subscription(
     diesel::insert_into(telegram_subscriptions::table)
         .values(subscription)
         .get_result::<TelegramSubscription>(conn)
+}
+
+pub fn find_subscription(
+    conn: &PgConnection,
+    subscription: NewTelegramSubscription,
+) -> Option<TelegramSubscription> {
+    match telegram_subscriptions::table
+        .filter(telegram_subscriptions::chat_id.eq(subscription.chat_id))
+        .filter(telegram_subscriptions::feed_id.eq(subscription.feed_id))
+        .first::<TelegramSubscription>(conn)
+    {
+        Ok(record) => Some(record),
+        _ => None,
+    }
+}
+
+pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
+    telegram_subscriptions::table
+        .filter(telegram_subscriptions::chat_id.eq(chat_id))
+        .count()
+        .get_result::<i64>(conn)
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -199,6 +221,129 @@ mod tests {
                 ),
                 _ => panic!("Error doesn't match"),
             };
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn it_fails_to_create_new_subscription_if_it_chat_does_not_exist() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+
+            let result = super::create_subscription(
+                &connection,
+                NewTelegramSubscription {
+                    feed_id: feed.id,
+                    chat_id: 42,
+                },
+            );
+
+            match result.err().unwrap() {
+                Error::DatabaseError(_, error_info) => assert_eq!(
+                    "insert or update on table \"telegram_subscriptions\" violates foreign key constraint \"telegram_subscriptions_chat_id_fkey\"",
+                    error_info.message()
+                ),
+                _ => panic!("Error doesn't match"),
+            };
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn it_finds_subscription() {
+        let connection = db::establish_connection();
+
+        let new_chat = NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            title: None,
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        };
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            let new_subscription =
+                super::create_subscription(&connection, new_subscription).unwrap();
+
+            assert_eq!(new_subscription.feed_id, feed.id);
+            assert_eq!(new_subscription.chat_id, chat.id);
+
+            let result = super::find_subscription(
+                &connection,
+                NewTelegramSubscription {
+                    feed_id: feed.id,
+                    chat_id: chat.id,
+                },
+            )
+            .unwrap();
+
+            assert_eq!(result.feed_id, feed.id);
+            assert_eq!(result.chat_id, chat.id);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn it_fails_to_find_a_subscription() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let result = super::find_subscription(
+                &connection,
+                NewTelegramSubscription {
+                    feed_id: 42,
+                    chat_id: 42,
+                },
+            );
+
+            assert!(result.is_none());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn it_counts_the_number_of_subscriptions() {
+        let connection = db::establish_connection();
+
+        let new_chat = NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            title: None,
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        };
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            super::create_subscription(&connection, new_subscription).unwrap();
+
+            let result = super::count_subscriptions_for_chat(&connection, chat.id);
+
+            assert_eq!(result, 1);
+            assert_eq!(super::count_subscriptions_for_chat(&connection, 99), 0);
 
             Ok(())
         });

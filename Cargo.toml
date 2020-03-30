@@ -25,6 +25,7 @@ rss = { version = "1.0", features = ["from_url"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 telebot = "0.3.1"
+url = "2.1"
 
 
 [dependencies.rocket_contrib]
