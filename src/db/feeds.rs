@@ -49,7 +49,7 @@ pub fn set_synced_at(
         .get_result::<Feed>(conn)
 }
 
-pub fn find_one(conn: &PgConnection, id: i64) -> Option<Feed> {
+pub fn find(conn: &PgConnection, id: i64) -> Option<Feed> {
     match feeds::table.filter(feeds::id.eq(id)).first::<Feed>(conn) {
         Ok(record) => Some(record),
         _ => None,
@@ -158,7 +158,7 @@ mod tests {
             let link = "Link".to_string();
             let feed = super::create(&connection, link.clone()).unwrap();
 
-            let found_feed = super::find_one(&connection, feed.id).unwrap();
+            let found_feed = super::find(&connection, feed.id).unwrap();
 
             assert_eq!(feed.id, found_feed.id);
             assert_eq!(found_feed.title, None);
@@ -174,7 +174,7 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let found_feed = super::find_one(&connection, 42);
+            let found_feed = super::find(&connection, 42);
 
             assert_eq!(found_feed, None);
 

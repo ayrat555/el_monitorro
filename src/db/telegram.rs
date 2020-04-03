@@ -17,7 +17,7 @@ pub struct NewTelegramChat {
     pub last_name: Option<String>,
 }
 
-#[derive(Insertable, Clone)]
+#[derive(Insertable, Clone, Copy)]
 #[table_name = "telegram_subscriptions"]
 pub struct NewTelegramSubscription {
     pub chat_id: i64,
@@ -38,6 +38,16 @@ pub fn create_chat(conn: &PgConnection, new_chat: NewTelegramChat) -> Result<Tel
             telegram_chats::last_name.eq(excluded(telegram_chats::last_name)),
         ))
         .get_result::<TelegramChat>(conn)
+}
+
+pub fn find_chat(conn: &PgConnection, chat_id: i64) -> Option<TelegramChat> {
+    match telegram_chats::table
+        .filter(telegram_chats::id.eq(chat_id))
+        .first::<TelegramChat>(conn)
+    {
+        Ok(record) => Some(record),
+        _ => None,
+    }
 }
 
 pub fn create_subscription(

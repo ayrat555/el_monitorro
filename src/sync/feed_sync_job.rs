@@ -26,7 +26,7 @@ impl FeedSyncJob {
         log::info!("Started processing a feed with id {}", self.feed_id);
 
         let db_connection = db::establish_connection();
-        let feed = feeds::find_one(&db_connection, self.feed_id).unwrap();
+        let feed = feeds::find(&db_connection, self.feed_id).unwrap();
         let rss_reader = RssReader {
             url: feed.link.clone(),
         };
@@ -111,7 +111,7 @@ mod tests {
 
         assert_eq!(created_items.len(), 3);
 
-        let updated_feed = feeds::find_one(&connection, feed.id).unwrap();
+        let updated_feed = feeds::find(&connection, feed.id).unwrap();
         assert!(updated_feed.synced_at.is_some());
         assert!(updated_feed.title.is_some());
         assert!(updated_feed.description.is_some());
