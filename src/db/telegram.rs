@@ -81,6 +81,15 @@ pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
         .unwrap()
 }
 
+pub fn set_subscription_last_delivered_at(
+    conn: &PgConnection,
+    subscription: &TelegramSubscription,
+) -> Result<TelegramSubscription, Error> {
+    diesel::update(subscription)
+        .set(telegram_subscriptions::last_delivered_at.eq(db::current_time()))
+        .get_result::<TelegramSubscription>(conn)
+}
+
 #[cfg(test)]
 mod tests {
     use super::NewTelegramChat;
@@ -92,7 +101,7 @@ mod tests {
     use diesel::result::Error;
 
     #[test]
-    fn it_creates_new_telegram_chat() {
+    fn create_chat_creates_new_telegram_chat() {
         let new_chat = NewTelegramChat {
             id: 42,
             kind: "private".to_string(),
@@ -157,7 +166,7 @@ mod tests {
     }
 
     #[test]
-    fn it_creates_new_subscription() {
+    fn create_subscription_creates_new_subscription() {
         let connection = db::establish_connection();
 
         let new_chat = NewTelegramChat {
@@ -189,7 +198,7 @@ mod tests {
     }
 
     #[test]
-    fn it_fails_to_create_new_subscription_if_it_already_exists() {
+    fn create_subscription_fails_to_create_new_subscription_if_it_already_exists() {
         let connection = db::establish_connection();
 
         let new_chat = NewTelegramChat {
@@ -237,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn it_fails_to_create_new_subscription_if_it_chat_does_not_exist() {
+    fn create_subscription_fails_to_create_new_subscription_if_it_chat_does_not_exist() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
@@ -264,7 +273,7 @@ mod tests {
     }
 
     #[test]
-    fn it_finds_subscription() {
+    fn find_subscription_finds_subscription() {
         let connection = db::establish_connection();
 
         let new_chat = NewTelegramChat {
@@ -308,7 +317,7 @@ mod tests {
     }
 
     #[test]
-    fn it_fails_to_find_a_subscription() {
+    fn find_subscription_fails_to_find_a_subscription() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
@@ -327,7 +336,7 @@ mod tests {
     }
 
     #[test]
-    fn it_counts_the_number_of_subscriptions() {
+    fn count_subscriptions_for_chat_counts_the_number_of_subscriptions() {
         let connection = db::establish_connection();
 
         let new_chat = NewTelegramChat {
@@ -354,6 +363,41 @@ mod tests {
 
             assert_eq!(result, 1);
             assert_eq!(super::count_subscriptions_for_chat(&connection, 99), 0);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn set_subscription_last_delivered_at_updates_last_delivered_at() {
+        let connection = db::establish_connection();
+
+        let new_chat = NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            title: None,
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        };
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            let subscription = super::create_subscription(&connection, new_subscription).unwrap();
+
+            assert!(subscription.last_delivered_at.is_none());
+
+            let updated_subscription =
+                super::set_subscription_last_delivered_at(&connection, &subscription).unwrap();
+
+            assert!(updated_subscription.last_delivered_at.is_some());
 
             Ok(())
         });

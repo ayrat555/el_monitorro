@@ -12,6 +12,7 @@ CREATE TABLE telegram_chats (
 CREATE TABLE telegram_subscriptions (
    chat_id BIGINT NOT NULL references telegram_chats(id) ON DELETE CASCADE,
    feed_id BIGINT NOT NULL references feeds(id) ON DELETE CASCADE,
+   last_delivered_at TIMESTAMP WITH TIME ZONE,
    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
    PRIMARY KEY(chat_id, feed_id)

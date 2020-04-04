@@ -85,7 +85,7 @@ mod tests {
     use diesel::{ExpressionMethods, RunQueryDsl};
 
     #[test]
-    fn it_creates_new_feed() {
+    fn create_creates_new_feed() {
         let link = "Link";
         let connection = db::establish_connection();
 
@@ -98,7 +98,7 @@ mod tests {
     }
 
     #[test]
-    fn it_fails_to_create_feed_without_link() {
+    fn create_fails_to_create_feed_without_link() {
         let link = "".to_string();
         let connection = db::establish_connection();
 
@@ -118,7 +118,7 @@ mod tests {
     }
 
     #[test]
-    fn it_sets_description_and_title_to_feed() {
+    fn set_synced_at_sets_description_and_title_to_feed() {
         let link = "Link".to_string();
 
         let title = "Title".to_string();
@@ -151,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn it_finds_feed() {
+    fn find_finds_feed() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -170,7 +170,7 @@ mod tests {
     }
 
     #[test]
-    fn it_cant_find_feed() {
+    fn find_cant_find_feed() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -183,7 +183,7 @@ mod tests {
     }
 
     #[test]
-    fn it_sets_error_message_to_feed() {
+    fn set_error_sets_error_message_to_feed() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -201,7 +201,7 @@ mod tests {
     }
 
     #[test]
-    fn it_sets_current_time_to_synced_at() {
+    fn set_synced_at_sets_current_time_to_synced_at() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -224,7 +224,7 @@ mod tests {
     }
 
     #[test]
-    fn it_fetches_unsynced_feeds_without_synced_at() {
+    fn find_unsynced_feeds_fetches_unsynced_feeds_without_synced_at() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -281,7 +281,7 @@ mod tests {
     }
 
     #[test]
-    fn it_doesnt_fetch_synced_feeds() {
+    fn find_unsynced_feeds_doesnt_fetch_synced_feeds() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {

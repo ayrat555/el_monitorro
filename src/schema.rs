@@ -61,6 +61,7 @@ table! {
     telegram_subscriptions (chat_id, feed_id) {
         chat_id -> Int8,
         feed_id -> Int8,
+        last_delivered_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }

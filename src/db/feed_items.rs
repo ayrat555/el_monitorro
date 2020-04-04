@@ -76,7 +76,7 @@ mod tests {
     use diesel::result::Error;
 
     #[test]
-    fn it_creates_new_feed_items() {
+    fn create_creates_new_feed_items() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -127,7 +127,7 @@ mod tests {
     }
 
     #[test]
-    fn it_updates_existing_feed_items() {
+    fn create_updates_existing_feed_items() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
