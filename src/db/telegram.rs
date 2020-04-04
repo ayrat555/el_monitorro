@@ -73,6 +73,17 @@ pub fn find_subscription(
     }
 }
 
+pub fn remove_subscription(
+    conn: &PgConnection,
+    subscription: NewTelegramSubscription,
+) -> Result<usize, Error> {
+    let record_query = telegram_subscriptions::table
+        .filter(telegram_subscriptions::chat_id.eq(subscription.chat_id))
+        .filter(telegram_subscriptions::feed_id.eq(subscription.feed_id));
+
+    diesel::delete(record_query).execute(conn)
+}
+
 pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
     telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(chat_id))
@@ -102,14 +113,7 @@ mod tests {
 
     #[test]
     fn create_chat_creates_new_telegram_chat() {
-        let new_chat = NewTelegramChat {
-            id: 42,
-            kind: "private".to_string(),
-            title: None,
-            username: Some("Username".to_string()),
-            first_name: Some("First".to_string()),
-            last_name: Some("Last".to_string()),
-        };
+        let new_chat = build_new_chat();
         let connection = db::establish_connection();
 
         let result = connection.test_transaction::<TelegramChat, Error, _>(|| {
@@ -201,14 +205,7 @@ mod tests {
     fn create_subscription_fails_to_create_new_subscription_if_it_already_exists() {
         let connection = db::establish_connection();
 
-        let new_chat = NewTelegramChat {
-            id: 42,
-            kind: "private".to_string(),
-            title: None,
-            username: Some("Username".to_string()),
-            first_name: Some("First".to_string()),
-            last_name: Some("Last".to_string()),
-        };
+        let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string()).unwrap();
@@ -276,14 +273,7 @@ mod tests {
     fn find_subscription_finds_subscription() {
         let connection = db::establish_connection();
 
-        let new_chat = NewTelegramChat {
-            id: 42,
-            kind: "private".to_string(),
-            title: None,
-            username: Some("Username".to_string()),
-            first_name: Some("First".to_string()),
-            last_name: Some("Last".to_string()),
-        };
+        let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string()).unwrap();
@@ -339,14 +329,7 @@ mod tests {
     fn count_subscriptions_for_chat_counts_the_number_of_subscriptions() {
         let connection = db::establish_connection();
 
-        let new_chat = NewTelegramChat {
-            id: 42,
-            kind: "private".to_string(),
-            title: None,
-            username: Some("Username".to_string()),
-            first_name: Some("First".to_string()),
-            last_name: Some("Last".to_string()),
-        };
+        let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string()).unwrap();
@@ -372,14 +355,7 @@ mod tests {
     fn set_subscription_last_delivered_at_updates_last_delivered_at() {
         let connection = db::establish_connection();
 
-        let new_chat = NewTelegramChat {
-            id: 42,
-            kind: "private".to_string(),
-            title: None,
-            username: Some("Username".to_string()),
-            first_name: Some("First".to_string()),
-            last_name: Some("Last".to_string()),
-        };
+        let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string()).unwrap();
@@ -401,5 +377,41 @@ mod tests {
 
             Ok(())
         });
+    }
+
+    #[test]
+    fn remove_subscription_removes_subscription() {
+        let connection = db::establish_connection();
+
+        let new_chat = build_new_chat();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            super::create_subscription(&connection, new_subscription.clone()).unwrap();
+
+            let result = super::remove_subscription(&connection, new_subscription).unwrap();
+
+            assert_eq!(result, 1);
+
+            Ok(())
+        });
+    }
+
+    fn build_new_chat() -> NewTelegramChat {
+        NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            title: None,
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        }
     }
 }
