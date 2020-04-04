@@ -12,6 +12,7 @@ pub enum SubscriptionError {
     RssUrlNotProvided,
     SubscriptionAlreadyExists,
     SubscriptionCountLimit,
+    TelegramError,
 }
 
 impl From<diesel::result::Error> for SubscriptionError {
