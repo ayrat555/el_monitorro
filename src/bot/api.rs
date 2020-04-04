@@ -1,6 +1,10 @@
+use crate::bot::logic;
+use crate::db;
+use crate::db::telegram::NewTelegramChat;
 use dotenv::dotenv;
 use futures::{stream::Stream, Future};
 use std::env;
+use telebot::objects::Chat;
 use telebot::Bot;
 
 use telebot::functions::*;
@@ -14,8 +18,11 @@ pub fn start_bot() {
     let known = bot
         .new_cmd("/subscribe")
         .and_then(|(bot, msg)| {
-            println!("{:?}", msg);
-            bot.message(msg.chat.id, "This one is known".into()).send()
+            let chat = NewTelegramChat::from(msg.chat);
+            let result =
+                logic::create_subscription(&db::establish_connection(), chat, msg.text).unwrap();
+            bot.message(result.chat_id, format!("{:?}", result).into())
+                .send()
         })
         .for_each(|_| Ok(()));
 
@@ -27,4 +34,17 @@ pub fn start_bot() {
 
     // Enter the main loop
     bot.run_with(known.join(unknown));
+}
+
+impl From<Chat> for NewTelegramChat {
+    fn from(chat: Chat) -> Self {
+        NewTelegramChat {
+            id: chat.id,
+            kind: chat.kind,
+            title: chat.title,
+            username: chat.username,
+            first_name: chat.first_name,
+            last_name: chat.last_name,
+        }
+    }
 }

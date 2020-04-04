@@ -9,6 +9,7 @@ use url::Url;
 pub enum SubscriptionError {
     DbError(diesel::result::Error),
     InvalidRssUrl,
+    RssUrlNotProvided,
     SubscriptionAlreadyExists,
     SubscriptionCountLimit,
 }
@@ -22,13 +23,19 @@ impl From<diesel::result::Error> for SubscriptionError {
 pub fn create_subscription(
     db_connection: &PgConnection,
     new_chat: NewTelegramChat,
-    rss_url: &str,
+    rss_url: Option<String>,
 ) -> Result<TelegramSubscription, SubscriptionError> {
-    validate_rss_url(rss_url)?;
+    if rss_url.is_none() {
+        return Err(SubscriptionError::RssUrlNotProvided);
+    }
+
+    let url = rss_url.unwrap();
+
+    validate_rss_url(&url)?;
 
     db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|| {
         let chat = telegram::create_chat(db_connection, new_chat).unwrap();
-        let feed = feeds::create(db_connection, rss_url.to_string()).unwrap();
+        let feed = feeds::create(db_connection, url).unwrap();
 
         let new_telegram_subscription = NewTelegramSubscription {
             chat_id: chat.id,
@@ -93,8 +100,12 @@ mod tests {
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-            let subscription =
-                super::create_subscription(&db_connection, new_chat, "https:/google.com").unwrap();
+            let subscription = super::create_subscription(
+                &db_connection,
+                new_chat,
+                Some("https:/google.com".to_string()),
+            )
+            .unwrap();
 
             assert!(feeds::find(&db_connection, subscription.feed_id).is_some());
             assert!(telegram::find_chat(&db_connection, subscription.chat_id).is_some());
@@ -116,7 +127,8 @@ mod tests {
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-            let result = super::create_subscription(&db_connection, new_chat, "11");
+            let result =
+                super::create_subscription(&db_connection, new_chat, Some("11".to_string()));
             assert_eq!(result.err(), Some(super::SubscriptionError::InvalidRssUrl));
 
             Ok(())
@@ -136,14 +148,21 @@ mod tests {
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-            let subscription =
-                super::create_subscription(&db_connection, new_chat.clone(), "https:/google.com")
-                    .unwrap();
+            let subscription = super::create_subscription(
+                &db_connection,
+                new_chat.clone(),
+                Some("https:/google.com".to_string()),
+            )
+            .unwrap();
 
             assert!(feeds::find(&db_connection, subscription.feed_id).is_some());
             assert!(telegram::find_chat(&db_connection, subscription.chat_id).is_some());
 
-            let result = super::create_subscription(&db_connection, new_chat, "https:/google.com");
+            let result = super::create_subscription(
+                &db_connection,
+                new_chat,
+                Some("https:/google.com".to_string()),
+            );
             assert_eq!(
                 result.err(),
                 Some(super::SubscriptionError::SubscriptionAlreadyExists)
@@ -166,14 +185,30 @@ mod tests {
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-            super::create_subscription(&db_connection, new_chat.clone(), "https:/google.com")
-                .unwrap();
-            super::create_subscription(&db_connection, new_chat.clone(), "https:/google1.com")
-                .unwrap();
-            super::create_subscription(&db_connection, new_chat.clone(), "https:/google2.com")
-                .unwrap();
+            super::create_subscription(
+                &db_connection,
+                new_chat.clone(),
+                Some("https:/google.com".to_string()),
+            )
+            .unwrap();
+            super::create_subscription(
+                &db_connection,
+                new_chat.clone(),
+                Some("https:/google1.com".to_string()),
+            )
+            .unwrap();
+            super::create_subscription(
+                &db_connection,
+                new_chat.clone(),
+                Some("https:/google2.com".to_string()),
+            )
+            .unwrap();
 
-            let result = super::create_subscription(&db_connection, new_chat, "https:/google3.com");
+            let result = super::create_subscription(
+                &db_connection,
+                new_chat,
+                Some("https:/google3.com".to_string()),
+            );
 
             assert_eq!(
                 result.err(),
@@ -182,5 +217,29 @@ mod tests {
 
             Ok(())
         });
+    }
+
+    #[test]
+    fn create_subscription_fails_if_url_is_not_provided() {
+        let db_connection = db::establish_connection();
+        let new_chat = NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            title: None,
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        };
+
+        db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+            let result = super::create_subscription(&db_connection, new_chat.clone(), None);
+
+            assert_eq!(
+                result.err(),
+                Some(super::SubscriptionError::RssUrlNotProvided)
+            );
+
+            Ok(())
+        })
     }
 }
