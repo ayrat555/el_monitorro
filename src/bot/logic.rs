@@ -94,7 +94,6 @@ mod tests {
         let new_chat = NewTelegramChat {
             id: 42,
             kind: "private".to_string(),
-            title: None,
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
@@ -121,7 +120,6 @@ mod tests {
         let new_chat = NewTelegramChat {
             id: 42,
             kind: "private".to_string(),
-            title: None,
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
@@ -142,7 +140,6 @@ mod tests {
         let new_chat = NewTelegramChat {
             id: 42,
             kind: "private".to_string(),
-            title: None,
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
@@ -179,7 +176,6 @@ mod tests {
         let new_chat = NewTelegramChat {
             id: 42,
             kind: "private".to_string(),
-            title: None,
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
@@ -226,7 +222,6 @@ mod tests {
         let new_chat = NewTelegramChat {
             id: 42,
             kind: "private".to_string(),
-            title: None,
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
