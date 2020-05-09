@@ -72,7 +72,6 @@ fn parse_argument(full_command: &str, command: &str) -> String {
     full_command.replace(command, "").trim().to_string()
 }
 
-#[tokio::main(max_threads = 10)]
 pub async fn start_bot() -> Result<(), Error> {
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
 
