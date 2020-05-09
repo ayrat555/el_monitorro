@@ -1,7 +1,9 @@
 use crate::db;
+use crate::models::feed::Feed;
 use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
-use crate::schema::{telegram_chats, telegram_subscriptions};
+use crate::schema::{feeds, telegram_chats, telegram_subscriptions};
+use diesel::dsl::*;
 use diesel::pg::upsert::excluded;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
@@ -88,6 +90,19 @@ pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
         .count()
         .get_result::<i64>(conn)
         .unwrap()
+}
+
+pub fn find_subscriptions_by_chat_id(
+    conn: &PgConnection,
+    chat_id: i64,
+) -> Result<Vec<Feed>, Error> {
+    let feed_ids = telegram_subscriptions::table
+        .filter(telegram_subscriptions::chat_id.eq(chat_id))
+        .select(telegram_subscriptions::feed_id);
+
+    feeds::table
+        .filter(feeds::id.eq(any(feed_ids)))
+        .get_results::<Feed>(conn)
 }
 
 pub fn set_subscription_last_delivered_at(

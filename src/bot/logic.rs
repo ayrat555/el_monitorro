@@ -23,6 +23,17 @@ impl From<diesel::result::Error> for SubscriptionError {
     }
 }
 
+pub fn find_feeds_by_chat_id(db_connection: &PgConnection, chat_id: i64) -> String {
+    match telegram::find_subscriptions_by_chat_id(db_connection, chat_id) {
+        Err(_) => "Couldn't fetch your subscription".to_string(),
+        Ok(feeds) => feeds
+            .into_iter()
+            .map(|feed| feed.link)
+            .collect::<Vec<String>>()
+            .join("\n"),
+    }
+}
+
 pub fn create_subscription(
     db_connection: &PgConnection,
     new_chat: NewTelegramChat,

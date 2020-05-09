@@ -8,6 +8,7 @@ use telegram_bot::prelude::*;
 use telegram_bot::{Api, Error, Message, MessageChat, MessageKind, UpdateKind};
 
 static SUBSCRIBE: &str = "/subscribe";
+static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
 
 impl From<MessageChat> for NewTelegramChat {
     fn from(message_chat: MessageChat) -> Self {
@@ -26,10 +27,9 @@ impl From<MessageChat> for NewTelegramChat {
 }
 
 async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error> {
-    let chat = api.send(message.chat.get_chat()).await?;
     let response = match logic::create_subscription(
         &db::establish_connection(),
-        message.chat.into(),
+        message.chat.clone().into(),
         Some(data.clone()),
     ) {
         Ok(_subscription) => format!("Successfully subscribed to {}", data),
@@ -43,12 +43,25 @@ async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error
             "Susbscription already exists".to_string()
         }
         Err(SubscriptionError::SubscriptionCountLimit) => {
-            "You exceeded the number of subscriptins".to_string()
+            "You exceeded the number of subscriptions".to_string()
         }
         Err(SubscriptionError::TelegramError) => "Something went wrong with Telegram".to_string(),
     };
 
-    api.send(chat.text(response)).await?;
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
+async fn list_subscriptions(api: Api, message: Message) -> Result<(), Error> {
+    let chat_id = if let MessageChat::Private(chat) = &message.chat {
+        chat.id
+    } else {
+        unimplemented!()
+    };
+
+    let response = logic::find_feeds_by_chat_id(&db::establish_connection(), chat_id.into());
+
+    api.send(message.reply(response)).await?;
     Ok(())
 }
 
@@ -59,7 +72,9 @@ async fn test(api: Api, message: Message) -> Result<(), Error> {
 
             if command.contains(SUBSCRIBE) {
                 let argument = parse_argument(command, SUBSCRIBE);
-                subscribe(api, message, argument).await?;
+                tokio::spawn(subscribe(api, message, argument));
+            } else if command.contains(LIST_SUBSCRIPTIONS) {
+                tokio::spawn(list_subscriptions(api, message));
             }
         }
         _ => (),
