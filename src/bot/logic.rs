@@ -3,12 +3,14 @@ use crate::db::telegram;
 use crate::db::telegram::{NewTelegramChat, NewTelegramSubscription};
 use crate::models::telegram_subscription::TelegramSubscription;
 use diesel::{Connection, PgConnection};
+use rss::Channel;
 use url::Url;
 
 #[derive(Debug, PartialEq)]
 pub enum SubscriptionError {
     DbError(diesel::result::Error),
     InvalidRssUrl,
+    UrlIsNotRss,
     RssUrlNotProvided,
     SubscriptionAlreadyExists,
     SubscriptionCountLimit,
@@ -55,7 +57,10 @@ pub fn create_subscription(
 
 fn validate_rss_url(rss_url: &str) -> Result<(), SubscriptionError> {
     match Url::parse(rss_url) {
-        Ok(_) => Ok(()),
+        Ok(_) => match Channel::from_url(rss_url) {
+            Ok(_) => Ok(()),
+            _ => Err(SubscriptionError::UrlIsNotRss),
+        },
         _ => Err(SubscriptionError::InvalidRssUrl),
     }
 }

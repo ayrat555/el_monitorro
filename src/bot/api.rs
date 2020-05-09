@@ -38,6 +38,7 @@ async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error
         }
         Err(SubscriptionError::InvalidRssUrl) => "Invalid url".to_string(),
         Err(SubscriptionError::RssUrlNotProvided) => "Url is not provided".to_string(),
+        Err(SubscriptionError::UrlIsNotRss) => "Url is not rss feed".to_string(),
         Err(SubscriptionError::SubscriptionAlreadyExists) => {
             "Susbscription already exists".to_string()
         }
@@ -77,6 +78,8 @@ pub async fn start_bot() -> Result<(), Error> {
 
     let api = Api::new(token);
     let mut stream = api.stream();
+
+    log::info!("Starting a bot");
 
     while let Some(update) = stream.next().await {
         let update = update?;
