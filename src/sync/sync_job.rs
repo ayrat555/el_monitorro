@@ -1,9 +1,11 @@
 use crate::db;
 use crate::db::feeds;
 use crate::models::feed::Feed;
-use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
+use crate::sync::feed_sync_job::FeedSyncJob;
 use chrono::Duration;
+
 use diesel::result::Error;
+use tokio::time;
 // use dotenv::dotenv;
 // use serde::{Deserialize, Serialize};
 // use std::env;
@@ -39,7 +41,7 @@ impl SyncJob {
 
         let mut total_number = 0;
 
-        let last_synced_at = db::current_time() - Duration::hours(24);
+        let last_synced_at = db::current_time() - Duration::hours(1);
         loop {
             unsynced_feeds = feeds::find_unsynced_feeds(&db_connection, last_synced_at, page, 100)?;
 
@@ -65,10 +67,18 @@ impl SyncJob {
     }
 }
 
-pub async fn sync_all_feeds() {
+pub fn sync_all_feeds() {
     match SyncJob::new().execute() {
-        Err(_error) => log::error!("Failed to sync feeds"),
+        Err(error) => log::error!("Failed to sync feeds: {}", error.msg),
         Ok(_) => (),
+    }
+}
+
+pub async fn sync_feeds_every_hour() {
+    let mut interval = time::interval(std::time::Duration::from_secs(3600));
+    loop {
+        interval.tick().await;
+        sync_all_feeds();
     }
 }
 
