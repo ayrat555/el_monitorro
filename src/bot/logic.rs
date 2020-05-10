@@ -33,11 +33,18 @@ impl From<diesel::result::Error> for SubscriptionError {
 pub fn find_feeds_by_chat_id(db_connection: &PgConnection, chat_id: i64) -> String {
     match telegram::find_feeds_by_chat_id(db_connection, chat_id) {
         Err(_) => "Couldn't fetch your subscriptions".to_string(),
-        Ok(feeds) => feeds
-            .into_iter()
-            .map(|feed| feed.link)
-            .collect::<Vec<String>>()
-            .join("\n"),
+        Ok(feeds) => {
+            let response = feeds
+                .into_iter()
+                .map(|feed| feed.link)
+                .collect::<Vec<String>>()
+                .join("\n");
+            if response == "" {
+                "You don't have any subscriptions".to_string()
+            } else {
+                response
+            }
+        }
     }
 }
 

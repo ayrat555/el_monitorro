@@ -1,8 +1,11 @@
 use crate::db;
 use crate::models::feed::Feed;
+use crate::models::feed_item::FeedItem;
 use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
+use crate::schema::feed_items;
 use crate::schema::{feeds, telegram_chats, telegram_subscriptions};
+use chrono::Duration;
 use diesel::dsl::*;
 use diesel::pg::upsert::excluded;
 use diesel::result::Error;
@@ -114,6 +117,31 @@ pub fn fetch_subscriptions(
         .limit(count)
         .offset(offset)
         .get_results(conn)
+}
+
+pub fn find_undelivered_feed_items(
+    conn: &PgConnection,
+    subscription: &TelegramSubscription,
+) -> Result<Vec<FeedItem>, Error> {
+    let last_delivered_at = match subscription.last_delivered_at {
+        Some(value) => value,
+        None => db::current_time() - Duration::hours(2),
+    };
+
+    feed_items::table
+        .filter(feed_items::publication_date.gt(last_delivered_at))
+        .filter(feed_items::feed_id.eq(subscription.feed_id))
+        .limit(10)
+        .get_results(conn)
+}
+
+pub fn set_subscription_delivered_at(
+    conn: &PgConnection,
+    subscription: &TelegramSubscription,
+) -> Result<TelegramSubscription, Error> {
+    diesel::update(subscription)
+        .set(telegram_subscriptions::last_delivered_at.eq(db::current_time()))
+        .get_result::<TelegramSubscription>(conn)
 }
 
 pub fn set_subscription_last_delivered_at(

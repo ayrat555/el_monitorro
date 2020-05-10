@@ -5,7 +5,7 @@ use crate::db::telegram::NewTelegramChat;
 use futures::StreamExt;
 use std::env;
 use telegram_bot::prelude::*;
-use telegram_bot::{Api, Error, Message, MessageChat, MessageKind, UpdateKind};
+use telegram_bot::{Api, Error, Message, MessageChat, MessageKind, UpdateKind, UserId};
 
 static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
@@ -35,8 +35,19 @@ async fn help(api: Api, message: Message) -> Result<(), Error> {
     Ok(())
 }
 
+pub async fn send_message(chat_id: i64, message: String) -> Result<(), Error> {
+    let user_id: UserId = chat_id.into();
+    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
+
+    let api = Api::new(token);
+
+    api.send(user_id.text(message)).await?;
+
+    Ok(())
+}
+
 async fn unknown_command(api: Api, message: Message) -> Result<(), Error> {
-    let response = "Unknown command. Use `/help` to show available commands".to_string();
+    let response = "Unknown command. Use /help to show available commands".to_string();
 
     api.send(message.text_reply(response)).await?;
     Ok(())

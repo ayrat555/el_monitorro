@@ -75,7 +75,7 @@ pub fn sync_all_feeds() {
 }
 
 pub async fn sync_feeds_every_hour() {
-    let mut interval = time::interval(std::time::Duration::from_secs(3600));
+    let mut interval = time::interval(std::time::Duration::from_secs(10));
     loop {
         interval.tick().await;
         sync_all_feeds();
