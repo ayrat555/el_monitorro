@@ -10,6 +10,7 @@ use telegram_bot::{Api, Error, Message, MessageChat, MessageKind, UpdateKind};
 static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
 static UNSUBSCRIBE: &str = "/unsubscribe";
+static HELP: &str = "/help";
 
 impl From<MessageChat> for NewTelegramChat {
     fn from(message_chat: MessageChat) -> Self {
@@ -25,6 +26,20 @@ impl From<MessageChat> for NewTelegramChat {
             unimplemented!()
         }
     }
+}
+
+async fn help(api: Api, message: Message) -> Result<(), Error> {
+    let response = format!("{} rss_url - subscribe to rss feed\n{} rss_url - unsubscribe from rss feed\n{} - list your subscriptions\n{} - show available commands", SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
+async fn unknown_command(api: Api, message: Message) -> Result<(), Error> {
+    let response = "Unknown command. Use `/help` to show available commands".to_string();
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
 }
 
 async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error> {
@@ -84,7 +99,7 @@ async fn list_subscriptions(api: Api, message: Message) -> Result<(), Error> {
     Ok(())
 }
 
-async fn test(api: Api, message: Message) -> Result<(), Error> {
+async fn process(api: Api, message: Message) -> Result<(), Error> {
     match message.kind {
         MessageKind::Text { ref data, .. } => {
             let command = data.as_str();
@@ -97,6 +112,10 @@ async fn test(api: Api, message: Message) -> Result<(), Error> {
             } else if command.contains(UNSUBSCRIBE) {
                 let argument = parse_argument(command, UNSUBSCRIBE);
                 tokio::spawn(unsubscribe(api, message, argument));
+            } else if command.contains(HELP) {
+                tokio::spawn(help(api, message));
+            } else {
+                tokio::spawn(unknown_command(api, message));
             }
         }
         _ => (),
@@ -120,7 +139,7 @@ pub async fn start_bot() -> Result<(), Error> {
     while let Some(update) = stream.next().await {
         let update = update?;
         if let UpdateKind::Message(message) = update.kind {
-            test(api.clone(), message).await?;
+            process(api.clone(), message).await?;
         }
     }
 
