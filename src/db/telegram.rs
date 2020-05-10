@@ -92,10 +92,7 @@ pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
         .unwrap()
 }
 
-pub fn find_subscriptions_by_chat_id(
-    conn: &PgConnection,
-    chat_id: i64,
-) -> Result<Vec<Feed>, Error> {
+pub fn find_feeds_by_chat_id(conn: &PgConnection, chat_id: i64) -> Result<Vec<Feed>, Error> {
     let feed_ids = telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(chat_id))
         .select(telegram_subscriptions::feed_id);
@@ -103,6 +100,20 @@ pub fn find_subscriptions_by_chat_id(
     feeds::table
         .filter(feeds::id.eq(any(feed_ids)))
         .get_results::<Feed>(conn)
+}
+
+pub fn fetch_subscriptions(
+    conn: &PgConnection,
+    page: i64,
+    count: i64,
+) -> Result<Vec<TelegramSubscription>, Error> {
+    let offset = (page - 1) * count;
+
+    telegram_subscriptions::table
+        .order(telegram_subscriptions::chat_id)
+        .limit(count)
+        .offset(offset)
+        .get_results(conn)
 }
 
 pub fn set_subscription_last_delivered_at(
