@@ -66,10 +66,9 @@ async fn deliver_updates(subscription: TelegramSubscription) -> Result<(), Deliv
             .into_iter()
             .map(|item| {
                 format!(
-                    "{}\n\n{}\n\n{}\n\n{}\n\n-----------------------\n\n",
+                    "{}\n\n{}\n\n{}\n\n-----------------------\n\n",
                     item.title.unwrap_or("".to_string()),
                     item.publication_date,
-                    item.description.unwrap_or("".to_string()),
                     item.link.unwrap_or("".to_string())
                 )
             })

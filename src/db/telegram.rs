@@ -125,12 +125,13 @@ pub fn find_undelivered_feed_items(
 ) -> Result<Vec<FeedItem>, Error> {
     let last_delivered_at = match subscription.last_delivered_at {
         Some(value) => value,
-        None => db::current_time() - Duration::hours(2),
+        None => db::current_time() - Duration::days(365),
     };
 
     feed_items::table
         .filter(feed_items::publication_date.gt(last_delivered_at))
         .filter(feed_items::feed_id.eq(subscription.feed_id))
+        .order(feed_items::publication_date.desc())
         .limit(10)
         .get_results(conn)
 }

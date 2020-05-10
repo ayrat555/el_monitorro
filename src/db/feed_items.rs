@@ -42,7 +42,7 @@ pub fn create(
         .on_conflict((
             feed_items::feed_id,
             feed_items::title,
-            feed_items::description,
+            feed_items::publication_date,
         ))
         .do_update()
         .set((

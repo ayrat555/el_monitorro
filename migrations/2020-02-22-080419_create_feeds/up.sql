@@ -25,5 +25,6 @@ create TABLE feed_items(
    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX feed_items_title_description_index ON feed_items(feed_id, title, description);
+CREATE UNIQUE INDEX feed_items_title_publication_date_index ON feed_items(feed_id, title, publication_date);
 CREATE INDEX feeds_synced_at_index ON feeds(synced_at);
+CREATE INDEX feed_items_publication_date_index ON feed_items(publication_date);
