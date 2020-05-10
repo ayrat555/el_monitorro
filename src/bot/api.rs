@@ -1,5 +1,5 @@
 use crate::bot::logic;
-use crate::bot::logic::SubscriptionError;
+use crate::bot::logic::{DeleteSubscriptionError, SubscriptionError};
 use crate::db;
 use crate::db::telegram::NewTelegramChat;
 use futures::StreamExt;
@@ -9,6 +9,7 @@ use telegram_bot::{Api, Error, Message, MessageChat, MessageKind, UpdateKind};
 
 static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
+static UNSUBSCRIBE: &str = "/unsubscribe";
 
 impl From<MessageChat> for NewTelegramChat {
     fn from(message_chat: MessageChat) -> Self {
@@ -52,6 +53,24 @@ async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error
     Ok(())
 }
 
+async fn unsubscribe(api: Api, message: Message, data: String) -> Result<(), Error> {
+    let chat_id = if let MessageChat::Private(chat) = &message.chat {
+        chat.id
+    } else {
+        unimplemented!()
+    };
+    let response =
+        match logic::delete_subscription(&db::establish_connection(), chat_id.into(), data.clone())
+        {
+            Ok(_) => format!("Successfully unsubscribed from {}", data),
+            Err(DeleteSubscriptionError::DbError) => format!("Failed to unsubscribe from {}", data),
+            _ => "Subscription does not exist".to_string(),
+        };
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
 async fn list_subscriptions(api: Api, message: Message) -> Result<(), Error> {
     let chat_id = if let MessageChat::Private(chat) = &message.chat {
         chat.id
@@ -61,7 +80,7 @@ async fn list_subscriptions(api: Api, message: Message) -> Result<(), Error> {
 
     let response = logic::find_feeds_by_chat_id(&db::establish_connection(), chat_id.into());
 
-    api.send(message.reply(response)).await?;
+    api.send(message.text_reply(response)).await?;
     Ok(())
 }
 
@@ -75,6 +94,9 @@ async fn test(api: Api, message: Message) -> Result<(), Error> {
                 tokio::spawn(subscribe(api, message, argument));
             } else if command.contains(LIST_SUBSCRIPTIONS) {
                 tokio::spawn(list_subscriptions(api, message));
+            } else if command.contains(UNSUBSCRIBE) {
+                let argument = parse_argument(command, UNSUBSCRIBE);
+                tokio::spawn(unsubscribe(api, message, argument));
             }
         }
         _ => (),

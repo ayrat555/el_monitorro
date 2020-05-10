@@ -56,6 +56,16 @@ pub fn find(conn: &PgConnection, id: i64) -> Option<Feed> {
     }
 }
 
+pub fn find_by_link(conn: &PgConnection, link: String) -> Option<Feed> {
+    match feeds::table
+        .filter(feeds::link.eq(link))
+        .first::<Feed>(conn)
+    {
+        Ok(record) => Some(record),
+        _ => None,
+    }
+}
+
 pub fn find_unsynced_feeds(
     conn: &PgConnection,
     last_updated_at: DateTime<Utc>,
@@ -159,6 +169,25 @@ mod tests {
             let feed = super::create(&connection, link.clone()).unwrap();
 
             let found_feed = super::find(&connection, feed.id).unwrap();
+
+            assert_eq!(feed.id, found_feed.id);
+            assert_eq!(found_feed.title, None);
+            assert_eq!(found_feed.link, link);
+            assert_eq!(found_feed.description, None);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn find_by_link_finds_feed() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let link = "Link".to_string();
+            let feed = super::create(&connection, link.clone()).unwrap();
+
+            let found_feed = super::find_by_link(&connection, link.clone()).unwrap();
 
             assert_eq!(feed.id, found_feed.id);
             assert_eq!(found_feed.title, None);

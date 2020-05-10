@@ -17,6 +17,13 @@ pub enum SubscriptionError {
     TelegramError,
 }
 
+pub enum DeleteSubscriptionError {
+    FeedNotFound,
+    ChatNotFound,
+    SubscriptionNotFound,
+    DbError,
+}
+
 impl From<diesel::result::Error> for SubscriptionError {
     fn from(error: diesel::result::Error) -> Self {
         SubscriptionError::DbError(error)
@@ -25,12 +32,43 @@ impl From<diesel::result::Error> for SubscriptionError {
 
 pub fn find_feeds_by_chat_id(db_connection: &PgConnection, chat_id: i64) -> String {
     match telegram::find_subscriptions_by_chat_id(db_connection, chat_id) {
-        Err(_) => "Couldn't fetch your subscription".to_string(),
+        Err(_) => "Couldn't fetch your subscriptions".to_string(),
         Ok(feeds) => feeds
             .into_iter()
             .map(|feed| feed.link)
             .collect::<Vec<String>>()
             .join("\n"),
+    }
+}
+
+pub fn delete_subscription(
+    db_connection: &PgConnection,
+    chat_id: i64,
+    link: String,
+) -> Result<(), DeleteSubscriptionError> {
+    let feed = match feeds::find_by_link(db_connection, link) {
+        Some(feed) => feed,
+        None => return Err(DeleteSubscriptionError::FeedNotFound),
+    };
+
+    let chat = match telegram::find_chat(db_connection, chat_id) {
+        Some(chat) => chat,
+        None => return Err(DeleteSubscriptionError::ChatNotFound),
+    };
+
+    let telegram_subscription = NewTelegramSubscription {
+        chat_id: chat.id,
+        feed_id: feed.id,
+    };
+
+    let _subscription = match telegram::find_subscription(db_connection, telegram_subscription) {
+        Some(subscription) => subscription,
+        None => return Err(DeleteSubscriptionError::SubscriptionNotFound),
+    };
+
+    match telegram::remove_subscription(db_connection, telegram_subscription) {
+        Ok(_) => Ok(()),
+        _ => Err(DeleteSubscriptionError::DbError),
     }
 }
 
