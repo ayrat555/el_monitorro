@@ -13,7 +13,9 @@ struct NewFeed {
 }
 
 pub fn create(conn: &PgConnection, link: String) -> Result<Feed, Error> {
-    let new_feed = &NewFeed { link: link };
+    let new_feed = &NewFeed {
+        link: link.trim().to_string(),
+    };
 
     diesel::insert_into(feeds::table)
         .values(new_feed)
