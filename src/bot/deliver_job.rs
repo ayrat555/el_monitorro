@@ -62,31 +62,33 @@ async fn deliver_updates(subscription: TelegramSubscription) -> Result<(), Deliv
     let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
 
     if !feed_items.is_empty() {
-        let response = feed_items
-            .into_iter()
-            .map(|item| {
-                format!(
-                    "{}\n\n{}\n\n{}\n\n-----------------------\n\n",
-                    item.title.unwrap_or("".to_string()),
-                    item.publication_date,
-                    item.link.unwrap_or("".to_string())
-                )
-            })
-            .fold("".to_string(), |acc, x| format!("{} {}", acc, x));
-        match api::send_message(subscription.chat_id, response).await {
-            Ok(_) => match telegram::set_subscription_delivered_at(&connection, &subscription) {
+        let messages = feed_items.into_iter().map(|item| {
+            format!(
+                "{}\n\n{}\n\n{}\n\n",
+                item.title.unwrap_or("".to_string()),
+                item.publication_date,
+                item.link.unwrap_or("".to_string())
+            )
+        });
+
+        for message in messages {
+            match api::send_message(subscription.chat_id, message).await {
                 Ok(_) => (),
                 Err(error) => {
-                    log::error!("Failed to set last_delivered_at: {}", error);
+                    log::error!("Failed to deliver updates: {}", error);
                     return Err(DeliverJobError {
-                        msg: format!("Failed to set last_delivered_at : {}", error),
+                        msg: format!("Failed to send updates : {}", error),
                     });
                 }
-            },
+            };
+        }
+
+        match telegram::set_subscription_delivered_at(&connection, &subscription) {
+            Ok(_) => (),
             Err(error) => {
-                log::error!("Failed to deliver updates: {}", error);
+                log::error!("Failed to set last_delivered_at: {}", error);
                 return Err(DeliverJobError {
-                    msg: format!("Failed to send updates : {}", error),
+                    msg: format!("Failed to set last_delivered_at : {}", error),
                 });
             }
         }
