@@ -4,7 +4,7 @@
 
 `el_monitorro` is RSS reader as a Telegram bot.
 
-It's available at [@el_monitorror_bot](https://t.me/el_monitorro_bot).
+It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 
 # Usage
 
