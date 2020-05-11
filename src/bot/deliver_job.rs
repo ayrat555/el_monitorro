@@ -62,16 +62,40 @@ async fn deliver_subscription_updates(
 ) -> Result<(), DeliverJobError> {
     let connection = db::establish_connection();
     let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
+    let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
+
+    if feed_items.len() < undelivered_count as usize {
+        let message = format!(
+            "You have {} unread items, below {} last items",
+            undelivered_count,
+            feed_items.len()
+        );
+
+        match api::send_message(subscription.chat_id, message).await {
+            Ok(_) => (),
+            Err(error) => {
+                log::error!("Failed to deliver updates: {}", error);
+                return Err(DeliverJobError {
+                    msg: format!("Failed to send updates : {}", error),
+                });
+            }
+        };
+    }
 
     if !feed_items.is_empty() {
-        let messages = feed_items.into_iter().map(|item| {
-            format!(
-                "{}\n\n{}\n\n{}\n\n",
-                item.title.unwrap_or("".to_string()),
-                item.publication_date,
-                item.link.unwrap_or("".to_string())
-            )
-        });
+        let mut messages = feed_items
+            .into_iter()
+            .map(|item| {
+                format!(
+                    "{}\n\n{}\n\n{}\n\n",
+                    item.title.unwrap_or("".to_string()),
+                    item.publication_date,
+                    item.link.unwrap_or("".to_string())
+                )
+            })
+            .collect::<Vec<String>>();
+
+        messages.reverse();
 
         for message in messages {
             match api::send_message(subscription.chat_id, message).await {

@@ -131,9 +131,26 @@ pub fn find_undelivered_feed_items(
     feed_items::table
         .filter(feed_items::publication_date.gt(last_delivered_at))
         .filter(feed_items::feed_id.eq(subscription.feed_id))
-        .order(feed_items::publication_date.asc())
+        .order(feed_items::publication_date.desc())
         .limit(10)
         .get_results(conn)
+}
+
+pub fn count_undelivered_feed_items(
+    conn: &PgConnection,
+    subscription: &TelegramSubscription,
+) -> i64 {
+    let last_delivered_at = match subscription.last_delivered_at {
+        Some(value) => value,
+        None => db::current_time() - Duration::days(365),
+    };
+
+    feed_items::table
+        .filter(feed_items::publication_date.gt(last_delivered_at))
+        .filter(feed_items::feed_id.eq(subscription.feed_id))
+        .count()
+        .get_result::<i64>(conn)
+        .unwrap()
 }
 
 pub fn set_subscription_delivered_at(
