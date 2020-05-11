@@ -2,7 +2,7 @@
 
 # el_monitorro
 
-`el_monitorro` is implemented as a Telegram bot that notifies you about new items in your RSS feeds. Basically, it's RSS reader as a Telegram bot.
+`el_monitorro` is RSS reader as a Telegram bot.
 
 It's available at [@el_monitorror_bot](https://t.me/el_monitorro_bot).
 
@@ -40,7 +40,7 @@ TELEGRAM_BOT_TOKEN=MYTOKEN
 diesel database setup
 ```
 
-You'll diesel-cli for this
+You'll need diesel-cli for this
 
 3. Start a bot
 
