@@ -2,18 +2,12 @@ use crate::db;
 use crate::db::feeds;
 use crate::models::feed::Feed;
 use crate::sync::feed_sync_job::FeedSyncJob;
-use chrono::Duration;
 
 use diesel::result::Error;
 use tokio::time;
-// use dotenv::dotenv;
-// use serde::{Deserialize, Serialize};
-// use std::env;
 
-// #[derive(Serialize, Deserialize)]
 pub struct SyncJob {}
 
-// #[derive(Serialize, Deserialize)]
 pub struct SyncError {
     msg: String,
 }
@@ -41,7 +35,7 @@ impl SyncJob {
 
         let mut total_number = 0;
 
-        let last_synced_at = db::current_time() - Duration::hours(1);
+        let last_synced_at = db::current_time();
         loop {
             unsynced_feeds = feeds::find_unsynced_feeds(&db_connection, last_synced_at, page, 100)?;
 
@@ -74,8 +68,8 @@ pub fn sync_all_feeds() {
     }
 }
 
-pub async fn sync_feeds_every_hour() {
-    let mut interval = time::interval(std::time::Duration::from_secs(10));
+pub async fn sync_feeds() {
+    let mut interval = time::interval(std::time::Duration::from_secs(60));
     loop {
         interval.tick().await;
         sync_all_feeds();

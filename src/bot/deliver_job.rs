@@ -44,7 +44,7 @@ impl DeliverJob {
             total_number += current_subscriptions.len();
 
             for subscription in current_subscriptions {
-                tokio::spawn(deliver_updates(subscription));
+                tokio::spawn(deliver_subscription_updates(subscription));
             }
         }
 
@@ -57,7 +57,9 @@ impl DeliverJob {
     }
 }
 
-async fn deliver_updates(subscription: TelegramSubscription) -> Result<(), DeliverJobError> {
+async fn deliver_subscription_updates(
+    subscription: TelegramSubscription,
+) -> Result<(), DeliverJobError> {
     let connection = db::establish_connection();
     let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
 
@@ -97,8 +99,8 @@ async fn deliver_updates(subscription: TelegramSubscription) -> Result<(), Deliv
     Ok(())
 }
 
-pub async fn deliver_updates_every_hour() {
-    let mut interval = time::interval(std::time::Duration::from_secs(10));
+pub async fn deliver_updates() {
+    let mut interval = time::interval(std::time::Duration::from_secs(60));
     loop {
         interval.tick().await;
         match DeliverJob::new().execute() {

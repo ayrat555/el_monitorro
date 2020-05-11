@@ -9,8 +9,8 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    tokio::spawn(deliver_job::deliver_updates_every_hour());
-    tokio::spawn(sync_job::sync_feeds_every_hour());
+    tokio::spawn(deliver_job::deliver_updates());
+    tokio::spawn(sync_job::sync_feeds());
 
     match bot::api::start_bot().await {
         Err(_) => log::error!("Couldn't start a bot"),
