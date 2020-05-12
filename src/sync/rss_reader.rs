@@ -43,7 +43,7 @@ impl ReadRSS for RssReader {
 
 impl From<Channel> for FetchedFeed {
     fn from(channel: Channel) -> Self {
-        let items = channel
+        let mut items = channel
             .items()
             .into_iter()
             .filter(|item| item.link().is_some())
@@ -59,6 +59,8 @@ impl From<Channel> for FetchedFeed {
                 }
             })
             .collect::<Vec<FetchedFeedItem>>();
+
+        items.dedup_by(|a, b| a.link == b.link && a.title == b.title);
 
         FetchedFeed {
             title: channel.title().to_string(),
