@@ -43,9 +43,7 @@ pub fn create(
         .do_update()
         .set((
             feed_items::author.eq(excluded(feed_items::author)),
-            feed_items::link.eq(excluded(feed_items::link)),
             feed_items::description.eq(excluded(feed_items::description)),
-            feed_items::title.eq(excluded(feed_items::title)),
             feed_items::guid.eq(excluded(feed_items::guid)),
             feed_items::updated_at.eq(db::current_time()),
         ))

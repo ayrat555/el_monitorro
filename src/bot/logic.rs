@@ -136,7 +136,7 @@ fn check_number_of_subscriptions(
     chat_id: i64,
 ) -> Result<(), SubscriptionError> {
     match telegram::count_subscriptions_for_chat(connection, chat_id) {
-        0 | 1 | 2 => Ok(()),
+        0 | 1 | 2 | 3 | 4 | 5 => Ok(()),
         _ => Err(SubscriptionError::SubscriptionCountLimit),
     }
 }

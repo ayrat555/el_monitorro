@@ -97,15 +97,4 @@ mod tests {
 
         assert!(mock.read_rss().is_ok());
     }
-
-    // #[test]
-    // fn parse_time_sucees_parses_string() {
-    //     let string = Some("Tue, 12 May 2020 16:08:48 GMT".to_string());
-
-    //     let result = super::parse_time(string);
-
-    //     eprintln!("{}", result);
-
-    //     assert!(result == db::current_time());
-    // }
 }
