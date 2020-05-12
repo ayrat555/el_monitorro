@@ -39,14 +39,9 @@ pub fn create(
 
     diesel::insert_into(feed_items::table)
         .values(new_feed_items)
-        .on_conflict((
-            feed_items::feed_id,
-            feed_items::title,
-            feed_items::publication_date,
-        ))
+        .on_conflict((feed_items::feed_id, feed_items::title))
         .do_update()
         .set((
-            feed_items::publication_date.eq(excluded(feed_items::publication_date)),
             feed_items::author.eq(excluded(feed_items::author)),
             feed_items::link.eq(excluded(feed_items::link)),
             feed_items::description.eq(excluded(feed_items::description)),

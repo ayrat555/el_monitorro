@@ -1,3 +1,4 @@
+use crate::db;
 use chrono::offset::Utc;
 use chrono::prelude::DateTime;
 use mockall::*;
@@ -45,9 +46,9 @@ impl From<Channel> for FetchedFeed {
         let items = channel
             .items()
             .into_iter()
+            .filter(|item| item.link().is_some())
             .map(|item| {
-                let pub_date: DateTime<Utc> =
-                    DateTime::from(DateTime::parse_from_rfc2822(item.pub_date().unwrap()).unwrap());
+                let pub_date: DateTime<Utc> = parse_time(item.pub_date());
                 FetchedFeedItem {
                     title: item.title().map(|s| s.to_string()),
                     description: item.description().map(|s| s.to_string()),
@@ -65,6 +66,13 @@ impl From<Channel> for FetchedFeed {
             description: channel.description().to_string(),
             items: items,
         }
+    }
+}
+
+fn parse_time(pub_date: Option<&str>) -> DateTime<Utc> {
+    match pub_date {
+        None => db::current_time(),
+        Some(string) => DateTime::from(DateTime::parse_from_rfc2822(string).unwrap()),
     }
 }
 
@@ -87,4 +95,15 @@ mod tests {
 
         assert!(mock.read_rss().is_ok());
     }
+
+    // #[test]
+    // fn parse_time_sucees_parses_string() {
+    //     let string = Some("Tue, 12 May 2020 16:08:48 GMT".to_string());
+
+    //     let result = super::parse_time(string);
+
+    //     eprintln!("{}", result);
+
+    //     assert!(result == db::current_time());
+    // }
 }
