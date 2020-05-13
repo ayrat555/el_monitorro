@@ -5,6 +5,7 @@ use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::schema::feed_items;
 use crate::schema::{feeds, telegram_chats, telegram_subscriptions};
+use chrono::prelude::{DateTime, Utc};
 use chrono::Duration;
 use diesel::dsl::*;
 use diesel::pg::upsert::excluded;
@@ -153,21 +154,13 @@ pub fn count_undelivered_feed_items(
         .unwrap()
 }
 
-pub fn set_subscription_delivered_at(
-    conn: &PgConnection,
-    subscription: &TelegramSubscription,
-) -> Result<TelegramSubscription, Error> {
-    diesel::update(subscription)
-        .set(telegram_subscriptions::last_delivered_at.eq(db::current_time()))
-        .get_result::<TelegramSubscription>(conn)
-}
-
 pub fn set_subscription_last_delivered_at(
     conn: &PgConnection,
     subscription: &TelegramSubscription,
+    last_delivered_at: DateTime<Utc>,
 ) -> Result<TelegramSubscription, Error> {
     diesel::update(subscription)
-        .set(telegram_subscriptions::last_delivered_at.eq(db::current_time()))
+        .set(telegram_subscriptions::last_delivered_at.eq(last_delivered_at))
         .get_result::<TelegramSubscription>(conn)
 }
 
@@ -434,8 +427,12 @@ mod tests {
 
             assert!(subscription.last_delivered_at.is_none());
 
-            let updated_subscription =
-                super::set_subscription_last_delivered_at(&connection, &subscription).unwrap();
+            let updated_subscription = super::set_subscription_last_delivered_at(
+                &connection,
+                &subscription,
+                db::current_time(),
+            )
+            .unwrap();
 
             assert!(updated_subscription.last_delivered_at.is_some());
 
