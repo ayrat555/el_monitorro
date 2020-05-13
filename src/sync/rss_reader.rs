@@ -74,7 +74,10 @@ impl From<Channel> for FetchedFeed {
 fn parse_time(pub_date: Option<&str>) -> DateTime<Utc> {
     match pub_date {
         None => db::current_time(),
-        Some(string) => DateTime::from(DateTime::parse_from_rfc2822(string).unwrap()),
+        Some(string) => match DateTime::parse_from_rfc2822(string) {
+            Ok(date) => date.into(),
+            Err(_) => db::current_time(),
+        },
     }
 }
 
