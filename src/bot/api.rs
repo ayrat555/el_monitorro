@@ -11,6 +11,7 @@ static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
 static UNSUBSCRIBE: &str = "/unsubscribe";
 static HELP: &str = "/help";
+static START: &str = "/start";
 
 impl From<MessageChat> for NewTelegramChat {
     fn from(message_chat: MessageChat) -> Self {
@@ -28,8 +29,36 @@ impl From<MessageChat> for NewTelegramChat {
     }
 }
 
+fn commands_string() -> String {
+    format!(
+        "{} - show the bot's description and contact information\n\
+         {} rss_url - subscribe to rss feed\n\
+         {} rss_url - unsubscribe from rss feed\n\
+         {} - list your subscriptions\n\
+         {} - show available commands",
+        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP
+    )
+}
+
 async fn help(api: Api, message: Message) -> Result<(), Error> {
-    let response = format!("{} rss_url - subscribe to rss feed\n{} rss_url - unsubscribe from rss feed\n{} - list your subscriptions\n{} - show available commands", SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP);
+    let response = commands_string();
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
+async fn start(api: Api, message: Message) -> Result<(), Error> {
+    let response = format!(
+        "El Monitorro is RSS reader as a Telegram bot.\n\n\
+                            Available commands:\n\
+                            {}\n\n\
+                            Synchronization information.\n\
+                            When you subscribe to a new feed, you'll receive 10 last messages from it. After that, you'll start receiving only new feed items.\n\
+                            RSS feeds updates check interval is 1 minute. Unread items delivery interval is also 1 minute.\n\
+                            Currently, the number of subscriptions is limited to 5.\n\n\
+                            Contact @Ayrat555 with your feedback, suggestions, found bugs, etc",
+        commands_string()
+    );
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -125,6 +154,8 @@ async fn process(api: Api, message: Message) -> Result<(), Error> {
                 tokio::spawn(unsubscribe(api, message, argument));
             } else if command.contains(HELP) {
                 tokio::spawn(help(api, message));
+            } else if command.contains(START) {
+                tokio::spawn(start(api, message));
             } else {
                 tokio::spawn(unknown_command(api, message));
             }
