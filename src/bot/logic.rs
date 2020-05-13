@@ -136,7 +136,7 @@ fn check_number_of_subscriptions(
     chat_id: i64,
 ) -> Result<(), SubscriptionError> {
     match telegram::count_subscriptions_for_chat(connection, chat_id) {
-        0 | 1 | 2 | 3 | 4 | 5 => Ok(()),
+        0 | 1 | 2 | 3 | 4 => Ok(()),
         _ => Err(SubscriptionError::SubscriptionCountLimit),
     }
 }
@@ -164,7 +164,7 @@ mod tests {
             let subscription = super::create_subscription(
                 &db_connection,
                 new_chat,
-                Some("https:/google.com".to_string()),
+                Some("http://feeds.reuters.com/reuters/technologyNews".to_string()),
             )
             .unwrap();
 
@@ -196,6 +196,29 @@ mod tests {
     }
 
     #[test]
+    fn create_subscription_fails_to_create_chat_when_rss_url_is_not_rss() {
+        let db_connection = db::establish_connection();
+        let new_chat = NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        };
+
+        db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+            let result = super::create_subscription(
+                &db_connection,
+                new_chat,
+                Some("http://google.com".to_string()),
+            );
+            assert_eq!(result.err(), Some(super::SubscriptionError::UrlIsNotRss));
+
+            Ok(())
+        });
+    }
+
+    #[test]
     fn create_subscription_fails_to_create_a_subscription_if_it_already_exists() {
         let db_connection = db::establish_connection();
         let new_chat = NewTelegramChat {
@@ -210,7 +233,7 @@ mod tests {
             let subscription = super::create_subscription(
                 &db_connection,
                 new_chat.clone(),
-                Some("https:/google.com".to_string()),
+                Some("http://feeds.reuters.com/reuters/technologyNews".to_string()),
             )
             .unwrap();
 
@@ -220,7 +243,7 @@ mod tests {
             let result = super::create_subscription(
                 &db_connection,
                 new_chat,
-                Some("https:/google.com".to_string()),
+                Some("http://feeds.reuters.com/reuters/technologyNews".to_string()),
             );
             assert_eq!(
                 result.err(),
@@ -232,7 +255,7 @@ mod tests {
     }
 
     #[test]
-    fn create_subscription_fails_to_create_a_subscription_if_it_already_has_3_suscriptions() {
+    fn create_subscription_fails_to_create_a_subscription_if_it_already_has_5_suscriptions() {
         let db_connection = db::establish_connection();
         let new_chat = NewTelegramChat {
             id: 42,
@@ -243,29 +266,25 @@ mod tests {
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-            super::create_subscription(
-                &db_connection,
-                new_chat.clone(),
-                Some("https:/google.com".to_string()),
-            )
-            .unwrap();
-            super::create_subscription(
-                &db_connection,
-                new_chat.clone(),
-                Some("https:/google1.com".to_string()),
-            )
-            .unwrap();
-            super::create_subscription(
-                &db_connection,
-                new_chat.clone(),
-                Some("https:/google2.com".to_string()),
-            )
-            .unwrap();
+            for rss_url in vec![
+                "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+                "https://www.eurekalert.org/rss/technology_engineering.xml",
+                "https://www.sciencedaily.com/rss/matter_energy/engineering.xml",
+                "https://www.france24.com/fr/france/rss",
+                "http://feeds.reuters.com/reuters/technologyNews",
+            ] {
+                assert!(super::create_subscription(
+                    &db_connection,
+                    new_chat.clone(),
+                    Some(rss_url.to_string()),
+                )
+                .is_ok());
+            }
 
             let result = super::create_subscription(
                 &db_connection,
                 new_chat,
-                Some("https:/google3.com".to_string()),
+                Some("http://www.engadget.com/rss.xml".to_string()),
             );
 
             assert_eq!(

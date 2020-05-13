@@ -149,7 +149,7 @@ mod tests {
             let updated_feed_items = vec![FetchedFeedItem {
                 title: Some("FeedItem1".to_string()),
                 description: Some("Description1".to_string()),
-                link: Some("Link2".to_string()),
+                link: Some("Link1".to_string()),
                 author: Some("Author2".to_string()),
                 guid: Some("Guid2".to_string()),
                 publication_date: publication_date,
