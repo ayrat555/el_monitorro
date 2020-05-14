@@ -17,11 +17,11 @@ It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 /help - show available commands
 ```
 
-### Update interval
+### Common info
 
-RSS Feeds updates check interval is 1 minute.
-Unread items delivery interval is 1 minute.
-
+- RSS Feeds updates check interval is 1 minute.
+- Unread items delivery interval is 1 minute.
+- The number of subscriptions is limited to 20.
 
 # Setup
 
@@ -44,6 +44,19 @@ You'll need diesel-cli for this
 
 3. Start a bot
 
+- Start the command bot
+
 ```
-RUST_LOG=info cargo run
+RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin el_monitorro
+```
+- Start the sync binary
+
+```
+RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin sync
+```
+
+- Start the delivery binary
+
+```
+RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin deliver
 ```
