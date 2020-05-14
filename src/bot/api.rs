@@ -55,7 +55,7 @@ async fn start(api: Api, message: Message) -> Result<(), Error> {
                             Synchronization information.\n\
                             When you subscribe to a new feed, you'll receive 10 last messages from it. After that, you'll start receiving only new feed items.\n\
                             RSS feeds updates check interval is 1 minute. Unread items delivery interval is also 1 minute.\n\
-                            Currently, the number of subscriptions is limited to 5.\n\n\
+                            Currently, the number of subscriptions is limited to 20.\n\n\
                             Contact @Ayrat555 with your feedback, suggestions, found bugs, etc",
         commands_string()
     );
