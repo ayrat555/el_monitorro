@@ -1,6 +1,5 @@
 use crate::db;
 use crate::db::feeds;
-use crate::models::feed::Feed;
 use crate::sync::feed_sync_job::FeedSyncJob;
 
 use diesel::result::Error;
@@ -28,7 +27,7 @@ impl SyncJob {
     pub fn execute(&self) -> Result<usize, SyncError> {
         let db_connection = db::establish_connection();
 
-        let mut unsynced_feeds: Vec<Feed>;
+        let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;
 
         log::info!("Started enqueuing feeds for sync");
@@ -37,19 +36,20 @@ impl SyncJob {
 
         let last_synced_at = db::current_time();
         loop {
-            unsynced_feeds = feeds::find_unsynced_feeds(&db_connection, last_synced_at, page, 100)?;
+            unsynced_feed_ids =
+                feeds::find_unsynced_feeds(&db_connection, last_synced_at, page, 100)?;
 
             page += 1;
 
-            for feed in &unsynced_feeds {
-                tokio::spawn(sync_feed(feed.id));
+            for id in &unsynced_feed_ids {
+                tokio::spawn(sync_feed(*id));
             }
 
-            if unsynced_feeds == [] {
+            if unsynced_feed_ids.is_empty() {
                 break;
             }
 
-            total_number += unsynced_feeds.len();
+            total_number += unsynced_feed_ids.len();
         }
 
         log::info!(

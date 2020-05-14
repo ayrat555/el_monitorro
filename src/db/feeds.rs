@@ -1,6 +1,6 @@
 use crate::db;
 use crate::models::feed::Feed;
-use crate::schema::feeds;
+use crate::schema::{feeds, telegram_subscriptions};
 use chrono::offset::Utc;
 use chrono::DateTime;
 use diesel::result::Error;
@@ -76,28 +76,34 @@ pub fn find_unsynced_feeds(
     last_updated_at: DateTime<Utc>,
     page: i64,
     count: i64,
-) -> Result<Vec<Feed>, Error> {
+) -> Result<Vec<i64>, Error> {
     let offset = (page - 1) * count;
 
     feeds::table
+        .inner_join(telegram_subscriptions::table)
         .filter(feeds::synced_at.lt(last_updated_at))
         .or_filter(feeds::synced_at.is_null())
+        .select(feeds::id)
         .order(feeds::id)
+        .distinct()
         .limit(count)
         .offset(offset)
-        .get_results(conn)
+        .load::<i64>(conn)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::db;
+    use crate::db::telegram;
+    use crate::db::telegram::{NewTelegramChat, NewTelegramSubscription};
     use crate::models::feed::Feed;
+    use crate::models::telegram_subscription::TelegramSubscription;
     use crate::schema::feeds;
     use chrono::offset::Utc;
     use chrono::Duration;
     use diesel::connection::Connection;
     use diesel::result::Error;
-    use diesel::{ExpressionMethods, RunQueryDsl};
+    use diesel::{ExpressionMethods, PgConnection, RunQueryDsl};
 
     #[test]
     fn create_creates_new_feed() {
@@ -294,7 +300,7 @@ mod tests {
     }
 
     #[test]
-    fn find_unsynced_feeds_fetches_unsynced_feeds_without_synced_at() {
+    fn find_unsynced_feeds_does_not_fetch_feeds_without_telegram_subscriptions() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -305,8 +311,28 @@ mod tests {
             let found_unsynced_feeds =
                 super::find_unsynced_feeds(&connection, Utc::now(), 1, 1).unwrap();
 
+            assert_eq!(found_unsynced_feeds.len(), 0);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn find_unsynced_feeds_fetches_unsynced_feeds_without_synced_at() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let link = "Link".to_string();
+            let feed_without_synced_at = super::create(&connection, link).unwrap();
+            assert!(feed_without_synced_at.synced_at.is_none());
+
+            create_telegram_subscription(&connection, &feed_without_synced_at);
+
+            let found_unsynced_feeds =
+                super::find_unsynced_feeds(&connection, Utc::now(), 1, 1).unwrap();
+
             assert_eq!(found_unsynced_feeds.len(), 1);
-            assert_eq!(found_unsynced_feeds[0].id, feed_without_synced_at.id);
+            assert_eq!(found_unsynced_feeds[0], feed_without_synced_at.id);
 
             let found_unsynced_feeds_page2 =
                 super::find_unsynced_feeds(&connection, Utc::now(), 2, 1).unwrap();
@@ -318,12 +344,14 @@ mod tests {
     }
 
     #[test]
-    fn it_fetches_unsynced_feeds_with_expired_synced_at() {
+    fn find_unsynced_feeds_fetches_unsynced_feeds_with_expired_synced_at() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
             let mut feed = super::create(&connection, link).unwrap();
+
+            create_telegram_subscription(&connection, &feed);
 
             let expired_synced_at = Utc::now() - Duration::hours(40);
 
@@ -339,7 +367,7 @@ mod tests {
                     .unwrap();
 
             assert_eq!(found_unsynced_feeds.len(), 1);
-            assert_eq!(found_unsynced_feeds[0].id, feed.id);
+            assert_eq!(found_unsynced_feeds[0], feed.id);
 
             let found_unsynced_feeds_page2 =
                 super::find_unsynced_feeds(&connection, Utc::now(), 2, 1).unwrap();
@@ -358,6 +386,8 @@ mod tests {
             let link = "Link".to_string();
             let mut feed = super::create(&connection, link).unwrap();
 
+            create_telegram_subscription(&connection, &feed);
+
             let expired_synced_at = Utc::now() - Duration::hours(10);
 
             feed = diesel::update(&feed)
@@ -375,5 +405,26 @@ mod tests {
 
             Ok(())
         })
+    }
+
+    fn create_telegram_subscription(
+        connection: &PgConnection,
+        feed: &Feed,
+    ) -> TelegramSubscription {
+        let new_chat = NewTelegramChat {
+            id: 42,
+            kind: "private".to_string(),
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+        };
+        let chat = telegram::create_chat(connection, new_chat).unwrap();
+
+        let new_subscription = NewTelegramSubscription {
+            feed_id: feed.id,
+            chat_id: chat.id,
+        };
+
+        telegram::create_subscription(connection, new_subscription).unwrap()
     }
 }

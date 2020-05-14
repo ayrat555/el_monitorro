@@ -143,7 +143,7 @@ pub fn count_undelivered_feed_items(
 ) -> i64 {
     let last_delivered_at = match subscription.last_delivered_at {
         Some(value) => value,
-        None => db::current_time() - Duration::days(365),
+        None => db::current_time() - Duration::days(1),
     };
 
     feed_items::table
