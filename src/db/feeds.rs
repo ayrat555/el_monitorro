@@ -41,12 +41,15 @@ pub fn set_synced_at(
     title: Option<String>,
     description: Option<String>,
 ) -> Result<Feed, Error> {
+    let error: Option<String> = None;
+
     diesel::update(feed)
         .set((
             feeds::synced_at.eq(db::current_time()),
             feeds::title.eq(title),
             feeds::description.eq(description),
             feeds::updated_at.eq(db::current_time()),
+            feeds::error.eq(error),
         ))
         .get_result::<Feed>(conn)
 }
@@ -153,6 +156,42 @@ mod tests {
             )
             .unwrap();
 
+            assert_eq!(updated_feed.title, Some(title));
+            assert_eq!(updated_feed.link, link);
+            assert_eq!(updated_feed.description, Some(description));
+            assert!(updated_feed.synced_at.is_some());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn set_synced_deletes_error_from_feed() {
+        let link = "Link".to_string();
+
+        let title = "Title".to_string();
+        let description = "Description".to_string();
+
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let feed = super::create(&connection, link.clone()).unwrap();
+            let feed_with_error = super::set_error(&connection, &feed, "error").unwrap();
+
+            assert_eq!(feed_with_error.error.unwrap(), "error".to_string());
+            assert_eq!(feed_with_error.title, None);
+            assert_eq!(feed_with_error.link, link);
+            assert_eq!(feed_with_error.description, None);
+
+            let updated_feed = super::set_synced_at(
+                &connection,
+                &feed,
+                Some(title.clone()),
+                Some(description.clone()),
+            )
+            .unwrap();
+
+            assert!(updated_feed.error.is_none());
             assert_eq!(updated_feed.title, Some(title));
             assert_eq!(updated_feed.link, link);
             assert_eq!(updated_feed.description, Some(description));
