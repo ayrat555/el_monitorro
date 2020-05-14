@@ -109,11 +109,8 @@ async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error
 }
 
 async fn unsubscribe(api: Api, message: Message, data: String) -> Result<(), Error> {
-    let chat_id = if let MessageChat::Private(chat) = &message.chat {
-        chat.id
-    } else {
-        unimplemented!()
-    };
+    let chat_id = get_chat_id(&message);
+
     let response =
         match logic::delete_subscription(&db::establish_connection(), chat_id.into(), data.clone())
         {
@@ -127,11 +124,7 @@ async fn unsubscribe(api: Api, message: Message, data: String) -> Result<(), Err
 }
 
 async fn list_subscriptions(api: Api, message: Message) -> Result<(), Error> {
-    let chat_id = if let MessageChat::Private(chat) = &message.chat {
-        chat.id
-    } else {
-        unimplemented!()
-    };
+    let chat_id = get_chat_id(&message);
 
     let response = logic::find_feeds_by_chat_id(&db::establish_connection(), chat_id.into());
 
@@ -143,6 +136,8 @@ async fn process(api: Api, message: Message) -> Result<(), Error> {
     match message.kind {
         MessageKind::Text { ref data, .. } => {
             let command = data.as_str();
+
+            log::info!("{} wrote: {}", get_chat_id(&message), command);
 
             if command.contains(SUBSCRIBE) {
                 let argument = parse_argument(command, SUBSCRIBE);
@@ -166,6 +161,14 @@ async fn process(api: Api, message: Message) -> Result<(), Error> {
     Ok(())
 }
 
+fn get_chat_id(message: &Message) -> i64 {
+    if let MessageChat::Private(chat) = &message.chat {
+        chat.id.into()
+    } else {
+        unimplemented!()
+    }
+}
+
 fn parse_argument(full_command: &str, command: &str) -> String {
     full_command.replace(command, "").trim().to_string()
 }
@@ -181,7 +184,7 @@ pub async fn start_bot() -> Result<(), Error> {
     while let Some(update) = stream.next().await {
         let update = update?;
         if let UpdateKind::Message(message) = update.kind {
-            process(api.clone(), message).await?;
+            tokio::spawn(process(api.clone(), message));
         }
     }
 
