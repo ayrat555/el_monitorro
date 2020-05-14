@@ -1,9 +1,7 @@
-use crate::db;
 use crate::models::feed_item::FeedItem;
 use crate::schema::feed_items;
 use crate::sync::rss_reader::FetchedFeedItem;
 use chrono::prelude::{DateTime, Utc};
-use diesel::pg::upsert::excluded;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
@@ -40,13 +38,7 @@ pub fn create(
     diesel::insert_into(feed_items::table)
         .values(new_feed_items)
         .on_conflict((feed_items::feed_id, feed_items::title, feed_items::link))
-        .do_update()
-        .set((
-            feed_items::author.eq(excluded(feed_items::author)),
-            feed_items::description.eq(excluded(feed_items::description)),
-            feed_items::guid.eq(excluded(feed_items::guid)),
-            feed_items::updated_at.eq(db::current_time()),
-        ))
+        .do_nothing()
         .get_results(conn)
 }
 
@@ -120,7 +112,7 @@ mod tests {
     }
 
     #[test]
-    fn create_updates_existing_feed_items() {
+    fn create_does_not_update_existing_feed_items() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -158,17 +150,7 @@ mod tests {
             let new_result =
                 super::create(&connection, feed.id, updated_feed_items.clone()).unwrap();
 
-            let new_item = new_result
-                .iter()
-                .find(|item| item.guid == Some("Guid2".to_string()))
-                .unwrap();
-
-            assert_eq!(new_item.feed_id, feed.id);
-            assert_eq!(new_item.title, updated_feed_items[0].title);
-            assert_eq!(new_item.description, updated_feed_items[0].description);
-            assert_eq!(new_item.link, updated_feed_items[0].link);
-
-            assert_eq!(new_item.created_at, old_item.created_at);
+            assert!(new_result.is_empty());
 
             Ok(())
         });
