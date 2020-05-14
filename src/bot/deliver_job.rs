@@ -13,6 +13,8 @@ pub struct DeliverJobError {
     msg: String,
 }
 
+static BLOCKED_ERROR: &str = "Forbidden: bot was blocked by the user";
+
 impl From<Error> for DeliverJobError {
     fn from(error: Error) -> Self {
         let msg = format!("{:?}", error);
@@ -65,6 +67,7 @@ async fn deliver_subscription_updates(
     let connection = db::establish_connection();
     let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
     let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
+    let chat_id = subscription.chat_id;
 
     if feed_items.len() < undelivered_count as usize {
         let message = format!(
@@ -73,15 +76,25 @@ async fn deliver_subscription_updates(
             feed_items.len()
         );
 
-        match api::send_message(subscription.chat_id, message).await {
+        match api::send_message(chat_id, message).await {
             Ok(_) => (),
             Err(error) => {
-                log::error!("Failed to deliver updates: {}", error);
+                let error_message = format!("{}", error);
+
+                log::error!("Failed to deliver updates: {}", error_message);
+
+                if error_message == BLOCKED_ERROR {
+                    match telegram::remove_chat(&connection, chat_id) {
+                        Ok(_) => log::info!("Successfully removed chat {}", chat_id),
+                        Err(error) => log::error!("Failed to remove a chat {}", error),
+                    }
+                };
+
                 return Err(DeliverJobError {
                     msg: format!("Failed to send updates : {}", error),
                 });
             }
-        };
+        }
     }
 
     if !feed_items.is_empty() {
@@ -99,11 +112,21 @@ async fn deliver_subscription_updates(
 
         messages.reverse();
 
-        for message in messages {
-            match api::send_message(subscription.chat_id, message).await {
+        for message in messages.into_iter() {
+            match api::send_message(chat_id, message).await {
                 Ok(_) => (),
                 Err(error) => {
-                    log::error!("Failed to deliver updates: {}", error);
+                    let error_message = format!("{}", error);
+
+                    log::error!("Failed to deliver updates: {}", error_message);
+
+                    if error_message == BLOCKED_ERROR {
+                        match telegram::remove_chat(&connection, chat_id) {
+                            Ok(_) => log::info!("Successfully removed chat {}", chat_id),
+                            Err(error) => log::error!("Failed to remove a chat {}", error),
+                        }
+                    };
+
                     return Err(DeliverJobError {
                         msg: format!("Failed to send updates : {}", error),
                     });

@@ -88,6 +88,12 @@ pub fn remove_subscription(
     diesel::delete(record_query).execute(conn)
 }
 
+pub fn remove_chat(conn: &PgConnection, chat_id: i64) -> Result<usize, Error> {
+    let record_query = telegram_chats::table.filter(telegram_chats::id.eq(chat_id));
+
+    diesel::delete(record_query).execute(conn)
+}
+
 pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
     telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(chat_id))
@@ -460,6 +466,27 @@ mod tests {
             let result = super::remove_subscription(&connection, new_subscription).unwrap();
 
             assert_eq!(result, 1);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn remove_chat_removes_chat() {
+        let connection = db::establish_connection();
+
+        let new_chat = build_new_chat();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            assert!(super::find_chat(&connection, chat.id).is_some());
+
+            let result = super::remove_chat(&connection, chat.id).unwrap();
+
+            assert_eq!(result, 1);
+
+            assert!(super::find_chat(&connection, chat.id).is_none());
 
             Ok(())
         });
