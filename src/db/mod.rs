@@ -2,15 +2,11 @@ use chrono::prelude::{DateTime, Utc};
 use diesel::connection::Connection;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
-use rocket_contrib::databases::diesel::PgConnection as RocketPgConnection;
 use std::env;
 
 pub mod feed_items;
 pub mod feeds;
 pub mod telegram;
-
-#[database("diesel_postgres_pool")]
-pub struct Conn(RocketPgConnection);
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();

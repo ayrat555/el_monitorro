@@ -2,14 +2,13 @@ use crate::db;
 use crate::db::{feed_items, feeds};
 use crate::sync::rss_reader::{ReadRSS, RssReader};
 use log::error;
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct FeedSyncJob {
     feed_id: i64,
 }
 
-#[derive(Debug, Fail, Serialize, Deserialize)]
+#[derive(Debug, Fail)]
 pub enum FeedSyncError {
     #[fail(display = "failed to sync a feed: {}", msg)]
     FeedError { msg: String },
