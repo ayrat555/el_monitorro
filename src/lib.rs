@@ -8,7 +8,7 @@ extern crate failure;
 extern crate atom_syndication;
 extern crate dotenv;
 extern crate futures;
-extern crate reqwest;
+extern crate isahc;
 extern crate rss;
 extern crate telegram_bot;
 extern crate tokio;

@@ -1,9 +1,10 @@
-pub mod atom;
-pub mod rss;
-
 use self::atom::AtomReader;
 use self::rss::RssReader;
+use crate::isahc::ResponseExt;
 use chrono::{DateTime, Utc};
+
+pub mod atom;
+pub mod rss;
 
 #[derive(Debug)]
 pub struct FeedReaderError {
@@ -34,8 +35,8 @@ pub trait ReadFeed {
 }
 
 pub fn read_url(url: &str) -> Result<String, FeedReaderError> {
-    match reqwest::blocking::get(url) {
-        Ok(response) => match response.text() {
+    match isahc::get(url) {
+        Ok(mut response) => match response.text() {
             Ok(body) => Ok(body),
             Err(error) => {
                 let msg = format!("{:?}", error);
