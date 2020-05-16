@@ -28,7 +28,9 @@ impl From<Channel> for FetchedFeed {
             .map(|item| {
                 let pub_date: DateTime<Utc> = parse_time(item.pub_date());
                 FetchedFeedItem {
-                    title: item.title().map(|s| s.to_string()),
+                    title: item
+                        .title()
+                        .map_or_else(|| "".to_string(), |s| s.to_string()),
                     description: item.description().map(|s| s.to_string()),
                     link: item.link().unwrap().to_string(),
                     author: item.author().map(|s| s.to_string()),

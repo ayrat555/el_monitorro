@@ -9,7 +9,7 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 #[table_name = "feed_items"]
 pub struct NewFeedItem {
     pub feed_id: i64,
-    pub title: Option<String>,
+    pub title: String,
     pub description: Option<String>,
     pub link: String,
     pub author: Option<String>,
@@ -69,7 +69,7 @@ mod tests {
             let publication_date = db::current_time();
             let feed_items = vec![
                 FetchedFeedItem {
-                    title: Some("FeedItem1".to_string()),
+                    title: "FeedItem1".to_string(),
                     description: Some("Description1".to_string()),
                     link: "Link1".to_string(),
                     author: Some("Author1".to_string()),
@@ -77,7 +77,7 @@ mod tests {
                     publication_date: publication_date,
                 },
                 FetchedFeedItem {
-                    title: Some("FeedItem2".to_string()),
+                    title: "FeedItem2".to_string(),
                     description: Some("Description2".to_string()),
                     link: "Link2".to_string(),
                     author: Some("Author2".to_string()),
@@ -119,7 +119,7 @@ mod tests {
             let feed = feeds::create(&connection, "Link".to_string(), "atom".to_string()).unwrap();
             let publication_date = db::current_time();
             let feed_items = vec![FetchedFeedItem {
-                title: Some("FeedItem1".to_string()),
+                title: "FeedItem1".to_string(),
                 description: Some("Description1".to_string()),
                 link: "Link1".to_string(),
                 author: Some("Author1".to_string()),
@@ -139,7 +139,7 @@ mod tests {
             assert_eq!(old_item.link, feed_items[0].link);
 
             let updated_feed_items = vec![FetchedFeedItem {
-                title: Some("FeedItem1".to_string()),
+                title: "FeedItem1".to_string(),
                 description: Some("Description1".to_string()),
                 link: "Link1".to_string(),
                 author: Some("Author2".to_string()),

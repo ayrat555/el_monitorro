@@ -103,9 +103,7 @@ async fn deliver_subscription_updates(
             .map(|item| {
                 format!(
                     "{}\n\n{}\n\n{}\n\n",
-                    item.title.as_ref().unwrap_or(&"".to_string()),
-                    item.publication_date,
-                    item.link
+                    item.title, item.publication_date, item.link
                 )
             })
             .collect::<Vec<String>>();
@@ -180,14 +178,12 @@ mod tests {
     #[test]
     fn get_max_publication_date_finds_max_publication_date_in_feed_items_vector() {
         let feed_item1 = FeedItem {
-            id: 1,
             feed_id: 1,
-            title: None,
+            title: "".to_string(),
             description: None,
             link: "dsd".to_string(),
             author: None,
             guid: None,
-
             publication_date: DateTime::parse_from_rfc2822("Wed, 13 May 2020 15:54:02 EDT")
                 .unwrap()
                 .into(),
@@ -196,9 +192,8 @@ mod tests {
         };
 
         let feed_item2 = FeedItem {
-            id: 2,
             feed_id: 1,
-            title: None,
+            title: "".to_string(),
             description: None,
             link: "dsd1".to_string(),
             author: None,

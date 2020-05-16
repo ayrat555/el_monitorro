@@ -38,7 +38,7 @@ impl From<AtomFeed> for FetchedFeed {
                 let pub_date: DateTime<Utc> = parse_time(base_date);
 
                 FetchedFeedItem {
-                    title: Some(item.title().to_string()),
+                    title: item.title().to_string(),
                     description: item.summary().map(|s| s.to_string()),
                     link: item.links().first().unwrap().href().to_string(),
                     author: Some(
@@ -96,7 +96,7 @@ mod tests {
             description: "".to_string(),
             feed_type: "atom".to_string(),
             items: vec![FetchedFeedItem {
-                title: Some("Atom-Powered Robots Run Amok".to_string()),
+                title: "Atom-Powered Robots Run Amok".to_string(),
                 description: Some("Some text.".to_string()),
                 link: "http://example.org/2003/12/13/atom03".to_string(),
                 author: Some("".to_string()),

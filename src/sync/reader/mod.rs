@@ -13,7 +13,7 @@ pub struct FeedReaderError {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FetchedFeedItem {
-    pub title: Option<String>,
+    pub title: String,
     pub description: Option<String>,
     pub link: String,
     pub author: Option<String>,
