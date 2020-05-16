@@ -5,9 +5,9 @@ extern crate diesel;
 extern crate log;
 #[macro_use]
 extern crate failure;
+extern crate atom_syndication;
 extern crate dotenv;
 extern crate futures;
-extern crate mockall;
 extern crate rss;
 extern crate telegram_bot;
 extern crate tokio;

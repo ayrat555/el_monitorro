@@ -1,6 +1,7 @@
 use crate::db;
 use crate::db::{feed_items, feeds};
-use crate::sync::rss_reader::{ReadRSS, RssReader};
+use crate::sync::reader::rss::RssReader;
+use crate::sync::reader::ReadFeed;
 use log::error;
 
 #[derive(Debug)]
@@ -30,7 +31,7 @@ impl FeedSyncJob {
             url: feed.link.clone(),
         };
 
-        match rss_reader.read_rss() {
+        match rss_reader.read() {
             Ok(fetched_feed) => {
                 match feed_items::create(&db_connection, feed.id, fetched_feed.items) {
                     Err(err) => {

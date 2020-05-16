@@ -3,7 +3,7 @@ use crate::db;
 use crate::db::telegram;
 use crate::models::feed_item::FeedItem;
 use crate::models::telegram_subscription::TelegramSubscription;
-use chrono::prelude::{DateTime, Utc};
+use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use tokio::time;
 
@@ -175,7 +175,7 @@ fn get_max_publication_date(items: Vec<FeedItem>) -> DateTime<Utc> {
 mod tests {
     use crate::db;
     use crate::models::feed_item::FeedItem;
-    use chrono::prelude::{DateTime, Utc};
+    use chrono::{DateTime, Utc};
 
     #[test]
     fn get_max_publication_date_finds_max_publication_date_in_feed_items_vector() {

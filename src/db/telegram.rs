@@ -5,8 +5,8 @@ use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::schema::feed_items;
 use crate::schema::{feeds, telegram_chats, telegram_subscriptions};
-use chrono::prelude::{DateTime, Utc};
-use chrono::Duration;
+
+use chrono::{DateTime, Duration, Utc};
 use diesel::dsl::*;
 use diesel::pg::upsert::excluded;
 use diesel::result::Error;

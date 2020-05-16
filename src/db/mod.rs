@@ -1,4 +1,4 @@
-use chrono::prelude::{DateTime, Utc};
+use chrono::{DateTime, Utc};
 use diesel::connection::Connection;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;

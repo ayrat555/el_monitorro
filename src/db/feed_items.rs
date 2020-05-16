@@ -1,7 +1,7 @@
 use crate::models::feed_item::FeedItem;
 use crate::schema::feed_items;
-use crate::sync::rss_reader::FetchedFeedItem;
-use chrono::prelude::{DateTime, Utc};
+use crate::sync::FetchedFeedItem;
+use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
@@ -56,7 +56,7 @@ pub fn find(conn: &PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
 mod tests {
     use crate::db;
     use crate::db::feeds;
-    use crate::sync::rss_reader::FetchedFeedItem;
+    use crate::sync::FetchedFeedItem;
     use diesel::connection::Connection;
     use diesel::result::Error;
 

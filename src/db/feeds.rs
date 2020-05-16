@@ -1,8 +1,7 @@
 use crate::db;
 use crate::models::feed::Feed;
 use crate::schema::{feeds, telegram_subscriptions};
-use chrono::offset::Utc;
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
@@ -99,8 +98,7 @@ mod tests {
     use crate::models::feed::Feed;
     use crate::models::telegram_subscription::TelegramSubscription;
     use crate::schema::feeds;
-    use chrono::offset::Utc;
-    use chrono::Duration;
+    use chrono::{Duration, Utc};
     use diesel::connection::Connection;
     use diesel::result::Error;
     use diesel::{ExpressionMethods, PgConnection, RunQueryDsl};
