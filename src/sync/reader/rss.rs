@@ -1,4 +1,4 @@
-use crate::sync::reader;
+use crate::db;
 use crate::sync::reader::{FeedReaderError, FetchedFeed, FetchedFeedItem, ReadFeed};
 use chrono::{DateTime, Utc};
 use rss::Channel;
@@ -26,7 +26,7 @@ impl From<Channel> for FetchedFeed {
             .into_iter()
             .filter(|item| item.link().is_some())
             .map(|item| {
-                let pub_date: DateTime<Utc> = reader::parse_time(item.pub_date());
+                let pub_date: DateTime<Utc> = parse_time(item.pub_date());
                 FetchedFeedItem {
                     title: item.title().map(|s| s.to_string()),
                     description: item.description().map(|s| s.to_string()),
@@ -46,6 +46,16 @@ impl From<Channel> for FetchedFeed {
             description: channel.description().to_string(),
             items: items,
         }
+    }
+}
+
+fn parse_time(pub_date: Option<&str>) -> DateTime<Utc> {
+    match pub_date {
+        None => db::current_time(),
+        Some(string) => match DateTime::parse_from_rfc2822(string) {
+            Ok(date) => date.into(),
+            Err(_) => db::current_time(),
+        },
     }
 }
 

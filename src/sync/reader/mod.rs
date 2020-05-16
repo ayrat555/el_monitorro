@@ -1,6 +1,6 @@
+pub mod atom;
 pub mod rss;
 
-use crate::db;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug)]
@@ -8,7 +8,7 @@ pub struct FeedReaderError {
     pub msg: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FetchedFeedItem {
     pub title: Option<String>,
     pub description: Option<String>,
@@ -18,7 +18,7 @@ pub struct FetchedFeedItem {
     pub publication_date: DateTime<Utc>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct FetchedFeed {
     pub title: String,
     pub link: String,
@@ -30,12 +30,20 @@ pub trait ReadFeed {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError>;
 }
 
-pub fn parse_time(pub_date: Option<&str>) -> DateTime<Utc> {
-    match pub_date {
-        None => db::current_time(),
-        Some(string) => match DateTime::parse_from_rfc2822(string) {
-            Ok(date) => date.into(),
-            Err(_) => db::current_time(),
+pub fn read_url(url: &str) -> Result<String, FeedReaderError> {
+    match reqwest::blocking::get(url) {
+        Ok(response) => match response.text() {
+            Ok(body) => Ok(body),
+            Err(error) => {
+                let msg = format!("{:?}", error);
+
+                Err(FeedReaderError { msg })
+            }
         },
+        Err(error) => {
+            let msg = format!("{:?}", error);
+
+            Err(FeedReaderError { msg })
+        }
     }
 }
