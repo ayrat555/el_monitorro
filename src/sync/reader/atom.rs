@@ -40,7 +40,7 @@ impl From<AtomFeed> for FetchedFeed {
                 FetchedFeedItem {
                     title: Some(item.title().to_string()),
                     description: item.summary().map(|s| s.to_string()),
-                    link: Some(item.links().first().unwrap().href().to_string()),
+                    link: item.links().first().unwrap().href().to_string(),
                     author: Some(
                         item.authors()
                             .into_iter()
@@ -63,6 +63,7 @@ impl From<AtomFeed> for FetchedFeed {
                 .subtitle()
                 .map_or_else(|| "".to_string(), |s| s.to_string()),
             items: items,
+            feed_type: "atom".to_string(),
         }
     }
 }
@@ -93,10 +94,11 @@ mod tests {
             title: "Example Feed".to_string(),
             link: "http://example.org/".to_string(),
             description: "".to_string(),
+            feed_type: "atom".to_string(),
             items: vec![FetchedFeedItem {
                 title: Some("Atom-Powered Robots Run Amok".to_string()),
                 description: Some("Some text.".to_string()),
-                link: Some("http://example.org/2003/12/13/atom03".to_string()),
+                link: "http://example.org/2003/12/13/atom03".to_string(),
                 author: Some("".to_string()),
                 guid: Some("urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a".to_string()),
                 publication_date: DateTime::parse_from_rfc3339("2003-12-13T18:30:02Z")

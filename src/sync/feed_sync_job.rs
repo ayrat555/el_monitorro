@@ -1,7 +1,11 @@
 use crate::db;
 use crate::db::{feed_items, feeds};
+use crate::models::feed::Feed;
+use crate::sync::reader::atom::AtomReader;
 use crate::sync::reader::rss::RssReader;
+use crate::sync::reader::FeedReaderError;
 use crate::sync::reader::ReadFeed;
+use crate::sync::FetchedFeed;
 use log::error;
 
 #[derive(Debug)]
@@ -27,11 +31,8 @@ impl FeedSyncJob {
 
         let db_connection = db::establish_connection();
         let feed = feeds::find(&db_connection, self.feed_id).unwrap();
-        let rss_reader = RssReader {
-            url: feed.link.clone(),
-        };
 
-        match rss_reader.read() {
+        match read_feed(&feed) {
             Ok(fetched_feed) => {
                 match feed_items::create(&db_connection, feed.id, fetched_feed.items) {
                     Err(err) => {
@@ -90,6 +91,20 @@ impl FeedSyncJob {
     }
 }
 
+fn read_feed(feed: &Feed) -> Result<FetchedFeed, FeedReaderError> {
+    if feed.feed_type == "rss".to_string() {
+        RssReader {
+            url: feed.link.clone(),
+        }
+        .read()
+    } else {
+        AtomReader {
+            url: feed.link.clone(),
+        }
+        .read()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::FeedSyncJob;
@@ -102,7 +117,7 @@ mod tests {
         let connection = db::establish_connection();
         let link = "https://www.feedforall.com/sample-feed.xml".to_string();
 
-        let feed = feeds::create(&connection, link).unwrap();
+        let feed = feeds::create(&connection, link, "rss".to_string()).unwrap();
         let sync_job = FeedSyncJob { feed_id: feed.id };
 
         sync_job.execute().unwrap();

@@ -2,15 +2,15 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::{NewTelegramChat, NewTelegramSubscription};
 use crate::models::telegram_subscription::TelegramSubscription;
+use crate::sync::reader;
 use diesel::{Connection, PgConnection};
-use rss::Channel;
 use url::Url;
 
 #[derive(Debug, PartialEq)]
 pub enum SubscriptionError {
     DbError(diesel::result::Error),
-    InvalidRssUrl,
-    UrlIsNotRss,
+    InvalidUrl,
+    UrlIsNotFeed,
     RssUrlNotProvided,
     SubscriptionAlreadyExists,
     SubscriptionCountLimit,
@@ -90,11 +90,11 @@ pub fn create_subscription(
 
     let url = rss_url.unwrap();
 
-    validate_rss_url(&url)?;
+    let feed_type = validate_rss_url(&url)?;
 
     db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|| {
         let chat = telegram::create_chat(db_connection, new_chat).unwrap();
-        let feed = feeds::create(db_connection, url).unwrap();
+        let feed = feeds::create(db_connection, url, feed_type).unwrap();
 
         let new_telegram_subscription = NewTelegramSubscription {
             chat_id: chat.id,
@@ -111,13 +111,13 @@ pub fn create_subscription(
     })
 }
 
-fn validate_rss_url(rss_url: &str) -> Result<(), SubscriptionError> {
+fn validate_rss_url(rss_url: &str) -> Result<String, SubscriptionError> {
     match Url::parse(rss_url) {
-        Ok(_) => match Channel::from_url(rss_url) {
-            Ok(_) => Ok(()),
-            _ => Err(SubscriptionError::UrlIsNotRss),
+        Ok(_) => match reader::validate_rss_url(rss_url) {
+            Ok(feed_type) => Ok(feed_type),
+            _ => Err(SubscriptionError::UrlIsNotFeed),
         },
-        _ => Err(SubscriptionError::InvalidRssUrl),
+        _ => Err(SubscriptionError::InvalidUrl),
     }
 }
 
@@ -192,7 +192,7 @@ mod tests {
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
             let result =
                 super::create_subscription(&db_connection, new_chat, Some("11".to_string()));
-            assert_eq!(result.err(), Some(super::SubscriptionError::InvalidRssUrl));
+            assert_eq!(result.err(), Some(super::SubscriptionError::InvalidUrl));
 
             Ok(())
         });
@@ -215,7 +215,7 @@ mod tests {
                 new_chat,
                 Some("http://google.com".to_string()),
             );
-            assert_eq!(result.err(), Some(super::SubscriptionError::UrlIsNotRss));
+            assert_eq!(result.err(), Some(super::SubscriptionError::UrlIsNotFeed));
 
             Ok(())
         });

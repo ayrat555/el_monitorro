@@ -4,7 +4,7 @@ table! {
         feed_id -> Int8,
         title -> Nullable<Text>,
         description -> Nullable<Text>,
-        link -> Nullable<Text>,
+        link -> Text,
         author -> Nullable<Text>,
         guid -> Nullable<Text>,
         publication_date -> Timestamptz,
@@ -23,6 +23,7 @@ table! {
         synced_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        feed_type -> Text,
     }
 }
 
@@ -52,9 +53,4 @@ joinable!(feed_items -> feeds (feed_id));
 joinable!(telegram_subscriptions -> feeds (feed_id));
 joinable!(telegram_subscriptions -> telegram_chats (chat_id));
 
-allow_tables_to_appear_in_same_query!(
-    feed_items,
-    feeds,
-    telegram_chats,
-    telegram_subscriptions,
-);
+allow_tables_to_appear_in_same_query!(feed_items, feeds, telegram_chats, telegram_subscriptions,);

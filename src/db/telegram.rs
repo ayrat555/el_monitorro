@@ -246,7 +246,7 @@ mod tests {
         };
 
         connection.test_transaction::<(), Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
             let chat = super::create_chat(&connection, new_chat).unwrap();
 
             let new_subscription = NewTelegramSubscription {
@@ -271,7 +271,7 @@ mod tests {
         let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "atom".to_string()).unwrap();
             let chat = super::create_chat(&connection, new_chat).unwrap();
 
             let new_subscription = NewTelegramSubscription {
@@ -310,7 +310,7 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "atom".to_string()).unwrap();
 
             let result = super::create_subscription(
                 &connection,
@@ -339,7 +339,7 @@ mod tests {
         let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
             let chat = super::create_chat(&connection, new_chat).unwrap();
 
             let new_subscription = NewTelegramSubscription {
@@ -395,7 +395,7 @@ mod tests {
         let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "atom".to_string()).unwrap();
             let chat = super::create_chat(&connection, new_chat).unwrap();
 
             let new_subscription = NewTelegramSubscription {
@@ -421,7 +421,7 @@ mod tests {
         let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
             let chat = super::create_chat(&connection, new_chat).unwrap();
 
             let new_subscription = NewTelegramSubscription {
@@ -453,7 +453,7 @@ mod tests {
         let new_chat = build_new_chat();
 
         connection.test_transaction::<(), Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
             let chat = super::create_chat(&connection, new_chat).unwrap();
 
             let new_subscription = NewTelegramSubscription {

@@ -11,7 +11,7 @@ pub struct NewFeedItem {
     pub feed_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
-    pub link: Option<String>,
+    pub link: String,
     pub author: Option<String>,
     pub guid: Option<String>,
     pub publication_date: DateTime<Utc>,
@@ -65,13 +65,13 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
             let publication_date = db::current_time();
             let feed_items = vec![
                 FetchedFeedItem {
                     title: Some("FeedItem1".to_string()),
                     description: Some("Description1".to_string()),
-                    link: Some("Link1".to_string()),
+                    link: "Link1".to_string(),
                     author: Some("Author1".to_string()),
                     guid: Some("Guid1".to_string()),
                     publication_date: publication_date,
@@ -79,7 +79,7 @@ mod tests {
                 FetchedFeedItem {
                     title: Some("FeedItem2".to_string()),
                     description: Some("Description2".to_string()),
-                    link: Some("Link2".to_string()),
+                    link: "Link2".to_string(),
                     author: Some("Author2".to_string()),
                     guid: Some("Guid2".to_string()),
                     publication_date: publication_date,
@@ -116,12 +116,12 @@ mod tests {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string()).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "atom".to_string()).unwrap();
             let publication_date = db::current_time();
             let feed_items = vec![FetchedFeedItem {
                 title: Some("FeedItem1".to_string()),
                 description: Some("Description1".to_string()),
-                link: Some("Link1".to_string()),
+                link: "Link1".to_string(),
                 author: Some("Author1".to_string()),
                 guid: Some("Guid1".to_string()),
                 publication_date: publication_date,
@@ -141,7 +141,7 @@ mod tests {
             let updated_feed_items = vec![FetchedFeedItem {
                 title: Some("FeedItem1".to_string()),
                 description: Some("Description1".to_string()),
-                link: Some("Link1".to_string()),
+                link: "Link1".to_string(),
                 author: Some("Author2".to_string()),
                 guid: Some("Guid2".to_string()),
                 publication_date: publication_date,

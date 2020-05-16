@@ -1,6 +1,8 @@
 pub mod atom;
 pub mod rss;
 
+use self::atom::AtomReader;
+use self::rss::RssReader;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug)]
@@ -12,7 +14,7 @@ pub struct FeedReaderError {
 pub struct FetchedFeedItem {
     pub title: Option<String>,
     pub description: Option<String>,
-    pub link: Option<String>,
+    pub link: String,
     pub author: Option<String>,
     pub guid: Option<String>,
     pub publication_date: DateTime<Utc>,
@@ -23,6 +25,7 @@ pub struct FetchedFeed {
     pub title: String,
     pub link: String,
     pub description: String,
+    pub feed_type: String,
     pub items: Vec<FetchedFeedItem>,
 }
 
@@ -44,6 +47,27 @@ pub fn read_url(url: &str) -> Result<String, FeedReaderError> {
             let msg = format!("{:?}", error);
 
             Err(FeedReaderError { msg })
+        }
+    }
+}
+
+pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
+    let rss_reader = RssReader {
+        url: url.to_string(),
+    };
+    match rss_reader.read() {
+        Ok(_) => Ok("rss".to_string()),
+        Err(_) => {
+            let atom_reader = AtomReader {
+                url: url.to_string(),
+            };
+
+            match atom_reader.read() {
+                Ok(_) => Ok("atom".to_string()),
+                Err(_) => Err(FeedReaderError {
+                    msg: "Url is not a feed".to_string(),
+                }),
+            }
         }
     }
 }

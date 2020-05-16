@@ -105,7 +105,7 @@ async fn deliver_subscription_updates(
                     "{}\n\n{}\n\n{}\n\n",
                     item.title.as_ref().unwrap_or(&"".to_string()),
                     item.publication_date,
-                    item.link.as_ref().unwrap_or(&"".to_string())
+                    item.link
                 )
             })
             .collect::<Vec<String>>();
@@ -184,7 +184,7 @@ mod tests {
             feed_id: 1,
             title: None,
             description: None,
-            link: None,
+            link: "dsd".to_string(),
             author: None,
             guid: None,
 
@@ -200,7 +200,7 @@ mod tests {
             feed_id: 1,
             title: None,
             description: None,
-            link: None,
+            link: "dsd1".to_string(),
             author: None,
             guid: None,
 

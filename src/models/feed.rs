@@ -13,4 +13,6 @@ pub struct Feed {
     pub synced_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+
+    pub feed_type: String,
 }

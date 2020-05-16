@@ -1,0 +1,1 @@
+ALTER TABLE feed_items ALTER COLUMN link DROP NOT NULL;

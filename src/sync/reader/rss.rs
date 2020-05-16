@@ -30,7 +30,7 @@ impl From<Channel> for FetchedFeed {
                 FetchedFeedItem {
                     title: item.title().map(|s| s.to_string()),
                     description: item.description().map(|s| s.to_string()),
-                    link: item.link().map(|s| s.to_string()),
+                    link: item.link().unwrap().to_string(),
                     author: item.author().map(|s| s.to_string()),
                     guid: item.guid().map(|s| s.value().to_string()),
                     publication_date: pub_date,
@@ -44,6 +44,7 @@ impl From<Channel> for FetchedFeed {
             title: channel.title().to_string(),
             link: channel.link().to_string(),
             description: channel.description().to_string(),
+            feed_type: "rss".to_string(),
             items: items,
         }
     }

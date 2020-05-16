@@ -92,9 +92,9 @@ async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error
         Err(SubscriptionError::DbError(_)) => {
             "Something went wrong with the bot's storage".to_string()
         }
-        Err(SubscriptionError::InvalidRssUrl) => "Invalid url".to_string(),
+        Err(SubscriptionError::InvalidUrl) => "Invalid url".to_string(),
         Err(SubscriptionError::RssUrlNotProvided) => "Url is not provided".to_string(),
-        Err(SubscriptionError::UrlIsNotRss) => "Url is not rss feed".to_string(),
+        Err(SubscriptionError::UrlIsNotFeed) => "Url is not a feed".to_string(),
         Err(SubscriptionError::SubscriptionAlreadyExists) => {
             "Susbscription already exists".to_string()
         }

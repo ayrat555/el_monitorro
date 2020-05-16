@@ -6,7 +6,7 @@ pub struct FeedItem {
     pub feed_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
-    pub link: Option<String>,
+    pub link: String,
     pub author: Option<String>,
     pub guid: Option<String>,
 
