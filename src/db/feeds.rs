@@ -424,6 +424,7 @@ mod tests {
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
+            title: None,
         };
         let chat = telegram::create_chat(connection, new_chat).unwrap();
 

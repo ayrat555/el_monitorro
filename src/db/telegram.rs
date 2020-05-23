@@ -206,6 +206,7 @@ mod tests {
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
+            title: None,
         };
         let updated_chat = NewTelegramChat {
             id: 42,
@@ -213,6 +214,7 @@ mod tests {
             username: Some("Username1".to_string()),
             first_name: Some("First1".to_string()),
             last_name: Some("Last1".to_string()),
+            title: None,
         };
         let connection = db::establish_connection();
 
@@ -245,6 +247,7 @@ mod tests {
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
+            title: None,
         };
 
         connection.test_transaction::<(), Error, _>(|| {
@@ -501,6 +504,7 @@ mod tests {
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
+            title: None,
         }
     }
 }
