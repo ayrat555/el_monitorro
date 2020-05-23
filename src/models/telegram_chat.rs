@@ -9,4 +9,5 @@ pub struct TelegramChat {
     pub last_name: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub title: Option<String>,
 }

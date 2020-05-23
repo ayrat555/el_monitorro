@@ -78,7 +78,7 @@ pub async fn sync_feeds() {
 
 pub async fn sync_feed(feed_id: i64) {
     match FeedSyncJob::new(feed_id).execute() {
-        Err(_error) => log::error!("Failed to process feed {}", feed_id),
+        Err(error) => log::error!("Failed to process feed {}: {:?}", feed_id, error),
         Ok(_) => (),
     }
 }

@@ -17,6 +17,7 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 pub struct NewTelegramChat {
     pub id: i64,
     pub kind: String,
+    pub title: Option<String>,
     pub username: Option<String>,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
@@ -40,6 +41,7 @@ pub fn create_chat(conn: &PgConnection, new_chat: NewTelegramChat) -> Result<Tel
             telegram_chats::username.eq(excluded(telegram_chats::username)),
             telegram_chats::first_name.eq(excluded(telegram_chats::first_name)),
             telegram_chats::last_name.eq(excluded(telegram_chats::last_name)),
+            telegram_chats::title.eq(excluded(telegram_chats::title)),
         ))
         .get_result::<TelegramChat>(conn)
 }

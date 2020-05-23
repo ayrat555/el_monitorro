@@ -35,6 +35,7 @@ table! {
         last_name -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        title -> Nullable<Text>,
     }
 }
 

@@ -15,16 +15,39 @@ static START: &str = "/start";
 
 impl From<MessageChat> for NewTelegramChat {
     fn from(message_chat: MessageChat) -> Self {
-        if let MessageChat::Private(chat) = message_chat {
-            NewTelegramChat {
+        match message_chat {
+            MessageChat::Private(chat) => NewTelegramChat {
                 id: chat.id.into(),
                 kind: "private".to_string(),
                 username: chat.username,
                 first_name: Some(chat.first_name),
                 last_name: chat.last_name,
-            }
-        } else {
-            unimplemented!()
+                title: None,
+            },
+            MessageChat::Group(chat) => NewTelegramChat {
+                id: chat.id.into(),
+                kind: "group".to_string(),
+                title: Some(chat.title),
+                username: None,
+                first_name: None,
+                last_name: None,
+            },
+            MessageChat::Supergroup(chat) => NewTelegramChat {
+                id: chat.id.into(),
+                kind: "supergroup".to_string(),
+                title: Some(chat.title),
+                username: chat.username,
+                first_name: None,
+                last_name: None,
+            },
+            MessageChat::Unknown(chat) => NewTelegramChat {
+                id: chat.id.into(),
+                kind: "unknown".to_string(),
+                title: chat.title,
+                username: chat.username,
+                first_name: chat.first_name,
+                last_name: chat.last_name,
+            },
         }
     }
 }
@@ -137,7 +160,7 @@ async fn process(api: Api, message: Message) -> Result<(), Error> {
         MessageKind::Text { ref data, .. } => {
             let command = data.as_str();
 
-            log::info!("{} wrote: {}", get_chat_id(&message), command);
+            log::info!("{:?} wrote: {}", get_chat_id(&message), command);
 
             if command.contains(SUBSCRIBE) {
                 let argument = parse_argument(command, SUBSCRIBE);
@@ -162,11 +185,7 @@ async fn process(api: Api, message: Message) -> Result<(), Error> {
 }
 
 fn get_chat_id(message: &Message) -> i64 {
-    if let MessageChat::Private(chat) = &message.chat {
-        chat.id.into()
-    } else {
-        unimplemented!()
-    }
+    message.chat.id().into()
 }
 
 fn parse_argument(full_command: &str, command: &str) -> String {
