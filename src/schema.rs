@@ -36,6 +36,7 @@ table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         title -> Nullable<Text>,
+        utc_offset_minutes -> Nullable<Int4>,
     }
 }
 

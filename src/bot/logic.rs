@@ -48,6 +48,47 @@ pub fn find_feeds_by_chat_id(db_connection: &PgConnection, chat_id: i64) -> Stri
     }
 }
 
+pub fn set_timezone(db_connection: &PgConnection, chat_id: i64, data: String) -> Result<(), &str> {
+    let offset = validate_offset(data)?;
+
+    match telegram::find_chat(db_connection, chat_id) {
+        None => Err(
+            "You'll be able to set your timezone only after you'll have at least one subscription",
+        ),
+        Some(chat) => match telegram::set_utc_offset_minutes(db_connection, &chat, offset) {
+            Ok(_) => Ok(()),
+            Err(_) => Err("Failed to set your timezone"),
+        },
+    }
+}
+
+pub fn get_timezone(db_connection: &PgConnection, chat_id: i64) -> String {
+    match telegram::find_chat(db_connection, chat_id) {
+        None => "You don't have timezone set".to_string(),
+        Some(chat) => match chat.utc_offset_minutes {
+            None => "You don't have timezone set".to_string(),
+            Some(value) => format!("Your timezone offset is {} minutes", value),
+        },
+    }
+}
+
+fn validate_offset(offset_string: String) -> Result<i32, &'static str> {
+    let offset = match offset_string.parse::<i32>() {
+        Ok(result) => result,
+        Err(_) => return Err("Passed value is not a number"),
+    };
+
+    if offset % 30 != 0 {
+        return Err("Offset must be divisible by 30");
+    }
+
+    if offset < -720 || offset > 840 {
+        return Err("Offset must be >= -720 (UTC -12) and <= 840 (UTC +14)");
+    }
+
+    Ok(offset)
+}
+
 pub fn delete_subscription(
     db_connection: &PgConnection,
     chat_id: i64,

@@ -1,6 +1,9 @@
+use crate::schema::telegram_chats;
 use chrono::{DateTime, Utc};
 
-#[derive(Queryable, Debug)]
+#[derive(Queryable, Identifiable, Debug)]
+#[table_name = "telegram_chats"]
+#[primary_key(id)]
 pub struct TelegramChat {
     pub id: i64,
     pub kind: String,
@@ -10,4 +13,5 @@ pub struct TelegramChat {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub title: Option<String>,
+    pub utc_offset_minutes: Option<i32>,
 }

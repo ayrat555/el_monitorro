@@ -3,7 +3,9 @@ use crate::db;
 use crate::db::telegram;
 use crate::models::feed_item::FeedItem;
 use crate::models::telegram_subscription::TelegramSubscription;
+use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
+
 use diesel::result::Error;
 use tokio::time;
 
@@ -98,13 +100,24 @@ async fn deliver_subscription_updates(
     }
 
     if !feed_items.is_empty() {
+        let chat = telegram::find_chat(&connection, chat_id).unwrap();
+
+        let offset = match chat.utc_offset_minutes {
+            None => FixedOffset::west(0),
+            Some(value) => {
+                if value > 0 {
+                    FixedOffset::east(value * 60)
+                } else {
+                    FixedOffset::west(value * 60)
+                }
+            }
+        };
+
         let mut messages = feed_items
             .iter()
             .map(|item| {
-                format!(
-                    "{}\n\n{}\n\n{}\n\n",
-                    item.title, item.publication_date, item.link
-                )
+                let date = item.publication_date.with_timezone(&offset);
+                format!("{}\n\n{}\n\n{}\n\n", item.title, date, item.link)
             })
             .collect::<Vec<String>>();
 

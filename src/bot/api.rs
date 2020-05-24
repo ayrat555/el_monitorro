@@ -9,6 +9,8 @@ use telegram_bot::{Api, Error, Message, MessageChat, MessageKind, UpdateKind, Us
 
 static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
+static SET_TIMEZONE: &str = "/set_timezone";
+static GET_TIMEZONE: &str = "/get_timezone";
 static UNSUBSCRIBE: &str = "/unsubscribe";
 static HELP: &str = "/help";
 static START: &str = "/start";
@@ -58,8 +60,10 @@ fn commands_string() -> String {
          {} rss_url - subscribe to rss feed\n\
          {} rss_url - unsubscribe from rss feed\n\
          {} - list your subscriptions\n\
-         {} - show available commands",
-        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP
+         {} - show available commands\n\
+         {} - set your timezone. All received dates with be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600\n\
+         {} - get your timezone\n",
+        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE
     )
 }
 
@@ -79,7 +83,7 @@ async fn start(api: Api, message: Message) -> Result<(), Error> {
                             When you subscribe to a new feed, you'll receive 10 last messages from it. After that, you'll start receiving only new feed items.\n\
                             RSS feeds updates check interval is 1 minute. Unread items delivery interval is also 1 minute.\n\
                             Currently, the number of subscriptions is limited to 20.\n\n\
-                            Contact @Ayrat555 with your feedback, suggestions, found bugs, etc",
+                            Contact @Ayrat555 with your feedback, suggestions, found bugs, etc. The bot is open source. You can find it at https://github.com/ayrat555/el_monitorro",
         commands_string()
     );
 
@@ -155,6 +159,27 @@ async fn list_subscriptions(api: Api, message: Message) -> Result<(), Error> {
     Ok(())
 }
 
+async fn set_timezone(api: Api, message: Message, data: String) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+
+    let response = match logic::set_timezone(&db::establish_connection(), chat_id, data) {
+        Ok(_) => "Your timezone was updated".to_string(),
+        Err(err_string) => err_string.to_string(),
+    };
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
+async fn get_timezone(api: Api, message: Message) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+
+    let response = logic::get_timezone(&db::establish_connection(), chat_id);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
 async fn process(api: Api, message: Message) -> Result<(), Error> {
     match message.kind {
         MessageKind::Text { ref data, .. } => {
@@ -174,6 +199,11 @@ async fn process(api: Api, message: Message) -> Result<(), Error> {
                 tokio::spawn(help(api, message));
             } else if command.contains(START) {
                 tokio::spawn(start(api, message));
+            } else if command.contains(SET_TIMEZONE) {
+                let argument = parse_argument(command, SET_TIMEZONE);
+                tokio::spawn(set_timezone(api, message, argument));
+            } else if command.contains(GET_TIMEZONE) {
+                tokio::spawn(get_timezone(api, message));
             } else {
                 tokio::spawn(unknown_command(api, message));
             }

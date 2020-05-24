@@ -56,6 +56,16 @@ pub fn find_chat(conn: &PgConnection, chat_id: i64) -> Option<TelegramChat> {
     }
 }
 
+pub fn set_utc_offset_minutes(
+    conn: &PgConnection,
+    chat: &TelegramChat,
+    offset: i32,
+) -> Result<TelegramChat, Error> {
+    diesel::update(chat)
+        .set(telegram_chats::utc_offset_minutes.eq(offset))
+        .get_result::<TelegramChat>(conn)
+}
+
 pub fn create_subscription(
     conn: &PgConnection,
     subscription: NewTelegramSubscription,
@@ -492,6 +502,25 @@ mod tests {
             assert_eq!(result, 1);
 
             assert!(super::find_chat(&connection, chat.id).is_none());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn set_utc_offset_minutes_sets_offset() {
+        let connection = db::establish_connection();
+
+        let new_chat = build_new_chat();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            assert!(super::find_chat(&connection, chat.id).is_some());
+
+            let result = super::set_utc_offset_minutes(&connection, &chat, 180).unwrap();
+
+            assert_eq!(result.utc_offset_minutes.unwrap(), 180);
 
             Ok(())
         });
