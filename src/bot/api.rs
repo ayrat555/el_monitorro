@@ -61,7 +61,7 @@ fn commands_string() -> String {
          {} rss_url - unsubscribe from rss feed\n\
          {} - list your subscriptions\n\
          {} - show available commands\n\
-         {} - set your timezone. All received dates with be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600\n\
+         {} - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600\n\
          {} - get your timezone\n",
         START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE
     )
