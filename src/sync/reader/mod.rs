@@ -1,4 +1,5 @@
 use self::atom::AtomReader;
+use self::json::JsonReader;
 use self::rss::RssReader;
 use crate::isahc::ResponseExt;
 use chrono::{DateTime, Utc};
@@ -58,19 +59,27 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
         url: url.to_string(),
     };
 
-    match rss_reader.read() {
-        Ok(_) => Ok("rss".to_string()),
-        Err(_) => {
-            let atom_reader = AtomReader {
-                url: url.to_string(),
-            };
-
-            match atom_reader.read() {
-                Ok(_) => Ok("atom".to_string()),
-                Err(_) => Err(FeedReaderError {
-                    msg: "Url is not a feed".to_string(),
-                }),
-            }
-        }
+    if let Ok(_) = rss_reader.read() {
+        return Ok("rss".to_string());
     }
+
+    let atom_reader = AtomReader {
+        url: url.to_string(),
+    };
+
+    if let Ok(_) = atom_reader.read() {
+        return Ok("atom".to_string());
+    }
+
+    let json_reader = JsonReader {
+        url: url.to_string(),
+    };
+
+    if let Ok(_) = json_reader.read() {
+        return Ok("json".to_string());
+    }
+
+    Err(FeedReaderError {
+        msg: "Url is not a feed".to_string(),
+    })
 }

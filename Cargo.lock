@@ -305,6 +305,7 @@ dependencies = [
  "isahc",
  "log 0.4.8",
  "rss",
+ "serde_json",
  "telegram-bot",
  "tokio",
  "url",

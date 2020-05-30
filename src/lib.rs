@@ -11,6 +11,7 @@ extern crate feed_rs;
 extern crate futures;
 extern crate isahc;
 extern crate rss;
+extern crate serde_json;
 extern crate telegram_bot;
 extern crate tokio;
 extern crate url;
