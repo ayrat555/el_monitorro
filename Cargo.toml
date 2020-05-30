@@ -14,6 +14,7 @@ env_logger = "0.7.1"
 failure = "0.1"
 log = "0.4.0"
 rss = { version = "1.0" }
+feed-rs = "0.2.0"
 isahc = { version = "0.9", features = ["text-decoding"]}
 atom_syndication = "0.9"
 telegram-bot = "0.7"

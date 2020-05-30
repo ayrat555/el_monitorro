@@ -1,0 +1,73 @@
+{
+  "version": "https://jsonfeed.org/version/1",
+  "title": "World",
+  "home_page_url": "https://www.npr.org/sections/world/?utm_medium=JSONFeed&utm_campaign=world",
+  "feed_url": "https://feeds.npr.org/1004/feed.json",
+  "description": "NPR world news, international art and culture, world business and financial markets, world economy, and global trends in health, science and technology. Subscribe to the World Story of the Day podcast and RSS feed.",
+  "icon": "https://media.npr.org/images/stations/nprone_logos/npr.png",
+  "author": {
+    "name": "NPR",
+    "url": "https://www.npr.org?utm_medium=JSONFeed&utm_campaign=world",
+    "avatar": "https://media.npr.org/images/stations/nprone_logos/npr.png"
+  },
+  "items": [
+    {
+      "id": "865816855",
+      "url": "https://www.npr.org/sections/goatsandsoda/2020/05/29/865816855/trump-says-u-s-will-withdraw-from-who-does-he-have-the-authority-to-do-it?utm_medium=JSONFeed&utm_campaign=world",
+      "title": "Trump Says U.S. Will Withdraw From WHO. Does He Have The Authority To Do It?",
+      "content_html": "<p>In a press conference on Friday, the president said he would immediately sever ties — and funding — to the World Health Organization because of its relationship with China.</p><img src='https://media.npr.org/include/images/tracking/npr-rss-pixel.png?story=865816855' />",
+      "summary": "In a press conference on Friday, the president said he would immediately sever ties — and funding — to the World Health Organization because of its relationship with China.",
+      "image": "https://media.npr.org/assets/img/2020/05/29/gettyimages-1232870183_custom-430f7a926ecdc0e0c64e62a49c106a89ea23f201.jpg",
+      "date_published": "2020-05-29T19:30:03-04:00",
+      "date_modified": "2020-05-30T06:39:00-04:00",
+      "author": {
+        "name": "Pien Huang",
+        "url": "https://www.npr.org/people/729920828/pien-huang?utm_medium=JSONFeed&utm_campaign=world",
+        "avatar": "https://media.npr.org/assets/img/2019/06/14/wany4031_vert-ba040c668a70876e5e6ba6005a9b0ee53794408c.jpg"
+      },
+      "tags": [
+        "COVID-19",
+        "President Trump",
+        "pandemic",
+        "coronavirus",
+        "World Health Organization",
+        "China"
+      ]
+    },
+    {
+      "id": "864892887",
+      "url": "https://www.npr.org/sections/coronavirus-live-updates/2020/05/29/864892887/france-eases-some-pandemic-restrictions-and-will-reopen-restaurants-bars-and-par?utm_medium=JSONFeed&utm_campaign=world",
+      "title": "France Eases Some Pandemic Restrictions And Will Reopen Restaurants, Bars And Parks",
+      "content_html": "<p>\"It will be so nice to be able to go lie on the grass in a park and have a picnic or to sit at a sidewalk cafe again,\" says a Paris resident. Restaurants and bars will reopen with restrictions June 2.</p><img src='https://media.npr.org/include/images/tracking/npr-rss-pixel.png?story=864892887' />",
+      "summary": "\"It will be so nice to be able to go lie on the grass in a park and have a picnic or to sit at a sidewalk cafe again,\" says a Paris resident. Restaurants and bars will reopen with restrictions June 2.",
+      "image": "https://media.npr.org/assets/img/2020/05/29/ap_20146671927879_wide-9945439e8bedade71799aa4d6c2625a60632a164.jpg",
+      "date_published": "2020-05-29T16:00:34-04:00",
+      "author": {
+        "name": "Eleanor Beardsley",
+        "url": "https://www.npr.org/people/17796129/eleanor-beardsley?utm_medium=JSONFeed&utm_campaign=world",
+        "avatar": "https://media.npr.org/documents/about/people/bios/biophotos/EBeardsley_custom-7430afe6ac5463f4cb34465b1d9a44878726a3bd.jpg"
+      },
+      "tags": [
+        "coronavirus",
+        "France"
+      ]
+    },
+    {
+      "id": "865044503",
+      "url": "https://www.npr.org/sections/coronavirus-live-updates/2020/05/29/865044503/moscow-doubles-last-months-coronavirus-death-toll-amid-suspicions-of-undercounti?utm_medium=JSONFeed&utm_campaign=world",
+      "title": "Moscow Doubles Last Month's Coronavirus Death Toll Amid Suspicions Of Undercounting",
+      "content_html": "<p>Media reports and analysts have questioned the accuracy of Russia's mortality figures for the virus. Moscow's Health Department now says 1,561 people died in April due to the coronavirus.</p><img src='https://media.npr.org/include/images/tracking/npr-rss-pixel.png?story=865044503' />",
+      "summary": "Media reports and analysts have questioned the accuracy of Russia's mortality figures for the virus. Moscow's Health Department now says 1,561 people died in April due to the coronavirus.",
+      "image": "https://media.npr.org/assets/img/2020/05/29/ap_20134611807538-541d900b55d2af8c8f340ca6006798c607a6fde0.jpg",
+      "date_published": "2020-05-29T15:35:00-04:00",
+      "date_modified": "2020-05-29T19:00:00-04:00",
+      "author": {
+        "name": "Jason Slotkin"
+      },
+      "tags": [
+        "COVID-19",
+        "Moscow"
+      ]
+    }
+  ]
+}

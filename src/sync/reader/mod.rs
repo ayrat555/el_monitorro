@@ -4,6 +4,7 @@ use crate::isahc::ResponseExt;
 use chrono::{DateTime, Utc};
 
 pub mod atom;
+pub mod json;
 pub mod rss;
 
 #[derive(Debug)]
@@ -56,6 +57,7 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
     let rss_reader = RssReader {
         url: url.to_string(),
     };
+
     match rss_reader.read() {
         Ok(_) => Ok("rss".to_string()),
         Err(_) => {
