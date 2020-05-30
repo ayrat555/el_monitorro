@@ -2,7 +2,7 @@
 
 # el_monitorro
 
-`el_monitorro` is RSS and Atom feed reader as a Telegram bot.
+`el_monitorro` is RSS, Atom and JSON feed reader as a Telegram bot.
 
 It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 
@@ -11,15 +11,15 @@ It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 ### Commands
 
 ```
-/subscribe rss_url - subscribe to rss feed
-/unsubscribe rss_url - unsubscribe from rss feed
+/subscribe feed_url - subscribe to feed
+/unsubscribe feed_url - unsubscribe from feed
 /list_subscriptions - list your subscriptions
 /help - show available commands
 ```
 
 ### Common info
 
-- RSS Feeds updates check interval is 1 minute.
+- Feed updates check interval is 1 minute.
 - Unread items delivery interval is 1 minute.
 - The number of subscriptions is limited to 20.
 
