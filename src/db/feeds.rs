@@ -79,6 +79,12 @@ pub fn find_by_link(conn: &PgConnection, link: String) -> Option<Feed> {
     }
 }
 
+pub fn remove_feed(conn: &PgConnection, feed_id: i64) -> Result<usize, Error> {
+    let record_query = feeds::table.filter(feeds::id.eq(feed_id));
+
+    diesel::delete(record_query).execute(conn)
+}
+
 pub fn find_unsynced_feeds(
     conn: &PgConnection,
     last_updated_at: DateTime<Utc>,

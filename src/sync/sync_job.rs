@@ -1,6 +1,8 @@
+use crate::bot::api;
 use crate::db;
 use crate::db::feeds;
-use crate::sync::feed_sync_job::FeedSyncJob;
+use crate::db::telegram;
+use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
 
 use diesel::result::Error;
 use tokio::time;
@@ -78,6 +80,29 @@ pub async fn sync_feeds() {
 
 pub async fn sync_feed(feed_id: i64) {
     match FeedSyncJob::new(feed_id).execute() {
+        Err(FeedSyncError::StaleError) => {
+            log::error!("Feed can not be processed for a long time {}", feed_id);
+
+            let db_connection = db::establish_connection();
+            let feed = feeds::find(&db_connection, feed_id).unwrap();
+            let chats = telegram::find_chats_by_feed_id(&db_connection, feed_id).unwrap();
+
+            let message = format!("{} can not be processed. It was removed.", feed.link);
+
+            for chat in chats.into_iter() {
+                match api::send_message(chat.id, message.clone()).await {
+                    Ok(_) => (),
+                    Err(error) => {
+                        log::error!("Failed to send a message: {}", error);
+                    }
+                }
+            }
+
+            match feeds::remove_feed(&db_connection, feed_id) {
+                Ok(_) => log::info!("Feed was removed: {}", feed_id),
+                Err(err) => log::error!("Failed to remove feed: {} {}", feed_id, err),
+            }
+        }
         Err(error) => log::error!("Failed to process feed {}: {:?}", feed_id, error),
         Ok(_) => (),
     }

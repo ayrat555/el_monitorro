@@ -7,6 +7,8 @@ use crate::sync::reader::rss::RssReader;
 use crate::sync::reader::FeedReaderError;
 use crate::sync::reader::ReadFeed;
 use crate::sync::FetchedFeed;
+use chrono::Duration;
+use diesel::pg::PgConnection;
 use log::error;
 
 #[derive(Debug)]
@@ -20,6 +22,8 @@ pub enum FeedSyncError {
     FeedError { msg: String },
     #[fail(display = "failed to insert data: {}", msg)]
     DbError { msg: String },
+    #[fail(display = "failed to insert a feed for too long")]
+    StaleError,
 }
 
 impl FeedSyncJob {
@@ -58,9 +62,11 @@ impl FeedSyncJob {
                                 "Error: failed to update synced_at for feed with id {}: {:?}",
                                 self.feed_id, err
                             );
+
                             let error = FeedSyncError::DbError {
                                 msg: format!("Error: failed to update synced_at {:?}", err),
                             };
+
                             Err(error)
                         }
                         _ => {
@@ -70,24 +76,46 @@ impl FeedSyncJob {
                     },
                 }
             }
-            Err(err) => match feeds::set_error(&db_connection, &feed, &format!("{:?}", err)) {
-                Err(err) => {
-                    error!(
-                        "Error: failed to set a sync error to feed with id {} {:?}",
-                        self.feed_id, err
-                    );
-                    let error = FeedSyncError::DbError {
-                        msg: format!("Error: failed to set a sync error to feed {:?}", err),
-                    };
+            Err(err) => {
+                let created_at_or_last_synced_at = if feed.synced_at.is_some() {
+                    feed.synced_at.unwrap()
+                } else {
+                    feed.created_at
+                };
+
+                if db::current_time() - Duration::days(1) < created_at_or_last_synced_at {
+                    let error = set_error(&db_connection, &feed, err);
+
                     Err(error)
+                } else {
+                    Err(FeedSyncError::StaleError)
                 }
-                _ => {
-                    let error = FeedSyncError::FeedError {
-                        msg: format!("Error: failed to fetch feed items {:?}", err),
-                    };
-                    Err(error)
-                }
-            },
+            }
+        }
+    }
+}
+
+fn set_error(
+    db_connection: &PgConnection,
+    feed: &Feed,
+    sync_error: FeedReaderError,
+) -> FeedSyncError {
+    match feeds::set_error(db_connection, feed, &format!("{:?}", sync_error)) {
+        Err(err) => {
+            error!(
+                "Error: failed to set a sync error to feed with id {} {:?}",
+                feed.id, err
+            );
+            let error = FeedSyncError::DbError {
+                msg: format!("Error: failed to set a sync error to feed {:?}", err),
+            };
+            error
+        }
+        _ => {
+            let error = FeedSyncError::FeedError {
+                msg: format!("Error: failed to fetch feed items {:?}", sync_error),
+            };
+            error
         }
     }
 }
