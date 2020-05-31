@@ -57,8 +57,8 @@ impl From<MessageChat> for NewTelegramChat {
 fn commands_string() -> String {
     format!(
         "{} - show the bot's description and contact information\n\
-         {} rss_url - subscribe to rss feed\n\
-         {} rss_url - unsubscribe from rss feed\n\
+         {} url - subscribe to feed\n\
+         {} url - unsubscribe from feed\n\
          {} - list your subscriptions\n\
          {} - show available commands\n\
          {} - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600\n\
@@ -76,14 +76,15 @@ async fn help(api: Api, message: Message) -> Result<(), Error> {
 
 async fn start(api: Api, message: Message) -> Result<(), Error> {
     let response = format!(
-        "El Monitorro is RSS reader as a Telegram bot.\n\n\
-                            Available commands:\n\
-                            {}\n\n\
-                            Synchronization information.\n\
-                            When you subscribe to a new feed, you'll receive 10 last messages from it. After that, you'll start receiving only new feed items.\n\
-                            RSS feeds updates check interval is 1 minute. Unread items delivery interval is also 1 minute.\n\
-                            Currently, the number of subscriptions is limited to 20.\n\n\
-                            Contact @Ayrat555 with your feedback, suggestions, found bugs, etc. The bot is open source. You can find it at https://github.com/ayrat555/el_monitorro",
+        "El Monitorro is feed reader as a Telegram bot.\n\
+         It supports RSS, Atom and JSON feeds.\n\n\
+         Available commands:\n\
+         {}\n\n\
+         Synchronization information.\n\
+         When you subscribe to a new feed, you'll receive 10 last messages from it. After that, you'll start receiving only new feed items.\n\
+         Feed updates check interval is 1 minute. Unread items delivery interval is also 1 minute.\n\
+         Currently, the number of subscriptions is limited to 20.\n\n\
+         Contact @Ayrat555 with your feedback, suggestions, found bugs, etc. The bot is open source. You can find it at https://github.com/ayrat555/el_monitorro",
         commands_string()
     );
 

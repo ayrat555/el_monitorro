@@ -2,6 +2,7 @@ use crate::db;
 use crate::db::{feed_items, feeds};
 use crate::models::feed::Feed;
 use crate::sync::reader::atom::AtomReader;
+use crate::sync::reader::json::JsonReader;
 use crate::sync::reader::rss::RssReader;
 use crate::sync::reader::FeedReaderError;
 use crate::sync::reader::ReadFeed;
@@ -97,8 +98,13 @@ fn read_feed(feed: &Feed) -> Result<FetchedFeed, FeedReaderError> {
             url: feed.link.clone(),
         }
         .read()
-    } else {
+    } else if feed.feed_type == "atom".to_string() {
         AtomReader {
+            url: feed.link.clone(),
+        }
+        .read()
+    } else {
+        JsonReader {
             url: feed.link.clone(),
         }
         .read()
