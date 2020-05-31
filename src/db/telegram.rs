@@ -124,6 +124,19 @@ pub fn find_feeds_by_chat_id(conn: &PgConnection, chat_id: i64) -> Result<Vec<Fe
         .get_results::<Feed>(conn)
 }
 
+pub fn find_chats_by_feed_id(
+    conn: &PgConnection,
+    feed_id: i64,
+) -> Result<Vec<TelegramChat>, Error> {
+    let chat_ids = telegram_subscriptions::table
+        .filter(telegram_subscriptions::feed_id.eq(feed_id))
+        .select(telegram_subscriptions::chat_id);
+
+    telegram_chats::table
+        .filter(telegram_chats::id.eq(any(chat_ids)))
+        .get_results::<TelegramChat>(conn)
+}
+
 pub fn fetch_subscriptions(
     conn: &PgConnection,
     page: i64,
@@ -526,9 +539,54 @@ mod tests {
         });
     }
 
+    #[test]
+    fn find_chats_by_feed_id_find_chats() {
+        let connection = db::establish_connection();
+
+        let new_chat1 = build_new_chat_with_id(10);
+        let new_chat2 = build_new_chat_with_id(20);
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let chat1 = super::create_chat(&connection, new_chat1).unwrap();
+            let chat2 = super::create_chat(&connection, new_chat2).unwrap();
+
+            let new_subscription1 = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat1.id,
+            };
+
+            super::create_subscription(&connection, new_subscription1.clone()).unwrap();
+
+            let new_subscription2 = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat2.id,
+            };
+
+            super::create_subscription(&connection, new_subscription2.clone()).unwrap();
+
+            let result = super::find_chats_by_feed_id(&connection, feed.id).unwrap();
+
+            assert_eq!(result.len(), 2);
+
+            Ok(())
+        });
+    }
+
     fn build_new_chat() -> NewTelegramChat {
         NewTelegramChat {
             id: 42,
+            kind: "private".to_string(),
+            username: Some("Username".to_string()),
+            first_name: Some("First".to_string()),
+            last_name: Some("Last".to_string()),
+            title: None,
+        }
+    }
+
+    fn build_new_chat_with_id(id: i64) -> NewTelegramChat {
+        NewTelegramChat {
+            id: id,
             kind: "private".to_string(),
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),

@@ -37,7 +37,6 @@ pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, 
     diesel::update(feed)
         .set((
             feeds::error.eq(error),
-            feeds::synced_at.eq(db::current_time()),
             feeds::updated_at.eq(db::current_time()),
         ))
         .get_result::<Feed>(conn)
@@ -77,6 +76,12 @@ pub fn find_by_link(conn: &PgConnection, link: String) -> Option<Feed> {
         Ok(record) => Some(record),
         _ => None,
     }
+}
+
+pub fn remove_feed(conn: &PgConnection, feed_id: i64) -> Result<usize, Error> {
+    let record_query = feeds::table.filter(feeds::id.eq(feed_id));
+
+    diesel::delete(record_query).execute(conn)
 }
 
 pub fn find_unsynced_feeds(
@@ -278,7 +283,6 @@ mod tests {
             let updated_feed = super::set_error(&connection, &feed, error).unwrap();
 
             assert_eq!(updated_feed.error.unwrap(), error);
-            assert!(updated_feed.synced_at.is_some());
 
             Ok(())
         })

@@ -11,10 +11,13 @@ It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 ### Commands
 
 ```
-/subscribe feed_url - subscribe to feed
-/unsubscribe feed_url - unsubscribe from feed
+/start - show the bot's description and contact information
+/subscribe url - subscribe to feed
+/unsubscribe url - unsubscribe from feed
 /list_subscriptions - list your subscriptions
 /help - show available commands
+/set_timezone - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600
+/get_timezone - get your timezone
 ```
 
 ### Common info

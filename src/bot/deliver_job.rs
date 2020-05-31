@@ -83,7 +83,7 @@ async fn deliver_subscription_updates(
             Err(error) => {
                 let error_message = format!("{}", error);
 
-                log::error!("Failed to deliver updates: {}", error_message);
+                log::error!("Failed to deliver updates: {} {}", chat_id, error_message);
 
                 if error_message == BLOCKED_ERROR {
                     match telegram::remove_chat(&connection, chat_id) {
