@@ -3,7 +3,6 @@ use crate::sync::reader;
 use crate::sync::reader::{FeedReaderError, FetchedFeed, FetchedFeedItem, ReadFeed};
 use atom_syndication::Feed as AtomFeed;
 use chrono::{DateTime, FixedOffset, Utc};
-use std::str::FromStr;
 
 pub struct AtomReader {
     pub url: String,
@@ -13,7 +12,7 @@ impl ReadFeed for AtomReader {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
         let body = reader::read_url(&self.url)?;
 
-        match AtomFeed::from_str(&body) {
+        match AtomFeed::read_from(&body[..]) {
             Ok(atom_feed) => Ok(FetchedFeed::from(atom_feed)),
             Err(err) => {
                 let msg = format!("{}", err);

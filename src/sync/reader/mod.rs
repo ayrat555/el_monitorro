@@ -1,8 +1,8 @@
 use self::atom::AtomReader;
 use self::json::JsonReader;
 use self::rss::RssReader;
-use crate::isahc::ResponseExt;
 use chrono::{DateTime, Utc};
+use std::io;
 
 pub mod atom;
 pub mod json;
@@ -36,16 +36,19 @@ pub trait ReadFeed {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError>;
 }
 
-pub fn read_url(url: &str) -> Result<String, FeedReaderError> {
+pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
     match isahc::get(url) {
-        Ok(mut response) => match response.text() {
-            Ok(body) => Ok(body),
-            Err(error) => {
-                let msg = format!("{:?}", error);
+        Ok(mut response) => {
+            let mut writer: Vec<u8> = vec![];
 
-                Err(FeedReaderError { msg })
+            if let Err(err) = io::copy(response.body_mut(), &mut writer) {
+                let msg = format!("{:?}", err);
+
+                return Err(FeedReaderError { msg });
             }
-        },
+
+            Ok(writer)
+        }
         Err(error) => {
             let msg = format!("{:?}", error);
 

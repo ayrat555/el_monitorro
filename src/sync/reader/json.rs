@@ -14,7 +14,7 @@ impl ReadFeed for JsonReader {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
         let body = reader::read_url(&self.url)?;
 
-        match serde_json::from_str::<Value>(&body) {
+        match serde_json::from_slice::<Value>(&body[..]) {
             Ok(_) => (),
             Err(err) => {
                 let msg = format!("{:?}", err);
@@ -22,7 +22,7 @@ impl ReadFeed for JsonReader {
             }
         }
 
-        match parser::parse(body.as_bytes()) {
+        match parser::parse(&body[..]) {
             Ok(feed) => {
                 let mut fetched_feed = FetchedFeed::from(feed);
                 fetched_feed.link = self.url.clone();
