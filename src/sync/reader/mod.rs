@@ -1,12 +1,11 @@
-use self::atom::AtomReader;
-use self::json::JsonReader;
-use self::rss::RssReader;
+use self::fetcher::Fetcher;
 use chrono::{DateTime, Utc};
+use isahc::config::RedirectPolicy;
+use isahc::prelude::*;
 use std::io;
+use std::time::Duration;
 
-pub mod atom;
-pub mod json;
-pub mod rss;
+pub mod fetcher;
 
 #[derive(Debug)]
 pub struct FeedReaderError {
@@ -37,7 +36,20 @@ pub trait ReadFeed {
 }
 
 pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
-    match isahc::get(url) {
+    let client = match HttpClient::builder()
+        .timeout(Duration::from_secs(5))
+        .redirect_policy(RedirectPolicy::Limit(10))
+        .build()
+    {
+        Ok(cl) => cl,
+        Err(er) => {
+            let msg = format!("{:?}", er);
+
+            return Err(FeedReaderError { msg });
+        }
+    };
+
+    match client.get(url) {
         Ok(mut response) => {
             let mut writer: Vec<u8> = vec![];
 
@@ -58,15 +70,13 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
 }
 
 pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
-    let json_reader = JsonReader {
+    let json_reader = Fetcher {
         url: url.to_string(),
     };
 
     if let Ok(feed) = json_reader.read() {
         return Ok(feed.feed_type);
     }
-
-    println!("{:?}", json_reader.read());
 
     Err(FeedReaderError {
         msg: "Url is not a feed".to_string(),

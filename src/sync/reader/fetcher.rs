@@ -5,15 +5,13 @@ use chrono::{DateTime, Utc};
 use feed_rs::model::{Feed, FeedType};
 use feed_rs::parser;
 
-pub struct JsonReader {
+pub struct Fetcher {
     pub url: String,
 }
 
-impl ReadFeed for JsonReader {
+impl ReadFeed for Fetcher {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
         let body = reader::read_url(&self.url)?;
-
-        println!("{:?}", body);
 
         match parser::parse(&body[..]) {
             Ok(feed) => {
