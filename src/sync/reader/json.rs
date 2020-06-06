@@ -2,9 +2,8 @@ use crate::db;
 use crate::sync::reader;
 use crate::sync::reader::{FeedReaderError, FetchedFeed, FetchedFeedItem, ReadFeed};
 use chrono::{DateTime, Utc};
-use feed_rs::model::Feed;
+use feed_rs::model::{Feed, FeedType};
 use feed_rs::parser;
-use serde_json::Value;
 
 pub struct JsonReader {
     pub url: String,
@@ -14,13 +13,7 @@ impl ReadFeed for JsonReader {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
         let body = reader::read_url(&self.url)?;
 
-        match serde_json::from_slice::<Value>(&body[..]) {
-            Ok(_) => (),
-            Err(err) => {
-                let msg = format!("{:?}", err);
-                return Err(FeedReaderError { msg });
-            }
-        }
+        println!("{:?}", body);
 
         match parser::parse(&body[..]) {
             Ok(feed) => {
@@ -66,12 +59,20 @@ impl From<Feed> for FetchedFeed {
 
         items.dedup_by(|a, b| a.link == b.link && a.title == b.title);
 
+        let feed_type = match feed.feed_type {
+            FeedType::JSON => "json",
+            FeedType::Atom => "atom",
+            FeedType::RSS0 => "rss",
+            FeedType::RSS1 => "rss",
+            FeedType::RSS2 => "rss",
+        };
+
         FetchedFeed {
             title: feed.title.map_or_else(|| "".to_string(), |s| s.content),
             description: feed
                 .description
                 .map_or_else(|| "".to_string(), |s| s.content),
-            feed_type: "json".to_string(),
+            feed_type: feed_type.to_string(),
             link: "".to_string(),
             items: items,
         }

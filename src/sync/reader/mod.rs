@@ -58,29 +58,15 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
 }
 
 pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
-    let rss_reader = RssReader {
-        url: url.to_string(),
-    };
-
-    if let Ok(_) = rss_reader.read() {
-        return Ok("rss".to_string());
-    }
-
-    let atom_reader = AtomReader {
-        url: url.to_string(),
-    };
-
-    if let Ok(_) = atom_reader.read() {
-        return Ok("atom".to_string());
-    }
-
     let json_reader = JsonReader {
         url: url.to_string(),
     };
 
-    if let Ok(_) = json_reader.read() {
-        return Ok("json".to_string());
+    if let Ok(feed) = json_reader.read() {
+        return Ok(feed.feed_type);
     }
+
+    println!("{:?}", json_reader.read());
 
     Err(FeedReaderError {
         msg: "Url is not a feed".to_string(),
