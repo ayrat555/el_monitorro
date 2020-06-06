@@ -358,8 +358,7 @@ dependencies = [
 [[package]]
 name = "feed-rs"
 version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "285c21fd7c2ff96625b352f99120670f7bc5f4327a7262d7dda31d2a473ed4b9"
+source = "git+https://github.com/feed-rs/feed-rs?rev=db26dffbb812def2788c77500544d1b369381ccb#db26dffbb812def2788c77500544d1b369381ccb"
 dependencies = [
  "chrono",
  "lazy_static",

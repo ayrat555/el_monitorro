@@ -1,9 +1,7 @@
 use crate::db;
 use crate::db::{feed_items, feeds};
 use crate::models::feed::Feed;
-use crate::sync::reader::atom::AtomReader;
-use crate::sync::reader::json::JsonReader;
-use crate::sync::reader::rss::RssReader;
+use crate::sync::reader::fetcher::Fetcher;
 use crate::sync::reader::FeedReaderError;
 use crate::sync::reader::ReadFeed;
 use crate::sync::FetchedFeed;
@@ -121,22 +119,10 @@ fn set_error(
 }
 
 fn read_feed(feed: &Feed) -> Result<FetchedFeed, FeedReaderError> {
-    if feed.feed_type == "rss".to_string() {
-        RssReader {
-            url: feed.link.clone(),
-        }
-        .read()
-    } else if feed.feed_type == "atom".to_string() {
-        AtomReader {
-            url: feed.link.clone(),
-        }
-        .read()
-    } else {
-        JsonReader {
-            url: feed.link.clone(),
-        }
-        .read()
+    Fetcher {
+        url: feed.link.clone(),
     }
+    .read()
 }
 
 #[cfg(test)]
