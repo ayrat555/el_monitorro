@@ -16,6 +16,8 @@ pub struct DeliverJobError {
 }
 
 static BLOCKED_ERROR: &str = "Forbidden: bot was blocked by the user";
+static CHAT_NOT_FOUND: &str = "Bad Request: chat not found";
+static KICKED_ERROR: &str = "Forbidden: bot was kicked from the supergroup chat";
 
 impl From<Error> for DeliverJobError {
     fn from(error: Error) -> Self {
@@ -85,7 +87,7 @@ async fn deliver_subscription_updates(
 
                 log::error!("Failed to deliver updates: {} {}", chat_id, error_message);
 
-                if error_message == BLOCKED_ERROR {
+                if bot_blocked(&error_message) {
                     match telegram::remove_chat(&connection, chat_id) {
                         Ok(_) => log::info!("Successfully removed chat {}", chat_id),
                         Err(error) => log::error!("Failed to remove a chat {}", error),
@@ -131,7 +133,7 @@ async fn deliver_subscription_updates(
 
                     log::error!("Failed to deliver updates: {}", error_message);
 
-                    if error_message == BLOCKED_ERROR {
+                    if bot_blocked(&error_message) {
                         match telegram::remove_chat(&connection, chat_id) {
                             Ok(_) => log::info!("Successfully removed chat {}", chat_id),
                             Err(error) => log::error!("Failed to remove a chat {}", error),
@@ -172,6 +174,12 @@ pub async fn deliver_updates() {
             Ok(_) => (),
         }
     }
+}
+
+fn bot_blocked(error_message: &str) -> bool {
+    error_message == BLOCKED_ERROR
+        || error_message == CHAT_NOT_FOUND
+        || error_message == KICKED_ERROR
 }
 
 fn get_max_publication_date(items: Vec<FeedItem>) -> DateTime<Utc> {
