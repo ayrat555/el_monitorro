@@ -38,9 +38,7 @@ impl From<Feed> for FetchedFeed {
                 let pub_date: DateTime<Utc> = parse_time(item.published);
                 FetchedFeedItem {
                     title: item.title.map_or_else(|| "".to_string(), |s| s.content),
-                    description: item
-                        .content
-                        .map(|s| s.body.map_or_else(|| "".to_string(), |s| s.to_string())),
+                    description: item.summary.map(|s| s.content),
                     link: item.links.first().unwrap().href.clone(),
                     author: Some(
                         item.authors
