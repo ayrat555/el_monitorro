@@ -38,6 +38,7 @@ pub trait ReadFeed {
 pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
     let client = match HttpClient::builder()
         .timeout(Duration::from_secs(5))
+        .default_header("User-Agent", "el_monitorro/0.1.0")
         .redirect_policy(RedirectPolicy::Limit(10))
         .build()
     {
