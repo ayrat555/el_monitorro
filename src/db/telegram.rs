@@ -21,6 +21,7 @@ pub struct NewTelegramChat {
     pub username: Option<String>,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
+    pub invite_link: Option<String>,
 }
 
 #[derive(Insertable, Clone, Copy)]
@@ -42,6 +43,7 @@ pub fn create_chat(conn: &PgConnection, new_chat: NewTelegramChat) -> Result<Tel
             telegram_chats::first_name.eq(excluded(telegram_chats::first_name)),
             telegram_chats::last_name.eq(excluded(telegram_chats::last_name)),
             telegram_chats::title.eq(excluded(telegram_chats::title)),
+            telegram_chats::invite_link.eq(excluded(telegram_chats::invite_link)),
         ))
         .get_result::<TelegramChat>(conn)
 }
@@ -230,6 +232,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         };
         let updated_chat = NewTelegramChat {
             id: 42,
@@ -238,6 +241,7 @@ mod tests {
             first_name: Some("First1".to_string()),
             last_name: Some("Last1".to_string()),
             title: None,
+            invite_link: None,
         };
         let connection = db::establish_connection();
 
@@ -271,6 +275,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         };
 
         connection.test_transaction::<(), Error, _>(|| {
@@ -581,6 +586,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         }
     }
 
@@ -592,6 +598,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         }
     }
 }

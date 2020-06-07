@@ -202,6 +202,7 @@ mod tests {
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
+            invite_link: None,
             title: None,
         };
 
@@ -230,6 +231,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
@@ -251,6 +253,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
@@ -275,6 +278,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
@@ -313,6 +317,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
@@ -356,6 +361,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {

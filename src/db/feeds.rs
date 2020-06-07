@@ -432,6 +432,7 @@ mod tests {
             first_name: Some("First".to_string()),
             last_name: Some("Last".to_string()),
             title: None,
+            invite_link: None,
         };
         let chat = telegram::create_chat(connection, new_chat).unwrap();
 

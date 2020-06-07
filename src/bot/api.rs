@@ -25,6 +25,7 @@ impl From<MessageChat> for NewTelegramChat {
                 first_name: Some(chat.first_name),
                 last_name: chat.last_name,
                 title: None,
+                invite_link: None,
             },
             MessageChat::Group(chat) => NewTelegramChat {
                 id: chat.id.into(),
@@ -33,6 +34,7 @@ impl From<MessageChat> for NewTelegramChat {
                 username: None,
                 first_name: None,
                 last_name: None,
+                invite_link: chat.invite_link,
             },
             MessageChat::Supergroup(chat) => NewTelegramChat {
                 id: chat.id.into(),
@@ -41,6 +43,7 @@ impl From<MessageChat> for NewTelegramChat {
                 username: chat.username,
                 first_name: None,
                 last_name: None,
+                invite_link: chat.invite_link,
             },
             MessageChat::Unknown(chat) => NewTelegramChat {
                 id: chat.id.into(),
@@ -49,6 +52,7 @@ impl From<MessageChat> for NewTelegramChat {
                 username: chat.username,
                 first_name: chat.first_name,
                 last_name: chat.last_name,
+                invite_link: chat.invite_link,
             },
         }
     }
