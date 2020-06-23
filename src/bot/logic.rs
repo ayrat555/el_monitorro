@@ -209,7 +209,7 @@ mod tests {
             let subscription = super::create_subscription(
                 &db_connection,
                 new_chat,
-                Some("http://feeds.reuters.com/reuters/technologyNews".to_string()),
+                Some("https://feeds.npr.org/1004/feed.json".to_string()),
             )
             .unwrap();
 
@@ -281,7 +281,7 @@ mod tests {
             let subscription = super::create_subscription(
                 &db_connection,
                 new_chat.clone(),
-                Some("http://feeds.reuters.com/reuters/technologyNews".to_string()),
+                Some("https://feeds.npr.org/1004/feed.json".to_string()),
             )
             .unwrap();
 
@@ -291,7 +291,7 @@ mod tests {
             let result = super::create_subscription(
                 &db_connection,
                 new_chat,
-                Some("http://feeds.reuters.com/reuters/technologyNews".to_string()),
+                Some("https://feeds.npr.org/1004/feed.json".to_string()),
             );
             assert_eq!(
                 result.err(),

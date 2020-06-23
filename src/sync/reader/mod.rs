@@ -2,7 +2,6 @@ use self::fetcher::Fetcher;
 use chrono::{DateTime, Utc};
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
-use std::io;
 use std::time::Duration;
 
 pub mod fetcher;
@@ -51,17 +50,14 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
     };
 
     match client.get(url) {
-        Ok(mut response) => {
-            let mut writer: Vec<u8> = vec![];
+        Ok(mut response) => match response.text() {
+            Ok(text) => Ok(text.as_bytes().to_vec()),
+            Err(error) => {
+                let msg = format!("{:?}", error);
 
-            if let Err(err) = io::copy(response.body_mut(), &mut writer) {
-                let msg = format!("{:?}", err);
-
-                return Err(FeedReaderError { msg });
+                Err(FeedReaderError { msg })
             }
-
-            Ok(writer)
-        }
+        },
         Err(error) => {
             let msg = format!("{:?}", error);
 
