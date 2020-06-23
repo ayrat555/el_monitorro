@@ -110,7 +110,7 @@ async fn deliver_subscription_updates(
                 if value > 0 {
                     FixedOffset::east(value * 60)
                 } else {
-                    FixedOffset::west(value * 60)
+                    FixedOffset::west(-value * 60)
                 }
             }
         };
