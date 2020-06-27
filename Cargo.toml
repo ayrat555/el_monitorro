@@ -13,9 +13,11 @@ dotenv = "0.15.0"
 env_logger = "0.7.1"
 failure = "0.1"
 log = "0.4.0"
+rss = { version = "1.0" }
 serde_json = "1.0"
-feed-rs = { git = "https://github.com/feed-rs/feed-rs", rev = "db26dffbb812def2788c77500544d1b369381ccb" }
+feed-rs = "0.2.0"
 isahc = { version = "0.9", features = ["text-decoding"]}
+atom_syndication = "0.9"
 telegram-bot = "0.7"
 futures = "0.3"
 tokio = { version = "0.2", features = ["full"] }
