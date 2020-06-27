@@ -1,3 +1,4 @@
+use chrono::prelude::*;
 use chrono::{DateTime, Utc};
 use diesel::connection::Connection;
 use diesel::pg::PgConnection;
@@ -16,5 +17,5 @@ pub fn establish_connection() -> PgConnection {
 }
 
 pub fn current_time() -> DateTime<Utc> {
-    Utc::now()
+    Utc::now().round_subsecs(0)
 }
