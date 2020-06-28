@@ -18,6 +18,8 @@ pub struct DeliverJobError {
 static BLOCKED_ERROR: &str = "Forbidden: bot was blocked by the user";
 static CHAT_NOT_FOUND: &str = "Bad Request: chat not found";
 static KICKED_ERROR: &str = "Forbidden: bot was kicked from the supergroup chat";
+static DEACTIVATED_ERROR: &str = "Forbidden: user is deactivated";
+static CHAT_UPGRADED_ERROR: &str = "Bad Request: group chat was upgraded to a supergroup chat";
 
 impl From<Error> for DeliverJobError {
     fn from(error: Error) -> Self {
@@ -180,6 +182,8 @@ fn bot_blocked(error_message: &str) -> bool {
     error_message == BLOCKED_ERROR
         || error_message == CHAT_NOT_FOUND
         || error_message == KICKED_ERROR
+        || error_message == DEACTIVATED_ERROR
+        || error_message.contains(CHAT_UPGRADED_ERROR)
 }
 
 fn get_max_publication_date(items: Vec<FeedItem>) -> DateTime<Utc> {
