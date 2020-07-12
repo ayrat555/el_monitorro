@@ -3,7 +3,7 @@ use crate::schema::feed_items;
 use crate::sync::FetchedFeedItem;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
-use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
+use diesel::{sql_query, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feed_items"]
@@ -50,6 +50,19 @@ pub fn find(conn: &PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
         Ok(record) => Some(record),
         _ => None,
     }
+}
+
+pub fn remove_old_feed_items(conn: &PgConnection, limit: i32) -> Result<usize, Error> {
+    let query = format!(
+         "delete  from feed_items using feed_items as items1 left join  (
+           select feed_id, title, link
+           from feed_items
+           order by publication_date desc
+           limit {}
+         ) as items2 on items1.feed_id = items2.feed_id and items1.title = items2.title and items1.link = items2.link
+         where items2.feed_id is null", limit);
+
+    sql_query(query).execute(conn)
 }
 
 #[cfg(test)]
@@ -151,6 +164,41 @@ mod tests {
                 super::create(&connection, feed.id, updated_feed_items.clone()).unwrap();
 
             assert!(new_result.is_empty());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn remove_old_feed_items() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed_items = vec![
+                FetchedFeedItem {
+                    title: "FeedItem1".to_string(),
+                    description: Some("Description1".to_string()),
+                    link: "Link1".to_string(),
+                    author: Some("Author1".to_string()),
+                    guid: Some("Guid1".to_string()),
+                    publication_date: db::current_time(),
+                },
+                FetchedFeedItem {
+                    title: "FeedItem2".to_string(),
+                    description: Some("Description2".to_string()),
+                    link: "Link2".to_string(),
+                    author: Some("Author2".to_string()),
+                    guid: Some("Guid2".to_string()),
+                    publication_date: db::current_time(),
+                },
+            ];
+
+            super::create(&connection, feed.id, feed_items.clone()).unwrap();
+
+            let result = super::remove_old_feed_items(&connection, 1).unwrap();
+
+            assert_eq!(result, 1);
 
             Ok(())
         });
