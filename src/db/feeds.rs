@@ -104,6 +104,17 @@ pub fn find_unsynced_feeds(
         .load::<i64>(conn)
 }
 
+pub fn delete_feeds_without_subscriptions(conn: &PgConnection) -> Result<usize, Error> {
+    let feeds_without_subscriptions = feeds::table
+        .left_join(telegram_subscriptions::table)
+        .filter(telegram_subscriptions::feed_id.is_null())
+        .select(feeds::id);
+
+    let delete_query = feeds::table.filter(feeds::id.eq_any(feeds_without_subscriptions));
+
+    diesel::delete(delete_query).execute(conn)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::db;
@@ -416,6 +427,44 @@ mod tests {
                     .unwrap();
 
             assert_eq!(found_unsynced_feeds.len(), 0);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn delete_feeds_without_subscriptions() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let link = "Link".to_string();
+            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+
+            let deleted_feeds_count =
+                super::delete_feeds_without_subscriptions(&connection).unwrap();
+
+            assert!(super::find(&connection, feed.id).is_none());
+            assert_eq!(deleted_feeds_count, 1);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn delete_feeds_without_subscriptions_doesnt_remove_feeds_with_subscriptions() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let link = "Link".to_string();
+            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+
+            create_telegram_subscription(&connection, &feed);
+
+            let deleted_feeds_count =
+                super::delete_feeds_without_subscriptions(&connection).unwrap();
+
+            assert!(super::find(&connection, feed.id).is_some());
+            assert_eq!(deleted_feeds_count, 0);
 
             Ok(())
         })
