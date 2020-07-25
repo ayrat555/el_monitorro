@@ -17,6 +17,7 @@ extern crate tokio;
 extern crate url;
 
 pub mod bot;
+pub mod cleaner;
 mod db;
 mod models;
 mod schema;
