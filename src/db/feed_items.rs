@@ -3,7 +3,7 @@ use crate::schema::feed_items;
 use crate::sync::FetchedFeedItem;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
-use diesel::{sql_query, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
+use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feed_items"]
@@ -52,17 +52,33 @@ pub fn find(conn: &PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
     }
 }
 
-pub fn remove_old_feed_items(conn: &PgConnection, limit: i32) -> Result<usize, Error> {
-    let query = format!(
-         "delete  from feed_items using feed_items as items1 left join  (
-           select feed_id, title, link
-           from feed_items
-           order by publication_date desc
-           limit {}
-         ) as items2 on items1.feed_id = items2.feed_id and items1.title = items2.title and items1.link = items2.link
-         where items2.feed_id is null", limit);
+pub fn delete_old_feed_items(
+    conn: &PgConnection,
+    feed_id: i64,
+    offset: i64,
+) -> Result<usize, Error> {
+    let publication_date_result = feed_items::table
+        .filter(feed_items::feed_id.eq(feed_id))
+        .order(feed_items::publication_date.desc())
+        .offset(offset)
+        .limit(1)
+        .select(feed_items::publication_date)
+        .load::<DateTime<Utc>>(conn);
 
-    sql_query(query).execute(conn)
+    eprintln!("{:?}", publication_date_result);
+
+    match publication_date_result {
+        Ok(pulication_dates) => {
+            let publication_date = pulication_dates[0];
+
+            let delete_query = feed_items::table
+                .filter(feed_items::feed_id.eq(feed_id))
+                .filter(feed_items::publication_date.le(publication_date));
+
+            diesel::delete(delete_query).execute(conn)
+        }
+        Err(error) => Err(error),
+    }
 }
 
 #[cfg(test)]
@@ -70,6 +86,7 @@ mod tests {
     use crate::db;
     use crate::db::feeds;
     use crate::sync::FetchedFeedItem;
+    use chrono::Duration;
     use diesel::connection::Connection;
     use diesel::result::Error;
 
@@ -170,7 +187,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_old_feed_items() {
+    fn delete_old_feed_items() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
@@ -190,15 +207,18 @@ mod tests {
                     link: "Link2".to_string(),
                     author: Some("Author2".to_string()),
                     guid: Some("Guid2".to_string()),
-                    publication_date: db::current_time(),
+                    publication_date: db::current_time() - Duration::days(1),
                 },
             ];
 
             super::create(&connection, feed.id, feed_items.clone()).unwrap();
 
-            let result = super::remove_old_feed_items(&connection, 1).unwrap();
-
+            let result = super::delete_old_feed_items(&connection, feed.id, 1).unwrap();
             assert_eq!(result, 1);
+
+            let found_feed_items = super::find(&connection, feed.id).unwrap();
+            assert_eq!(found_feed_items.len(), 1);
+            assert_eq!(found_feed_items[0].guid, Some("Guid1".to_string()));
 
             Ok(())
         });
