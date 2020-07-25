@@ -104,6 +104,17 @@ pub fn find_unsynced_feeds(
         .load::<i64>(conn)
 }
 
+pub fn load_feed_ids(conn: &PgConnection, page: i64, count: i64) -> Result<Vec<i64>, Error> {
+    let offset = (page - 1) * count;
+
+    feeds::table
+        .select(feeds::id)
+        .order(feeds::id)
+        .limit(count)
+        .offset(offset)
+        .load::<i64>(conn)
+}
+
 pub fn delete_feeds_without_subscriptions(conn: &PgConnection) -> Result<usize, Error> {
     let feeds_without_subscriptions = feeds::table
         .left_join(telegram_subscriptions::table)
