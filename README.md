@@ -63,3 +63,9 @@ RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin sync
 ```
 RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin deliver
 ```
+
+- If you don't want to store all feed items that were synced and feeds without any subscriptions, start the cleaner binary
+
+```
+RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin cleaner
+```
