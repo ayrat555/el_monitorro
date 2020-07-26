@@ -86,7 +86,7 @@ fn delete_feeds_without_subscriptions(conn: &PgConnection) {
 }
 
 pub async fn clean() {
-    let mut interval = time::interval(std::time::Duration::from_secs(60));
+    let mut interval = time::interval(std::time::Duration::from_secs(60 * 60 * 12));
     loop {
         interval.tick().await;
         clean_feeds();

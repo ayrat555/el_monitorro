@@ -65,8 +65,6 @@ pub fn delete_old_feed_items(
         .select(feed_items::publication_date)
         .load::<DateTime<Utc>>(conn);
 
-    eprintln!("{:?}", publication_date_result);
-
     match publication_date_result {
         Ok(publication_dates) => {
             if publication_dates.len() > 0 {
