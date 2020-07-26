@@ -1,5 +1,6 @@
 use crate::bot::api;
 use crate::db;
+use crate::db::feeds;
 use crate::db::telegram;
 use crate::models::feed_item::FeedItem;
 use crate::models::telegram_subscription::TelegramSubscription;
@@ -118,11 +119,35 @@ async fn deliver_subscription_updates(
             }
         };
 
+        let feed = feeds::find(&connection, subscription.feed_id).unwrap();
+        let feed_title = match feed.title {
+            Some(title) => {
+                let mut feed_title = title.clone();
+                if feed_title.len() > 50 {
+                    feed_title.truncate(50);
+                    feed_title.push_str("...");
+                };
+                Some(feed_title)
+            }
+            None => None,
+        };
+
         let mut messages = feed_items
             .iter()
             .map(|item| {
                 let date = item.publication_date.with_timezone(&offset);
-                format!("{}\n\n{}\n\n{}\n\n", item.title, date, item.link)
+
+                if feed_title.is_some() {
+                    format!(
+                        "{}\n\n{}\n\n{}\n\n{}\n\n",
+                        feed_title.clone().unwrap(),
+                        item.title,
+                        date,
+                        item.link
+                    )
+                } else {
+                    format!("{}\n\n{}\n\n{}\n\n", item.title, date, item.link)
+                }
             })
             .collect::<Vec<String>>();
 
