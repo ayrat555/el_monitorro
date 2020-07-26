@@ -32,8 +32,6 @@ impl FeedSyncJob {
     }
 
     pub fn execute(&self) -> Result<(), FeedSyncError> {
-        log::info!("Started processing a feed with id {}", self.feed_id);
-
         let db_connection = db::establish_connection();
         let feed = feeds::find(&db_connection, self.feed_id).unwrap();
 
