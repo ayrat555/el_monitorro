@@ -59,7 +59,7 @@ impl CleanJob {
 pub async fn remove_old_feed_items(feed_id: i64) {
     let db_connection = db::establish_connection();
 
-    match feed_items::delete_old_feed_items(&db_connection, feed_id, 20) {
+    match feed_items::delete_old_feed_items(&db_connection, feed_id, 30) {
         Err(error) => log::error!(
             "Failed to delete old feed items for {}: {:?}",
             feed_id,
