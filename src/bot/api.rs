@@ -5,7 +5,9 @@ use crate::db::telegram::NewTelegramChat;
 use futures::StreamExt;
 use std::env;
 use telegram_bot::prelude::*;
-use telegram_bot::{Api, Error, Message, MessageChat, MessageKind, UpdateKind, UserId};
+use telegram_bot::{
+    Api, ChannelPost, Error, Message, MessageChat, MessageKind, UpdateKind, UserId,
+};
 
 static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
@@ -215,6 +217,40 @@ async fn process(api: Api, message: Message) -> Result<(), Error> {
     Ok(())
 }
 
+async fn process_channel_post(api: Api, post: ChannelPost) {
+    match message.kind {
+        MessageKind::Text { ref data, .. } => {
+            let command = data.as_str();
+
+            log::info!("{:?} wrote: {}", get_chat_id(&message), command);
+
+            if command.contains(SUBSCRIBE) {
+                let argument = parse_argument(command, SUBSCRIBE);
+                tokio::spawn(subscribe(api, message, argument));
+            } else if command.contains(LIST_SUBSCRIPTIONS) {
+                tokio::spawn(list_subscriptions(api, message));
+            } else if command.contains(UNSUBSCRIBE) {
+                let argument = parse_argument(command, UNSUBSCRIBE);
+                tokio::spawn(unsubscribe(api, message, argument));
+            } else if command.contains(HELP) {
+                tokio::spawn(help(api, message));
+            } else if command.contains(START) {
+                tokio::spawn(start(api, message));
+            } else if command.contains(SET_TIMEZONE) {
+                let argument = parse_argument(command, SET_TIMEZONE);
+                tokio::spawn(set_timezone(api, message, argument));
+            } else if command.contains(GET_TIMEZONE) {
+                tokio::spawn(get_timezone(api, message));
+            } else {
+                tokio::spawn(unknown_command(api, message));
+            }
+        }
+        _ => (),
+    };
+
+    Ok(())
+}
+
 fn get_chat_id(message: &Message) -> i64 {
     message.chat.id().into()
 }
@@ -233,8 +269,14 @@ pub async fn start_bot() -> Result<(), Error> {
 
     while let Some(update) = stream.next().await {
         let update = update?;
-        if let UpdateKind::Message(message) = update.kind {
-            tokio::spawn(process(api.clone(), message));
+        match update.kind {
+            UpdateKind::Message(message) => {
+                tokio::spawn(process(api.clone(), message));
+            }
+            UpdateKind::ChannelPost(message) => {
+                tokio::spawn(process_channel_post(api.clone(), message));
+            }
+            _ => (),
         }
     }
 
