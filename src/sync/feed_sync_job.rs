@@ -69,10 +69,7 @@ impl FeedSyncJob {
 
                             Err(error)
                         }
-                        _ => {
-                            log::info!("Successfully processed feed with id {}", self.feed_id);
-                            Ok(())
-                        }
+                        _ => Ok(()),
                     },
                 }
             }
