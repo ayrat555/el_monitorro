@@ -122,11 +122,8 @@ async fn deliver_subscription_updates(
         let feed = feeds::find(&connection, subscription.feed_id).unwrap();
         let feed_title = match feed.title {
             Some(title) => {
-                let mut feed_title = title.clone();
-                if feed_title.len() > 50 {
-                    feed_title.truncate(50);
-                    feed_title.push_str("...");
-                };
+                let feed_title = truncate(&title, 50);
+
                 Some(feed_title)
             }
             None => None,
@@ -191,6 +188,19 @@ async fn deliver_subscription_updates(
     }
 
     Ok(())
+}
+
+fn truncate(s: &str, max_chars: usize) -> String {
+    match s.char_indices().nth(max_chars) {
+        None => String::from(s),
+        Some((idx, _)) => {
+            let mut string = String::from(&s[..idx]);
+
+            string.push_str("...");
+
+            string
+        }
+    }
 }
 
 pub async fn deliver_updates() {
