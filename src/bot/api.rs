@@ -206,6 +206,8 @@ fn process_message(api: Api, orig_message: Message) {
             let command = data.clone();
             let message = MessageOrChannelPost::Message(orig_message.clone());
 
+            log::info!("{:?} wrote: {}", get_chat_id(&message), command);
+
             tokio::spawn(process_message_or_channel_post(api, message, command));
         }
         _ => (),
@@ -233,7 +235,6 @@ async fn process_message_or_channel_post(
     command_string: String,
 ) -> Result<(), Error> {
     let command = &command_string;
-    log::info!("{:?} wrote: {}", get_chat_id(&message), command);
 
     if command.contains(SUBSCRIBE) {
         let argument = parse_argument(command, SUBSCRIBE);
