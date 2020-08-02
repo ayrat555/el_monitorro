@@ -5,7 +5,10 @@ use crate::db::telegram::NewTelegramChat;
 use futures::StreamExt;
 use std::env;
 use telegram_bot::prelude::*;
-use telegram_bot::{Api, Error, Message, MessageChat, MessageKind, UpdateKind, UserId};
+use telegram_bot::{
+    Api, ChannelPost, Error, Message, MessageChat, MessageKind, MessageOrChannelPost, UpdateKind,
+    UserId,
+};
 
 static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
@@ -54,6 +57,22 @@ impl From<MessageChat> for NewTelegramChat {
     }
 }
 
+impl From<MessageOrChannelPost> for NewTelegramChat {
+    fn from(message_or_post: MessageOrChannelPost) -> Self {
+        match message_or_post {
+            MessageOrChannelPost::Message(message) => message.chat.into(),
+            MessageOrChannelPost::ChannelPost(post) => NewTelegramChat {
+                id: post.chat.id.into(),
+                kind: "channel".to_string(),
+                title: Some(post.chat.title),
+                username: post.chat.username,
+                first_name: None,
+                last_name: None,
+            },
+        }
+    }
+}
+
 fn commands_string() -> String {
     format!(
         "{} - show the bot's description and contact information\n\
@@ -67,14 +86,14 @@ fn commands_string() -> String {
     )
 }
 
-async fn help(api: Api, message: Message) -> Result<(), Error> {
+async fn help(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let response = commands_string();
 
     api.send(message.text_reply(response)).await?;
     Ok(())
 }
 
-async fn start(api: Api, message: Message) -> Result<(), Error> {
+async fn start(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let response = format!(
         "El Monitorro is feed reader as a Telegram bot.\n\
          It supports RSS, Atom and JSON feeds.\n\n\
@@ -103,17 +122,17 @@ pub async fn send_message(chat_id: i64, message: String) -> Result<(), Error> {
     Ok(())
 }
 
-async fn unknown_command(api: Api, message: Message) -> Result<(), Error> {
+async fn unknown_command(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let response = "Unknown command. Use /help to show available commands".to_string();
 
     api.send(message.text_reply(response)).await?;
     Ok(())
 }
 
-async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error> {
+async fn subscribe(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let response = match logic::create_subscription(
         &db::establish_connection(),
-        message.chat.clone().into(),
+        message.clone().into(),
         Some(data.clone()),
     ) {
         Ok(_subscription) => format!("Successfully subscribed to {}", data),
@@ -136,7 +155,7 @@ async fn subscribe(api: Api, message: Message, data: String) -> Result<(), Error
     Ok(())
 }
 
-async fn unsubscribe(api: Api, message: Message, data: String) -> Result<(), Error> {
+async fn unsubscribe(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
 
     let response =
@@ -151,7 +170,7 @@ async fn unsubscribe(api: Api, message: Message, data: String) -> Result<(), Err
     Ok(())
 }
 
-async fn list_subscriptions(api: Api, message: Message) -> Result<(), Error> {
+async fn list_subscriptions(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
 
     let response = logic::find_feeds_by_chat_id(&db::establish_connection(), chat_id.into());
@@ -160,7 +179,7 @@ async fn list_subscriptions(api: Api, message: Message) -> Result<(), Error> {
     Ok(())
 }
 
-async fn set_timezone(api: Api, message: Message, data: String) -> Result<(), Error> {
+async fn set_timezone(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
 
     let response = match logic::set_timezone(&db::establish_connection(), chat_id, data) {
@@ -172,7 +191,7 @@ async fn set_timezone(api: Api, message: Message, data: String) -> Result<(), Er
     Ok(())
 }
 
-async fn get_timezone(api: Api, message: Message) -> Result<(), Error> {
+async fn get_timezone(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
 
     let response = logic::get_timezone(&db::establish_connection(), chat_id);
@@ -181,42 +200,70 @@ async fn get_timezone(api: Api, message: Message) -> Result<(), Error> {
     Ok(())
 }
 
-async fn process(api: Api, message: Message) -> Result<(), Error> {
-    match message.kind {
+fn process_message(api: Api, orig_message: Message) {
+    match orig_message.kind {
         MessageKind::Text { ref data, .. } => {
-            let command = data.as_str();
+            let command = data.clone();
+            let message = MessageOrChannelPost::Message(orig_message.clone());
 
-            log::info!("{:?} wrote: {}", get_chat_id(&message), command);
-
-            if command.contains(SUBSCRIBE) {
-                let argument = parse_argument(command, SUBSCRIBE);
-                tokio::spawn(subscribe(api, message, argument));
-            } else if command.contains(LIST_SUBSCRIPTIONS) {
-                tokio::spawn(list_subscriptions(api, message));
-            } else if command.contains(UNSUBSCRIBE) {
-                let argument = parse_argument(command, UNSUBSCRIBE);
-                tokio::spawn(unsubscribe(api, message, argument));
-            } else if command.contains(HELP) {
-                tokio::spawn(help(api, message));
-            } else if command.contains(START) {
-                tokio::spawn(start(api, message));
-            } else if command.contains(SET_TIMEZONE) {
-                let argument = parse_argument(command, SET_TIMEZONE);
-                tokio::spawn(set_timezone(api, message, argument));
-            } else if command.contains(GET_TIMEZONE) {
-                tokio::spawn(get_timezone(api, message));
-            } else {
-                tokio::spawn(unknown_command(api, message));
-            }
+            tokio::spawn(process_message_or_channel_post(api, message, command));
         }
         _ => (),
     };
+}
+
+fn process_channel_post(api: Api, post: ChannelPost) {
+    match post.kind {
+        MessageKind::Text { ref data, .. } => {
+            let command = data.clone();
+
+            tokio::spawn(process_message_or_channel_post(
+                api,
+                MessageOrChannelPost::ChannelPost(post.clone()),
+                command,
+            ));
+        }
+        _ => (),
+    };
+}
+
+async fn process_message_or_channel_post(
+    api: Api,
+    message: MessageOrChannelPost,
+    command_string: String,
+) -> Result<(), Error> {
+    let command = &command_string;
+    log::info!("{:?} wrote: {}", get_chat_id(&message), command);
+
+    if command.contains(SUBSCRIBE) {
+        let argument = parse_argument(command, SUBSCRIBE);
+        tokio::spawn(subscribe(api, message, argument));
+    } else if command.contains(LIST_SUBSCRIPTIONS) {
+        tokio::spawn(list_subscriptions(api, message));
+    } else if command.contains(UNSUBSCRIBE) {
+        let argument = parse_argument(command, UNSUBSCRIBE);
+        tokio::spawn(unsubscribe(api, message, argument));
+    } else if command.contains(HELP) {
+        tokio::spawn(help(api, message));
+    } else if command.contains(START) {
+        tokio::spawn(start(api, message));
+    } else if command.contains(SET_TIMEZONE) {
+        let argument = parse_argument(command, SET_TIMEZONE);
+        tokio::spawn(set_timezone(api, message, argument));
+    } else if command.contains(GET_TIMEZONE) {
+        tokio::spawn(get_timezone(api, message));
+    } else {
+        tokio::spawn(unknown_command(api, message));
+    }
 
     Ok(())
 }
 
-fn get_chat_id(message: &Message) -> i64 {
-    message.chat.id().into()
+fn get_chat_id(message: &MessageOrChannelPost) -> i64 {
+    match message {
+        MessageOrChannelPost::Message(message) => message.chat.id().into(),
+        MessageOrChannelPost::ChannelPost(post) => post.chat.id.into(),
+    }
 }
 
 fn parse_argument(full_command: &str, command: &str) -> String {
@@ -233,8 +280,14 @@ pub async fn start_bot() -> Result<(), Error> {
 
     while let Some(update) = stream.next().await {
         let update = update?;
-        if let UpdateKind::Message(message) = update.kind {
-            tokio::spawn(process(api.clone(), message));
+        match update.kind {
+            UpdateKind::Message(message) => {
+                process_message(api.clone(), message);
+            }
+            UpdateKind::ChannelPost(message) => {
+                process_channel_post(api.clone(), message);
+            }
+            _ => (),
         }
     }
 
