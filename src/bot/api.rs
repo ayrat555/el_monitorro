@@ -255,7 +255,9 @@ async fn process_message_or_channel_post(
     } else if command.contains(GET_TIMEZONE) {
         tokio::spawn(get_timezone(api, message));
     } else {
-        tokio::spawn(unknown_command(api, message));
+        if let MessageOrChannelPost::Message(_) = message {
+            tokio::spawn(unknown_command(api, message));
+        }
     }
 
     Ok(())
