@@ -9,6 +9,7 @@ extern crate atom_syndication;
 extern crate dotenv;
 extern crate feed_rs;
 extern crate futures;
+extern crate html2text;
 extern crate isahc;
 extern crate rss;
 extern crate serde_json;

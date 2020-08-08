@@ -6,6 +6,7 @@ use crate::models::feed_item::FeedItem;
 use crate::models::telegram_subscription::TelegramSubscription;
 use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
+use html2text::from_read;
 
 use diesel::result::Error;
 use tokio::time;
@@ -136,9 +137,9 @@ async fn deliver_subscription_updates(
 
                 if feed_title.is_some() {
                     format!(
-                        "{}\n\n{}\n\n{}\n\n{}\n\n",
-                        feed_title.clone().unwrap(),
-                        item.title,
+                        "{}\n{}\n{}\n\n{}\n\n",
+                        from_read(&feed_title.clone().unwrap().as_bytes()[..], 2000),
+                        from_read(&item.title.as_bytes()[..], 2000),
                         date,
                         item.link
                     )
