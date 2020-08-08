@@ -13,7 +13,15 @@ impl ReadFeed for AtomReader {
         let body = reader::read_url(&self.url)?;
 
         match AtomFeed::read_from(&body[..]) {
-            Ok(atom_feed) => Ok(FetchedFeed::from(atom_feed)),
+            Ok(atom_feed) => {
+                let mut feed = FetchedFeed::from(atom_feed);
+
+                if feed.link == "".to_string() {
+                    feed.link = self.url.clone();
+                }
+
+                Ok(feed)
+            }
             Err(err) => {
                 let msg = format!("{}", err);
                 Err(FeedReaderError { msg })
@@ -57,7 +65,10 @@ impl From<AtomFeed> for FetchedFeed {
 
         FetchedFeed {
             title: feed.title().to_string(),
-            link: feed.links().first().unwrap().href().to_string(),
+            link: feed
+                .links()
+                .first()
+                .map_or_else(|| "".to_string(), |s| s.href.to_string()),
             description: feed
                 .subtitle()
                 .map_or_else(|| "".to_string(), |s| s.to_string()),
