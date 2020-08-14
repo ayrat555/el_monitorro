@@ -23,6 +23,8 @@ static KICKED_ERROR: &str = "Forbidden: bot was kicked from the supergroup chat"
 static DEACTIVATED_ERROR: &str = "Forbidden: user is deactivated";
 static CHAT_UPGRADED_ERROR: &str = "Bad Request: group chat was upgraded to a supergroup chat";
 static BOT_IS_NOT_MEMBER: &str = "Forbidden: bot is not a member of the supergroup chat";
+static BOT_IS_NOT_IN_CHANNEL: &str = "Forbidden: bot is not a member of the channel chat";
+static BOT_IS_KICKED: &str = "Forbidden: bot was kicked from the channel chat";
 
 impl From<Error> for DeliverJobError {
     fn from(error: Error) -> Self {
@@ -221,6 +223,8 @@ fn bot_blocked(error_message: &str) -> bool {
         || error_message == KICKED_ERROR
         || error_message == DEACTIVATED_ERROR
         || error_message == BOT_IS_NOT_MEMBER
+        || error_message == BOT_IS_KICKED
+        || error_message == BOT_IS_NOT_IN_CHANNEL
         || error_message.contains(CHAT_UPGRADED_ERROR)
 }
 
