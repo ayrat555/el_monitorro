@@ -66,6 +66,16 @@ pub fn set_utc_offset_minutes(
         .get_result::<TelegramChat>(conn)
 }
 
+pub fn set_template(
+    conn: &PgConnection,
+    chat: &TelegramSubscription,
+    template: String,
+) -> Result<TelegramSubscription, Error> {
+    diesel::update(chat)
+        .set(telegram_subscriptions::template.eq(template))
+        .get_result::<TelegramSubscription>(conn)
+}
+
 pub fn create_subscription(
     conn: &PgConnection,
     subscription: NewTelegramSubscription,
@@ -534,6 +544,37 @@ mod tests {
             let result = super::set_utc_offset_minutes(&connection, &chat, 180).unwrap();
 
             assert_eq!(result.utc_offset_minutes.unwrap(), 180);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn set_template_sets_template() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let new_chat = build_new_chat();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            let subscription =
+                super::create_subscription(&connection, new_subscription.clone()).unwrap();
+
+            assert_eq!(subscription.template, None);
+
+            let updated_subscription =
+                super::set_template(&connection, &subscription, "my_template".to_string()).unwrap();
+
+            assert_eq!(
+                updated_subscription.template,
+                Some("my_template".to_string())
+            );
 
             Ok(())
         });
