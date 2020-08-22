@@ -14,6 +14,8 @@ static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
 static SET_TIMEZONE: &str = "/set_timezone";
 static GET_TIMEZONE: &str = "/get_timezone";
+static SET_TEMPLATE: &str = "/set_template";
+static GET_TEMPLATE: &str = "/get_template";
 static UNSUBSCRIBE: &str = "/unsubscribe";
 static HELP: &str = "/help";
 static START: &str = "/start";
@@ -185,6 +187,18 @@ async fn set_timezone(api: Api, message: MessageOrChannelPost, data: String) -> 
 
     let response = match logic::set_timezone(&db::establish_connection(), chat_id, data) {
         Ok(_) => "Your timezone was updated".to_string(),
+        Err(err_string) => err_string.to_string(),
+    };
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
+async fn set_template(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+
+    let response = match logic::set_template(&db::establish_connection(), chat_id, data) {
+        Ok(_) => "The template was updated".to_string(),
         Err(err_string) => err_string.to_string(),
     };
 

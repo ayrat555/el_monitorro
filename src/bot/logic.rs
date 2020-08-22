@@ -62,6 +62,14 @@ pub fn set_timezone(db_connection: &PgConnection, chat_id: i64, data: String) ->
     }
 }
 
+pub fn set_template(
+    _db_connection: &PgConnection,
+    _chat_id: i64,
+    _data: String,
+) -> Result<(), &str> {
+    Ok(())
+}
+
 pub fn get_timezone(db_connection: &PgConnection, chat_id: i64) -> String {
     match telegram::find_chat(db_connection, chat_id) {
         None => "You don't have timezone set".to_string(),
