@@ -198,6 +198,18 @@ fn validate_rss_url(rss_url: &str) -> Result<String, SubscriptionError> {
     }
 }
 
+fn validate_template(template: &str) -> Result<(), ()> {
+    let allowed_fields = vec![
+        "feed_name",
+        "item_name",
+        "date",
+        "feed_link",
+        "item_link",
+        "item_description",
+    ];
+    let separators = vec!["\n", "\t"];
+}
+
 fn check_if_subscription_exists(
     connection: &PgConnection,
     subscription: NewTelegramSubscription,
