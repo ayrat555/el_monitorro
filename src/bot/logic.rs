@@ -80,6 +80,34 @@ pub fn get_timezone(db_connection: &PgConnection, chat_id: i64) -> String {
     }
 }
 
+pub fn get_template(db_connection: &PgConnection, chat_id: i64, feed_url: String) -> String {
+    let not_exists_error = "Subscription does not exist".to_string();
+    let feed = match feeds::find_by_link(db_connection, feed_url) {
+        Some(feed) => feed,
+        None => return not_exists_error,
+    };
+
+    let chat = match telegram::find_chat(db_connection, chat_id) {
+        Some(chat) => chat,
+        None => return not_exists_error,
+    };
+
+    let telegram_subscription = NewTelegramSubscription {
+        chat_id: chat.id,
+        feed_id: feed.id,
+    };
+
+    let subscription = match telegram::find_subscription(db_connection, telegram_subscription) {
+        Some(subscription) => subscription,
+        None => return not_exists_error,
+    };
+
+    match subscription.template {
+        None => "You did not set a template for this subcription".to_string(),
+        Some(template) => template,
+    }
+}
+
 fn validate_offset(offset_string: String) -> Result<i32, &'static str> {
     let offset = match offset_string.parse::<i32>() {
         Ok(result) => result,

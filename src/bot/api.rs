@@ -215,6 +215,15 @@ async fn get_timezone(api: Api, message: MessageOrChannelPost) -> Result<(), Err
     Ok(())
 }
 
+async fn get_template(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+
+    let response = logic::get_template(&db::establish_connection(), chat_id, data);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
 fn process_message(api: Api, orig_message: Message) {
     match orig_message.kind {
         MessageKind::Text { ref data, .. } => {
@@ -268,6 +277,9 @@ async fn process_message_or_channel_post(
         tokio::spawn(set_timezone(api, message, argument));
     } else if command.contains(GET_TIMEZONE) {
         tokio::spawn(get_timezone(api, message));
+    } else if command.contains(GET_TEMPLATE) {
+        let argument = parse_argument(command, GET_TEMPLATE);
+        tokio::spawn(get_template(api, message, argument));
     } else {
         if let MessageOrChannelPost::Message(_) = message {
             tokio::spawn(unknown_command(api, message));
