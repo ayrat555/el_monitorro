@@ -185,7 +185,7 @@ fn format_messages(
 
     let templ = match template {
         Some(t) => t,
-        None => "{{bot_feed_name}}\n{{bot_item_name}}\n{{bot_date}}\n\n{{bot_item_link}}\n\n"
+        None => "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n"
             .to_string(),
     };
 
@@ -237,7 +237,7 @@ fn format_messages(
 }
 
 fn remove_html(string: String) -> String {
-    from_read(&string.as_bytes()[..], 2000)
+    from_read(&string.as_bytes()[..], 2000).trim().to_string()
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
@@ -364,7 +364,7 @@ mod tests {
 
         assert_eq!(
             result[0],
-            "FeedTitle\n\nTitle\n\n2020-05-13T19:59:02+00:05\n\ndsd\n\n".to_string()
+            "FeedTitle\nTitle\n2020-05-13 19:59:02 +00:05\n\ndsd\n\n".to_string()
         );
     }
 
@@ -399,7 +399,7 @@ mod tests {
 
         assert_eq!(
             result[0],
-            "FeedTitle\n\nTitle\n\n2020-05-13T19:59:02+00:05\n\ndsd\n\n".to_string()
+            "FeedTitle link 2020-05-14 05:54:02 +10:00 dsd Description Title Title".to_string()
         );
     }
 }
