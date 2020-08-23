@@ -197,10 +197,7 @@ async fn set_timezone(api: Api, message: MessageOrChannelPost, data: String) -> 
 async fn set_template(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
 
-    let response = match logic::set_template(&db::establish_connection(), chat_id, data) {
-        Ok(_) => "The template was updated".to_string(),
-        Err(err_string) => err_string.to_string(),
-    };
+    let response = logic::set_template(&db::establish_connection(), chat_id, data);
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -280,6 +277,9 @@ async fn process_message_or_channel_post(
     } else if command.contains(GET_TEMPLATE) {
         let argument = parse_argument(command, GET_TEMPLATE);
         tokio::spawn(get_template(api, message, argument));
+    } else if command.contains(SET_TEMPLATE) {
+        let argument = parse_argument(command, SET_TEMPLATE);
+        tokio::spawn(set_template(api, message, argument));
     } else {
         if let MessageOrChannelPost::Message(_) = message {
             tokio::spawn(unknown_command(api, message));

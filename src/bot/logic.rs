@@ -63,14 +63,6 @@ pub fn set_timezone(db_connection: &PgConnection, chat_id: i64, data: String) ->
     }
 }
 
-pub fn set_template(
-    _db_connection: &PgConnection,
-    _chat_id: i64,
-    _data: String,
-) -> Result<(), &str> {
-    Ok(())
-}
-
 pub fn get_timezone(db_connection: &PgConnection, chat_id: i64) -> String {
     match telegram::find_chat(db_connection, chat_id) {
         None => "You don't have timezone set".to_string(),
@@ -106,6 +98,42 @@ pub fn get_template(db_connection: &PgConnection, chat_id: i64, feed_url: String
     match subscription.template {
         None => "You did not set a template for this subcription".to_string(),
         Some(template) => template,
+    }
+}
+
+pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) -> String {
+    let not_exists_error = "Subscription does not exist".to_string();
+    let vec: Vec<&str> = params.split(' ').collect();
+
+    if vec.len() != 2 {
+        return "Wrong number of parameters".to_string();
+    }
+
+    let feed = match feeds::find_by_link(db_connection, vec[0].to_string()) {
+        Some(feed) => feed,
+        None => return not_exists_error,
+    };
+
+    let chat = match telegram::find_chat(db_connection, chat_id) {
+        Some(chat) => chat,
+        None => return not_exists_error,
+    };
+
+    let telegram_subscription = NewTelegramSubscription {
+        chat_id: chat.id,
+        feed_id: feed.id,
+    };
+
+    let subscription = match telegram::find_subscription(db_connection, telegram_subscription) {
+        Some(subscription) => subscription,
+        None => return not_exists_error,
+    };
+
+    let template = parse_template(vec[1]);
+
+    match telegram::set_template(db_connection, &subscription, template) {
+        Ok(_) => "The template was updated".to_string(),
+        Err(_) => "Failed to update the template".to_string(),
     }
 }
 
