@@ -14,12 +14,31 @@ It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 
 ```
 /start - show the bot's description and contact information
+
 /subscribe url - subscribe to feed
+
 /unsubscribe url - unsubscribe from feed
+
 /list_subscriptions - list your subscriptions
+
 /help - show available commands
+
 /set_timezone - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600
+
 /get_timezone - get your timezone
+
+/set_template url template - set a template for all received items for the specified subscription. All new updates will be converted to the format defined by this subscription. Supported fields you can use for templates:
+- bot_feed_name - name of the feed
+- bot_feed_link - url of the feed
+- bot_item_name - name of the item
+- bot_item_link - url of the item
+- bot_item_description - description of the item
+- bot_date - publication date of the feed
+- bot_space - defines a space character
+- bot_new_line - defines a new line character
+Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description.
+
+/get_template url - get a template for the subscription
 ```
 
 ### Common info

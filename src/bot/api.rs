@@ -14,6 +14,8 @@ static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
 static SET_TIMEZONE: &str = "/set_timezone";
 static GET_TIMEZONE: &str = "/get_timezone";
+static SET_TEMPLATE: &str = "/set_template";
+static GET_TEMPLATE: &str = "/get_template";
 static UNSUBSCRIBE: &str = "/unsubscribe";
 static HELP: &str = "/help";
 static START: &str = "/start";
@@ -75,14 +77,25 @@ impl From<MessageOrChannelPost> for NewTelegramChat {
 
 fn commands_string() -> String {
     format!(
-        "{} - show the bot's description and contact information\n\
-         {} url - subscribe to feed\n\
-         {} url - unsubscribe from feed\n\
-         {} - list your subscriptions\n\
-         {} - show available commands\n\
-         {} - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600\n\
-         {} - get your timezone\n",
-        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE
+        "{} - show the bot's description and contact information\n\n\
+         {} url - subscribe to feed\n\n\
+         {} url - unsubscribe from feed\n\n\
+         {} - list your subscriptions\n\n\
+         {} - show available commands\n\n\
+         {} - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600\n\n\
+         {} - get your timezone\n\n\
+         {} url template - set a template for all received items for the specified subscription. All new updates will be converted to the format defined by this subscription. Supported fields you can use for templates:\n\
+         - bot_feed_name - name of the feed\n\
+         - bot_feed_link - url of the feed\n\
+         - bot_item_name - name of the item\n\
+         - bot_item_link - url of the item\n\
+         - bot_item_description - description of the item\n\
+         - bot_date - publication date of the feed\n\
+         - bot_space - defines a space character\n\
+         - bot_new_line - defines a new line character\n\
+         Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description\n\n\
+         {} url - get a template for the subscription",
+        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE, SET_TEMPLATE, GET_TEMPLATE
     )
 }
 
@@ -192,10 +205,28 @@ async fn set_timezone(api: Api, message: MessageOrChannelPost, data: String) -> 
     Ok(())
 }
 
+async fn set_template(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+
+    let response = logic::set_template(&db::establish_connection(), chat_id, data);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
 async fn get_timezone(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
 
     let response = logic::get_timezone(&db::establish_connection(), chat_id);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
+async fn get_template(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+
+    let response = logic::get_template(&db::establish_connection(), chat_id, data);
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -254,6 +285,12 @@ async fn process_message_or_channel_post(
         tokio::spawn(set_timezone(api, message, argument));
     } else if command.contains(GET_TIMEZONE) {
         tokio::spawn(get_timezone(api, message));
+    } else if command.contains(GET_TEMPLATE) {
+        let argument = parse_argument(command, GET_TEMPLATE);
+        tokio::spawn(get_template(api, message, argument));
+    } else if command.contains(SET_TEMPLATE) {
+        let argument = parse_argument(command, SET_TEMPLATE);
+        tokio::spawn(set_template(api, message, argument));
     } else {
         if let MessageOrChannelPost::Message(_) = message {
             tokio::spawn(unknown_command(api, message));

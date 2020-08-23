@@ -4,6 +4,9 @@ use crate::db::telegram::{NewTelegramChat, NewTelegramSubscription};
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::sync::reader;
 use diesel::{Connection, PgConnection};
+use handlebars::{to_json, Handlebars};
+use regex::Regex;
+use serde_json::value::Map;
 use url::Url;
 
 #[derive(Debug, PartialEq)]
@@ -69,6 +72,91 @@ pub fn get_timezone(db_connection: &PgConnection, chat_id: i64) -> String {
             None => "You don't have timezone set".to_string(),
             Some(value) => format!("Your timezone offset is {} minutes", value),
         },
+    }
+}
+
+pub fn get_template(db_connection: &PgConnection, chat_id: i64, feed_url: String) -> String {
+    let not_exists_error = "Subscription does not exist".to_string();
+    let feed = match feeds::find_by_link(db_connection, feed_url) {
+        Some(feed) => feed,
+        None => return not_exists_error,
+    };
+
+    let chat = match telegram::find_chat(db_connection, chat_id) {
+        Some(chat) => chat,
+        None => return not_exists_error,
+    };
+
+    let telegram_subscription = NewTelegramSubscription {
+        chat_id: chat.id,
+        feed_id: feed.id,
+    };
+
+    let subscription = match telegram::find_subscription(db_connection, telegram_subscription) {
+        Some(subscription) => subscription,
+        None => return not_exists_error,
+    };
+
+    match subscription.template {
+        None => "You did not set a template for this subcription".to_string(),
+        Some(template) => template,
+    }
+}
+
+pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) -> String {
+    let not_exists_error = "Subscription does not exist".to_string();
+    let vec: Vec<&str> = params.split(' ').collect();
+
+    if vec.len() != 2 {
+        return "Wrong number of parameters".to_string();
+    }
+
+    let feed = match feeds::find_by_link(db_connection, vec[0].to_string()) {
+        Some(feed) => feed,
+        None => return not_exists_error,
+    };
+
+    let chat = match telegram::find_chat(db_connection, chat_id) {
+        Some(chat) => chat,
+        None => return not_exists_error,
+    };
+
+    let telegram_subscription = NewTelegramSubscription {
+        chat_id: chat.id,
+        feed_id: feed.id,
+    };
+
+    let subscription = match telegram::find_subscription(db_connection, telegram_subscription) {
+        Some(subscription) => subscription,
+        None => return not_exists_error,
+    };
+
+    let mut data = Map::new();
+    data.insert("bot_feed_name".to_string(), to_json("feed_name"));
+    data.insert("bot_item_name".to_string(), to_json("item_name"));
+    data.insert("bot_date".to_string(), to_json("date"));
+    data.insert("bot_feed_link".to_string(), to_json("feed_link"));
+    data.insert("bot_item_link".to_string(), to_json("item_link"));
+    data.insert(
+        "bot_item_description".to_string(),
+        to_json("item_description"),
+    );
+
+    let reg = Handlebars::new();
+    let template = parse_template(vec[1]);
+
+    let example = match reg.render_template(&template, &data) {
+        Err(_) => return "Failed to update the template".to_string(),
+        Ok(result) => result,
+    };
+
+    match telegram::set_template(db_connection, &subscription, template) {
+        Ok(_) => format!(
+            "The template was updated. Your messages will look like:\n\n{}",
+            example
+        )
+        .to_string(),
+        Err(_) => "Failed to update the template".to_string(),
     }
 }
 
@@ -160,6 +248,54 @@ fn validate_rss_url(rss_url: &str) -> Result<String, SubscriptionError> {
         },
         _ => Err(SubscriptionError::InvalidUrl),
     }
+}
+
+fn parse_template(template: &str) -> String {
+    let allowed_fields = vec![
+        "bot_feed_name",
+        "bot_item_name",
+        "bot_date",
+        "bot_feed_link",
+        "bot_item_link",
+        "bot_item_description",
+    ];
+    let separators = vec!["bot_new_line", "bot_space"];
+    let all_words = [&allowed_fields[..], &separators[..]].concat();
+    let regex_string = all_words.join("|");
+    let regex = Regex::new(&regex_string).unwrap();
+
+    let mut result = "".to_string();
+
+    for part in split_keep(&regex, template) {
+        if allowed_fields.iter().any(|&i| i == part) {
+            let new_part = format!("{{{{{}}}}}", part);
+            result.push_str(&new_part);
+        } else if part == "bot_space" {
+            result.push_str(" ");
+        } else if part == "bot_new_line" {
+            result.push_str("\n");
+        } else {
+            result.push_str(part);
+        }
+    }
+
+    result
+}
+
+fn split_keep<'a>(r: &Regex, text: &'a str) -> Vec<&'a str> {
+    let mut result = Vec::new();
+    let mut last = 0;
+    for (index, matched) in text.match_indices(r) {
+        if last != index {
+            result.push(&text[last..index]);
+        }
+        result.push(matched);
+        last = index + matched.len();
+    }
+    if last < text.len() {
+        result.push(&text[last..]);
+    }
+    result
 }
 
 fn check_if_subscription_exists(
@@ -344,6 +480,14 @@ mod tests {
 
             Ok(())
         });
+    }
+
+    #[test]
+    fn parse_template() {
+        let template = "bot_feed_namehellobot_new_linebot_datebot_space";
+        let result = super::parse_template(template);
+
+        assert_eq!(result, "{{bot_feed_name}}hello\n{{bot_date}} ".to_string());
     }
 
     #[test]

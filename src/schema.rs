@@ -47,6 +47,7 @@ table! {
         last_delivered_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        template -> Nullable<Text>,
     }
 }
 

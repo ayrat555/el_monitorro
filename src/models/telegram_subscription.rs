@@ -11,4 +11,6 @@ pub struct TelegramSubscription {
     pub last_delivered_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+
+    pub template: Option<String>,
 }

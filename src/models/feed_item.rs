@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 
-#[derive(Queryable, Debug)]
+#[derive(Queryable, Debug, Clone)]
 pub struct FeedItem {
     pub feed_id: i64,
     pub title: String,
