@@ -4,6 +4,7 @@ use crate::db::telegram::{NewTelegramChat, NewTelegramSubscription};
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::sync::reader;
 use diesel::{Connection, PgConnection};
+use regex::Regex;
 use url::Url;
 
 #[derive(Debug, PartialEq)]
@@ -198,16 +199,50 @@ fn validate_rss_url(rss_url: &str) -> Result<String, SubscriptionError> {
     }
 }
 
-fn validate_template(template: &str) -> Result<(), ()> {
+fn parse_template(template: &str) -> String {
     let allowed_fields = vec![
-        "feed_name",
-        "item_name",
-        "date",
-        "feed_link",
-        "item_link",
-        "item_description",
+        "bot_feed_name",
+        "bot_item_name",
+        "bot_date",
+        "bot_feed_link",
+        "bot_item_link",
+        "bot_item_description",
     ];
     let separators = vec!["\n", "\t"];
+    let all_words = [&allowed_fields[..], &separators[..]].concat();
+    let regex_string = all_words.join("|");
+    let regex = Regex::new(&regex_string).unwrap();
+
+    let mut result = "".to_string();
+
+    for part in split_keep(&regex, template) {
+        if allowed_fields.iter().any(|&i| i == part) {
+            let new_part = format!("{{{{{}}}}}", part);
+            result.push_str(&new_part);
+        } else if part == "\t" {
+            result.push_str(" ");
+        } else {
+            result.push_str(part);
+        }
+    }
+
+    result
+}
+
+fn split_keep<'a>(r: &Regex, text: &'a str) -> Vec<&'a str> {
+    let mut result = Vec::new();
+    let mut last = 0;
+    for (index, matched) in text.match_indices(r) {
+        if last != index {
+            result.push(&text[last..index]);
+        }
+        result.push(matched);
+        last = index + matched.len();
+    }
+    if last < text.len() {
+        result.push(&text[last..]);
+    }
+    result
 }
 
 fn check_if_subscription_exists(
@@ -392,6 +427,14 @@ mod tests {
 
             Ok(())
         });
+    }
+
+    #[test]
+    fn parse_template() {
+        let template = "bot_feed_namehello\nbot_date\t";
+        let result = super::parse_template(template);
+
+        assert_eq!(result, "{{bot_feed_name}}hello\n{{bot_date}} ".to_string());
     }
 
     #[test]

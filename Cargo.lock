@@ -315,6 +315,7 @@ dependencies = [
  "html2text",
  "isahc",
  "log 0.4.8",
+ "regex",
  "rss",
  "serde_json",
  "telegram-bot",
