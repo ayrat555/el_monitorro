@@ -2,11 +2,14 @@ use crate::bot::api;
 use crate::db;
 use crate::db::feeds;
 use crate::db::telegram;
+use crate::models::feed::Feed;
 use crate::models::feed_item::FeedItem;
 use crate::models::telegram_subscription::TelegramSubscription;
 use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
+use handlebars::{to_json, Handlebars};
 use html2text::from_read;
+use serde_json::value::Map;
 
 use diesel::result::Error;
 use tokio::time;
@@ -123,37 +126,16 @@ async fn deliver_subscription_updates(
         };
 
         let feed = feeds::find(&connection, subscription.feed_id).unwrap();
-        let feed_title = match feed.title {
-            Some(title) => {
-                let feed_title = truncate(&title, 50);
 
-                Some(feed_title)
-            }
-            None => None,
-        };
-
-        let mut messages = feed_items
-            .iter()
-            .map(|item| {
-                let date = item.publication_date.with_timezone(&offset);
-
-                if feed_title.is_some() {
-                    format!(
-                        "{}\n{}\n{}\n\n{}\n\n",
-                        from_read(&feed_title.clone().unwrap().as_bytes()[..], 2000),
-                        from_read(&item.title.as_bytes()[..], 2000),
-                        date,
-                        item.link
-                    )
-                } else {
-                    format!("{}\n\n{}\n\n{}\n\n", item.title, date, item.link)
-                }
-            })
-            .collect::<Vec<String>>();
-
+        let mut messages = format_messages(
+            subscription.template.clone(),
+            offset,
+            feed_items.clone(),
+            feed,
+        );
         messages.reverse();
 
-        for message in messages.into_iter() {
+        for message in messages {
             match api::send_message(chat_id, message).await {
                 Ok(_) => (),
                 Err(error) => {
@@ -191,6 +173,71 @@ async fn deliver_subscription_updates(
     }
 
     Ok(())
+}
+
+fn format_messages(
+    template: Option<String>,
+    date_offset: FixedOffset,
+    feed_items: Vec<FeedItem>,
+    feed: Feed,
+) -> Vec<String> {
+    let mut data = Map::new();
+
+    let templ = match template {
+        Some(t) => t,
+        None => "{{bot_feed_name}}\n{{bot_item_name}}\n{{bot_date}}\n\n{{bot_item_link}}\n\n"
+            .to_string(),
+    };
+
+    let reg = Handlebars::new();
+
+    let feed_title = match feed.title {
+        Some(title) => {
+            let feed_title = truncate(&title, 50);
+
+            feed_title
+        }
+        None => "".to_string(),
+    };
+
+    data.insert(
+        "bot_feed_name".to_string(),
+        to_json(remove_html(feed_title)),
+    );
+    data.insert("bot_feed_link".to_string(), to_json(feed.link));
+
+    feed_items
+        .iter()
+        .map(|item| {
+            let date = item.publication_date.with_timezone(&date_offset);
+
+            data.insert("bot_date".to_string(), to_json(format!("{}", date)));
+            data.insert(
+                "bot_item_name".to_string(),
+                to_json(remove_html(item.title.clone())),
+            );
+
+            data.insert("bot_item_link".to_string(), to_json(item.link.clone()));
+
+            data.insert(
+                "bot_item_description".to_string(),
+                to_json(remove_html(
+                    item.description
+                        .clone()
+                        .map_or_else(|| "".to_string(), |s| s.to_string()),
+                )),
+            );
+
+            match reg.render_template(&templ, &data) {
+                Err(_error) => "Failed to render a message".to_string(),
+                Ok(result) => result,
+            }
+        })
+        .collect::<Vec<String>>()
+}
+
+fn remove_html(string: String) -> String {
+    from_read(&string.as_bytes()[..], 2000)
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
@@ -239,7 +286,9 @@ fn get_max_publication_date(items: Vec<FeedItem>) -> DateTime<Utc> {
 #[cfg(test)]
 mod tests {
     use crate::db;
+    use crate::models::feed::Feed;
     use crate::models::feed_item::FeedItem;
+    use chrono::offset::FixedOffset;
     use chrono::{DateTime, Utc};
 
     #[test]
@@ -282,5 +331,75 @@ mod tests {
                 .into();
 
         assert!(result == expected_result);
+    }
+
+    #[test]
+    fn format_messages_uses_default_template_if_custom_template_is_missing() {
+        let feed_items = vec![FeedItem {
+            feed_id: 1,
+            title: "Title".to_string(),
+            description: Some("Description".to_string()),
+            link: "dsd".to_string(),
+            author: None,
+            guid: None,
+            publication_date: DateTime::parse_from_rfc2822("Wed, 13 May 2020 15:54:02 EDT")
+                .unwrap()
+                .into(),
+            created_at: db::current_time(),
+            updated_at: db::current_time(),
+        }];
+        let feed = Feed {
+            id: 1,
+            title: Some("FeedTitle".to_string()),
+            link: "link".to_string(),
+            error: None,
+            description: None,
+            synced_at: None,
+            created_at: db::current_time(),
+            updated_at: db::current_time(),
+            feed_type: "rss".to_string(),
+        };
+
+        let result = super::format_messages(None, FixedOffset::east(5 * 60), feed_items, feed);
+
+        assert_eq!(
+            result[0],
+            "FeedTitle\n\nTitle\n\n2020-05-13T19:59:02+00:05\n\ndsd\n\n".to_string()
+        );
+    }
+
+    #[test]
+    fn format_messages_uses_custom_template() {
+        let feed_items = vec![FeedItem {
+            feed_id: 1,
+            title: "Title".to_string(),
+            description: Some("Description".to_string()),
+            link: "dsd".to_string(),
+            author: None,
+            guid: None,
+            publication_date: DateTime::parse_from_rfc2822("Wed, 13 May 2020 15:54:02 EDT")
+                .unwrap()
+                .into(),
+            created_at: db::current_time(),
+            updated_at: db::current_time(),
+        }];
+        let feed = Feed {
+            id: 1,
+            title: Some("FeedTitle".to_string()),
+            link: "link".to_string(),
+            error: None,
+            description: None,
+            synced_at: None,
+            created_at: db::current_time(),
+            updated_at: db::current_time(),
+            feed_type: "rss".to_string(),
+        };
+
+        let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_date}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), FixedOffset::east(600 * 60), feed_items, feed);
+
+        assert_eq!(
+            result[0],
+            "FeedTitle\n\nTitle\n\n2020-05-13T19:59:02+00:05\n\ndsd\n\n".to_string()
+        );
     }
 }
