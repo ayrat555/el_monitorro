@@ -9,6 +9,7 @@ use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
 use handlebars::{to_json, Handlebars};
 use html2text::from_read;
+use htmlescape::decode_html;
 use serde_json::value::Map;
 
 use diesel::result::Error;
@@ -229,8 +230,17 @@ fn format_messages(
             );
 
             match reg.render_template(&templ, &data) {
-                Err(_error) => "Failed to render a message".to_string(),
-                Ok(result) => result,
+                Err(error) => {
+                    log::error!("Failed to render template {:?}", error);
+                    "Failed to render a message".to_string()
+                }
+                Ok(result) => match decode_html(&result) {
+                    Err(error) => {
+                        log::error!("Failed to render template {:?}", error);
+                        "Failed to render a message".to_string()
+                    }
+                    Ok(string) => string,
+                },
             }
         })
         .collect::<Vec<String>>()
@@ -364,7 +374,7 @@ mod tests {
 
         assert_eq!(
             result[0],
-            "FeedTitle\nTitle\n2020-05-13 19:59:02 +00:05\n\ndsd\n\n".to_string()
+            "FeedTitle\n\nTitle\n\n2020-05-13 19:59:02 +00:05\n\ndsd\n\n".to_string()
         );
     }
 

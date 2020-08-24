@@ -25,3 +25,4 @@ tokio = { version = "0.2", features = ["full"] }
 url = "2.1"
 regex = { version = "1", features = ["pattern"] }
 handlebars = "3.4"
+htmlescape = "0.3"
