@@ -131,6 +131,57 @@ pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) 
         None => return not_exists_error,
     };
 
+    match parse_template_and_send_example(vec[1].to_string()) {
+        Ok((template, example)) => {
+            match telegram::set_template(db_connection, &subscription, template) {
+                Ok(_) => format!(
+                    "The template was updated. Your messages will look like:\n\n{}",
+                    example
+                )
+                .to_string(),
+                Err(_) => "Failed to update the template".to_string(),
+            }
+        }
+
+        Err(error) => error,
+    }
+}
+
+pub fn set_global_template(db_connection: &PgConnection, chat_id: i64, template: String) -> String {
+    let not_exists_error = "Subscription does not exist".to_string();
+
+    let chat = match telegram::find_chat(db_connection, chat_id) {
+        Some(chat) => chat,
+        None => return not_exists_error,
+    };
+
+    match parse_template_and_send_example(template) {
+        Ok((template, example)) => {
+            match telegram::set_global_template(db_connection, &chat, template) {
+                Ok(_) => format!(
+                    "The global template was updated. Your messages will look like:\n\n{}",
+                    example
+                )
+                .to_string(),
+                Err(_) => "Failed to update the template".to_string(),
+            }
+        }
+
+        Err(error) => error,
+    }
+}
+
+pub fn get_global_template(db_connection: &PgConnection, chat_id: i64) -> String {
+    match telegram::find_chat(db_connection, chat_id) {
+        None => "You don't the global template set".to_string(),
+        Some(chat) => match chat.template {
+            None => "You don't the global template set".to_string(),
+            Some(value) => format!("You global template is \n {}", value),
+        },
+    }
+}
+
+fn parse_template_and_send_example(raw_template: String) -> Result<(String, String), String> {
     let mut data = Map::new();
     data.insert("bot_feed_name".to_string(), to_json("feed_name"));
     data.insert("bot_item_name".to_string(), to_json("item_name"));
@@ -143,20 +194,11 @@ pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) 
     );
 
     let reg = Handlebars::new();
-    let template = parse_template(vec[1]);
+    let template = parse_template(&raw_template);
 
-    let example = match reg.render_template(&template, &data) {
-        Err(_) => return "Failed to update the template".to_string(),
-        Ok(result) => result,
-    };
-
-    match telegram::set_template(db_connection, &subscription, template) {
-        Ok(_) => format!(
-            "The template was updated. Your messages will look like:\n\n{}",
-            example
-        )
-        .to_string(),
-        Err(_) => "Failed to update the template".to_string(),
+    match reg.render_template(&template, &data) {
+        Err(_) => return Err("Failed to update the template".to_string()),
+        Ok(result) => Ok((template, result)),
     }
 }
 
