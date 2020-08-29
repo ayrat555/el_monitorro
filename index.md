@@ -51,7 +51,7 @@ Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_ite
 
 You can deploy your instance of `el_monitorro` by:
 
-1. Clone the repo
+1. Clone the repo:
 
 ```
 git clone https://github.com/ayrat555/el_monitorro
