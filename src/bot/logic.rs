@@ -131,6 +131,10 @@ pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) 
         None => return not_exists_error,
     };
 
+    if vec[1] == "" {
+        return "Template can not be empty".to_string();
+    }
+
     match parse_template_and_send_example(vec[1].to_string()) {
         Ok((template, example)) => {
             match telegram::set_template(db_connection, &subscription, template) {
@@ -148,6 +152,10 @@ pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) 
 }
 
 pub fn set_global_template(db_connection: &PgConnection, chat_id: i64, template: String) -> String {
+    if template == "".to_string() {
+        return "Template can not be empty".to_string();
+    }
+
     let chat = match telegram::find_chat(db_connection, chat_id) {
         Some(chat) => chat,
         None => return "You don't have any subcriptions".to_string(),
