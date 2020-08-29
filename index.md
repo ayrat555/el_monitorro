@@ -51,20 +51,20 @@ Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_ite
 
 You can deploy your instance of `el_monitorro` by:
 
-0. Clone the repo
+1. Clone the repo
 
 ```
 git clone https://github.com/ayrat555/el_monitorro
 ```
 
-1. Set postgres db url (`DATABASE_URL`) and telegram bot token (`TELEGRAM_BOT_TOKEN`) to `.env` file in the root directory. For example:
+2. Set postgres db url (`DATABASE_URL`) and telegram bot token (`TELEGRAM_BOT_TOKEN`) to `.env` file in the root directory. For example:
 
 ```
 DATABASE_URL=postgres://admin:pass@localhost/el_monitorro
 TELEGRAM_BOT_TOKEN=MYTOKEN
 ```
 
-2. Setup database by running:
+3. Setup database by running:
 
 ```
 diesel database setup
@@ -72,7 +72,7 @@ diesel database setup
 
 You'll need diesel-cli for this
 
-3. Start a bot
+4. Start a bot
 
 - Start the command bot
 
@@ -97,6 +97,7 @@ RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin deliver
 RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin cleaner
 ```
 
+# Support the project
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/ayrat555)
 
