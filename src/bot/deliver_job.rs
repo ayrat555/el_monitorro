@@ -128,12 +128,12 @@ async fn deliver_subscription_updates(
 
         let feed = feeds::find(&connection, subscription.feed_id).unwrap();
 
-        let mut messages = format_messages(
-            subscription.template.clone(),
-            offset,
-            feed_items.clone(),
-            feed,
-        );
+        let template = match subscription.template.clone() {
+            Some(template) => Some(template),
+            None => chat.template,
+        };
+
+        let mut messages = format_messages(template, offset, feed_items.clone(), feed);
         messages.reverse();
 
         for message in messages {
