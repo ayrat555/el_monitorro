@@ -171,9 +171,9 @@ pub fn set_global_template(db_connection: &PgConnection, chat_id: i64, template:
 
 pub fn get_global_template(db_connection: &PgConnection, chat_id: i64) -> String {
     match telegram::find_chat(db_connection, chat_id) {
-        None => "You don't the global template set".to_string(),
+        None => "You don't have the global template set".to_string(),
         Some(chat) => match chat.template {
-            None => "You don't the global template set".to_string(),
+            None => "You don't have the global template set".to_string(),
             Some(value) => format!("You global template is \n {}", value),
         },
     }
