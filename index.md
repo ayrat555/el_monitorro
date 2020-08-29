@@ -1,10 +1,6 @@
-<p align="center"><img src="el_monitorro_logo.png" alt="el_monitorro" height="300px"></p>
+# El Monitorro
 
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/ayrat555)
-
-# el_monitorro
-
-`el_monitorro` is RSS, Atom and JSON feed reader as a Telegram bot.
+`El Monitorro` is RSS, Atom and JSON feed reader as a Telegram bot.
 
 It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 
@@ -55,6 +51,12 @@ Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_ite
 
 You can deploy your instance of `el_monitorro` by:
 
+0. Clone the repo
+
+```
+git clone https://github.com/ayrat555/el_monitorro
+```
+
 1. Set postgres db url (`DATABASE_URL`) and telegram bot token (`TELEGRAM_BOT_TOKEN`) to `.env` file in the root directory. For example:
 
 ```
@@ -94,3 +96,7 @@ RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin deliver
 ```
 RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin cleaner
 ```
+
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/ayrat555)
+
