@@ -39,6 +39,10 @@ It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description.
 
 /get_template url - get a template for the subscription
+
+/set_global_template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.
+
+/get_global_template - get global timezone
 ```
 
 ### Common info
