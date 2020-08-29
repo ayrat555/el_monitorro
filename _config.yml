@@ -1,1 +1,4 @@
 theme: jekyll-theme-minimal
+title: El Monitorro
+description: El Monitorro is RSS, Atom and JSON feed reader as a Telegram bot
+logo: https://github.com/ayrat555/el_monitorro/blob/master/el_monitorro_logo.png
