@@ -66,6 +66,16 @@ pub fn set_utc_offset_minutes(
         .get_result::<TelegramChat>(conn)
 }
 
+pub fn set_global_template(
+    conn: &PgConnection,
+    chat: &TelegramChat,
+    template: String,
+) -> Result<TelegramChat, Error> {
+    diesel::update(chat)
+        .set(telegram_chats::template.eq(template))
+        .get_result::<TelegramChat>(conn)
+}
+
 pub fn set_template(
     conn: &PgConnection,
     chat: &TelegramSubscription,
@@ -456,7 +466,7 @@ mod tests {
     fn set_subscription_last_delivered_at_updates_last_delivered_at() {
         let connection = db::establish_connection();
 
-        let new_chat = build_new_chat();
+        let new_chat = build_new_chat_with_id(900);
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
@@ -488,7 +498,7 @@ mod tests {
     fn remove_subscription_removes_subscription() {
         let connection = db::establish_connection();
 
-        let new_chat = build_new_chat();
+        let new_chat = build_new_chat_with_id(9001);
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
@@ -544,6 +554,24 @@ mod tests {
             let result = super::set_utc_offset_minutes(&connection, &chat, 180).unwrap();
 
             assert_eq!(result.utc_offset_minutes.unwrap(), 180);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn set_global_template_sets_template() {
+        let connection = db::establish_connection();
+
+        let new_chat = build_new_chat_with_id(200);
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            let result =
+                super::set_global_template(&connection, &chat, "template".to_string()).unwrap();
+
+            assert_eq!(result.template.unwrap(), "template".to_string());
 
             Ok(())
         });

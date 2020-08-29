@@ -16,6 +16,8 @@ static SET_TIMEZONE: &str = "/set_timezone";
 static GET_TIMEZONE: &str = "/get_timezone";
 static SET_TEMPLATE: &str = "/set_template";
 static GET_TEMPLATE: &str = "/get_template";
+static SET_GLOBAL_TEMPLATE: &str = "/set_global_template";
+static GET_GLOBAL_TEMPLATE: &str = "/get_global_template";
 static UNSUBSCRIBE: &str = "/unsubscribe";
 static HELP: &str = "/help";
 static START: &str = "/start";
@@ -94,8 +96,10 @@ fn commands_string() -> String {
          - bot_space - defines a space character\n\
          - bot_new_line - defines a new line character\n\
          Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description\n\n\
-         {} url - get a template for the subscription",
-        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE, SET_TEMPLATE, GET_TEMPLATE
+         {} url - get a template for the subscription\n\n\
+         {} template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.\n\n\
+         {} - get global timezone\n",
+        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE, SET_TEMPLATE, GET_TEMPLATE, SET_GLOBAL_TEMPLATE, GET_GLOBAL_TEMPLATE
     )
 }
 
@@ -223,6 +227,28 @@ async fn get_timezone(api: Api, message: MessageOrChannelPost) -> Result<(), Err
     Ok(())
 }
 
+async fn get_global_template(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+
+    let response = logic::get_global_template(&db::establish_connection(), chat_id);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
+async fn set_global_template(
+    api: Api,
+    message: MessageOrChannelPost,
+    data: String,
+) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+
+    let response = logic::set_global_template(&db::establish_connection(), chat_id, data);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
 async fn get_template(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
 
@@ -291,6 +317,11 @@ async fn process_message_or_channel_post(
     } else if command.contains(SET_TEMPLATE) {
         let argument = parse_argument(command, SET_TEMPLATE);
         tokio::spawn(set_template(api, message, argument));
+    } else if command.contains(GET_GLOBAL_TEMPLATE) {
+        tokio::spawn(get_global_template(api, message));
+    } else if command.contains(SET_GLOBAL_TEMPLATE) {
+        let argument = parse_argument(command, SET_GLOBAL_TEMPLATE);
+        tokio::spawn(set_global_template(api, message, argument));
     } else {
         if let MessageOrChannelPost::Message(_) = message {
             tokio::spawn(unknown_command(api, message));

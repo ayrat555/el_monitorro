@@ -37,6 +37,7 @@ table! {
         updated_at -> Timestamptz,
         title -> Nullable<Text>,
         utc_offset_minutes -> Nullable<Int4>,
+        template -> Nullable<Text>,
     }
 }
 
