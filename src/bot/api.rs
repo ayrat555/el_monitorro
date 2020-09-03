@@ -98,7 +98,7 @@ fn commands_string() -> String {
          Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description\n\n\
          {} url - get a template for the subscription\n\n\
          {} template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.\n\n\
-         {} - get global timezone\n",
+         {} - get global template\n",
         START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE, SET_TEMPLATE, GET_TEMPLATE, SET_GLOBAL_TEMPLATE, GET_GLOBAL_TEMPLATE
     )
 }
