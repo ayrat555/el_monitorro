@@ -12,7 +12,7 @@ use diesel::pg::upsert::excluded;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
-#[derive(Insertable, Clone)]
+#[derive(Insertable, Clone, Debug)]
 #[table_name = "telegram_chats"]
 pub struct NewTelegramChat {
     pub id: i64,

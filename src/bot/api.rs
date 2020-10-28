@@ -323,7 +323,9 @@ async fn process_message_or_channel_post(
         let argument = parse_argument(command, SET_GLOBAL_TEMPLATE);
         tokio::spawn(set_global_template(api, message, argument));
     } else {
-        if let MessageOrChannelPost::Message(_) = message {
+        let chat: NewTelegramChat = message.clone().into();
+
+        if chat.kind == "private" {
             tokio::spawn(unknown_command(api, message));
         }
     }
