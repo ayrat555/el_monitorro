@@ -341,7 +341,17 @@ fn get_chat_id(message: &MessageOrChannelPost) -> i64 {
 }
 
 fn parse_argument(full_command: &str, command: &str) -> String {
-    full_command.replace(command, "").trim().to_string()
+    let handle = env::var("TELEGRAM_BOT_HANDLE").unwrap_or("".to_string());
+    let command_with_handle = format!("{}@{}", command, handle);
+
+    if full_command.starts_with(&command_with_handle) {
+        full_command
+            .replace(&command_with_handle, "")
+            .trim()
+            .to_string()
+    } else {
+        full_command.replace(command, "").trim().to_string()
+    }
 }
 
 pub async fn start_bot() -> Result<(), Error> {
