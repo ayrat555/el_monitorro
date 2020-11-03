@@ -31,6 +31,8 @@ static BOT_IS_NOT_IN_CHANNEL: &str = "Forbidden: bot is not a member of the chan
 static BOT_IS_KICKED: &str = "Forbidden: bot was kicked from the channel chat";
 static BOT_IS_KICKED_GROUP: &str = "Forbidden: bot was kicked from the group chat";
 
+static DISCRIPTION_LIMIT: usize = 3500;
+
 impl From<Error> for DeliverJobError {
     fn from(error: Error) -> Self {
         let msg = format!("{:?}", error);
@@ -223,11 +225,10 @@ fn format_messages(
 
             data.insert(
                 "bot_item_description".to_string(),
-                to_json(remove_html(
-                    item.description
-                        .clone()
-                        .map_or_else(|| "".to_string(), |s| s.to_string()),
-                )),
+                to_json(remove_html(item.description.clone().map_or_else(
+                    || "".to_string(),
+                    |s| truncate(&s, DISCRIPTION_LIMIT).to_string(),
+                ))),
             );
 
             match reg.render_template(&templ, &data) {
