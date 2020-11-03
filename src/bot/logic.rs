@@ -182,7 +182,7 @@ pub fn get_global_template(db_connection: &PgConnection, chat_id: i64) -> String
         None => "You don't have the global template set".to_string(),
         Some(chat) => match chat.template {
             None => "You don't have the global template set".to_string(),
-            Some(value) => format!("You global template is \n {}", value),
+            Some(value) => format!("Your global template is \n {}", value),
         },
     }
 }
