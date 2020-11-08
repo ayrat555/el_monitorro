@@ -2,6 +2,7 @@ use crate::db;
 use crate::sync::reader;
 use crate::sync::reader::{FeedReaderError, FetchedFeed, FetchedFeedItem, ReadFeed};
 use atom_syndication::Feed as AtomFeed;
+use atom_syndication::Link;
 use chrono::{DateTime, FixedOffset, Utc};
 
 pub struct AtomReader {
@@ -47,7 +48,7 @@ impl From<AtomFeed> for FetchedFeed {
                 FetchedFeedItem {
                     title: item.title().to_string(),
                     description: item.summary().map(|s| s.to_string()),
-                    link: item.links().first().unwrap().href().to_string(),
+                    link: find_link(item.links()).unwrap().href().to_string(),
                     author: Some(
                         item.authors()
                             .into_iter()
@@ -65,16 +66,23 @@ impl From<AtomFeed> for FetchedFeed {
 
         FetchedFeed {
             title: feed.title().to_string(),
-            link: feed
-                .links()
-                .first()
-                .map_or_else(|| "".to_string(), |s| s.href.to_string()),
+            link: find_link(feed.links()).map_or_else(|| "".to_string(), |s| s.href.to_string()),
             description: feed
                 .subtitle()
                 .map_or_else(|| "".to_string(), |s| s.to_string()),
             items: items,
             feed_type: "atom".to_string(),
         }
+    }
+}
+
+fn find_link<'a>(links: &'a [Link]) -> Option<&'a Link> {
+    let alternate_link = links.into_iter().find(|link| link.rel == "alternate");
+
+    if alternate_link.is_some() {
+        alternate_link
+    } else {
+        links.first()
     }
 }
 
@@ -118,5 +126,16 @@ mod tests {
         };
 
         assert_eq!(expected_result, fetched_feed);
+    }
+
+    #[test]
+    fn it_uses_alternte_link() {
+        let xml_feed = fs::read_to_string("./tests/support/atom_feed_alternat_link.xml").unwrap();
+        let channel = AtomFeed::from_str(&xml_feed).unwrap();
+
+        let fetched_feed: FetchedFeed = channel.into();
+        let item = fetched_feed.items.first().unwrap();
+
+        assert_eq!(item.link, "https://www.sekolahdasar.net/2020/11/latihan-soal-ulangan-pts-kelas-4-bahasa-jawa.html".to_string());
     }
 }
