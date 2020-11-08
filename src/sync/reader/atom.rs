@@ -48,7 +48,10 @@ impl From<AtomFeed> for FetchedFeed {
                 FetchedFeedItem {
                     title: item.title().to_string(),
                     description: item.summary().map(|s| s.to_string()),
-                    link: find_link(item.links()).unwrap().href().to_string(),
+                    link: find_link(item.links(), "alternate")
+                        .unwrap()
+                        .href()
+                        .to_string(),
                     author: Some(
                         item.authors()
                             .into_iter()
@@ -66,7 +69,8 @@ impl From<AtomFeed> for FetchedFeed {
 
         FetchedFeed {
             title: feed.title().to_string(),
-            link: find_link(feed.links()).map_or_else(|| "".to_string(), |s| s.href.to_string()),
+            link: find_link(feed.links(), "self")
+                .map_or_else(|| "".to_string(), |s| s.href.to_string()),
             description: feed
                 .subtitle()
                 .map_or_else(|| "".to_string(), |s| s.to_string()),
@@ -76,8 +80,8 @@ impl From<AtomFeed> for FetchedFeed {
     }
 }
 
-fn find_link<'a>(links: &'a [Link]) -> Option<&'a Link> {
-    let alternate_link = links.into_iter().find(|link| link.rel == "alternate");
+fn find_link<'a>(links: &'a [Link], link_type: &str) -> Option<&'a Link> {
+    let alternate_link = links.into_iter().find(|link| link.rel == link_type);
 
     if alternate_link.is_some() {
         alternate_link
