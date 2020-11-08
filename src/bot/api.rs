@@ -22,6 +22,20 @@ static UNSUBSCRIBE: &str = "/unsubscribe";
 static HELP: &str = "/help";
 static START: &str = "/start";
 
+static COMMANDS: [&str; 11] = [
+    SUBSCRIBE,
+    LIST_SUBSCRIPTIONS,
+    SET_TIMEZONE,
+    GET_TIMEZONE,
+    SET_TEMPLATE,
+    GET_TEMPLATE,
+    SET_GLOBAL_TEMPLATE,
+    GET_GLOBAL_TEMPLATE,
+    UNSUBSCRIBE,
+    HELP,
+    START,
+];
+
 impl From<MessageChat> for NewTelegramChat {
     fn from(message_chat: MessageChat) -> Self {
         match message_chat {
@@ -264,7 +278,13 @@ fn process_message(api: Api, orig_message: Message) {
             let command = data.clone();
             let message = MessageOrChannelPost::Message(orig_message.clone());
 
-            log::info!("{:?} wrote: {}", get_chat_id(&message), command);
+            let is_known_command = COMMANDS
+                .iter()
+                .any(|command_name| command.contains(command_name));
+
+            if is_known_command {
+                log::info!("{:?} wrote: {}", get_chat_id(&message), command);
+            }
 
             tokio::spawn(process_message_or_channel_post(api, message, command));
         }
@@ -294,32 +314,32 @@ async fn process_message_or_channel_post(
 ) -> Result<(), Error> {
     let command = &command_string;
 
-    if command.contains(SUBSCRIBE) {
+    if command.starts_with(SUBSCRIBE) {
         let argument = parse_argument(command, SUBSCRIBE);
         tokio::spawn(subscribe(api, message, argument));
-    } else if command.contains(LIST_SUBSCRIPTIONS) {
+    } else if command.starts_with(LIST_SUBSCRIPTIONS) {
         tokio::spawn(list_subscriptions(api, message));
-    } else if command.contains(UNSUBSCRIBE) {
+    } else if command.starts_with(UNSUBSCRIBE) {
         let argument = parse_argument(command, UNSUBSCRIBE);
         tokio::spawn(unsubscribe(api, message, argument));
-    } else if command.contains(HELP) {
+    } else if command.starts_with(HELP) {
         tokio::spawn(help(api, message));
-    } else if command.contains(START) {
+    } else if command.starts_with(START) {
         tokio::spawn(start(api, message));
-    } else if command.contains(SET_TIMEZONE) {
+    } else if command.starts_with(SET_TIMEZONE) {
         let argument = parse_argument(command, SET_TIMEZONE);
         tokio::spawn(set_timezone(api, message, argument));
-    } else if command.contains(GET_TIMEZONE) {
+    } else if command.starts_with(GET_TIMEZONE) {
         tokio::spawn(get_timezone(api, message));
-    } else if command.contains(GET_TEMPLATE) {
+    } else if command.starts_with(GET_TEMPLATE) {
         let argument = parse_argument(command, GET_TEMPLATE);
         tokio::spawn(get_template(api, message, argument));
-    } else if command.contains(SET_TEMPLATE) {
+    } else if command.starts_with(SET_TEMPLATE) {
         let argument = parse_argument(command, SET_TEMPLATE);
         tokio::spawn(set_template(api, message, argument));
-    } else if command.contains(GET_GLOBAL_TEMPLATE) {
+    } else if command.starts_with(GET_GLOBAL_TEMPLATE) {
         tokio::spawn(get_global_template(api, message));
-    } else if command.contains(SET_GLOBAL_TEMPLATE) {
+    } else if command.starts_with(SET_GLOBAL_TEMPLATE) {
         let argument = parse_argument(command, SET_GLOBAL_TEMPLATE);
         tokio::spawn(set_global_template(api, message, argument));
     } else {
