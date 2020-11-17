@@ -1,0 +1,76 @@
+<p align="center"><img src="el_monitorro_logo.png" alt="el_monitorro" height="300px"></p>
+
+<p><a href="https://paypal.me/ayrat555"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="paypal"></a></p>
+<h1 id="el_monitorro">el_monitorro</h1>
+<p><code>el_monitorro</code> is RSS, Atom and JSON feed reader as a Telegram bot.</p>
+<p>It&#39;s available at <a href="https://t.me/el_monitorro_bot">@el_monitorro_bot</a>.</p>
+<h1 id="usage">Usage</h1>
+<h3 id="commands">Commands</h3>
+<pre><code>/start - show the <span class="hljs-keyword">bot's </span>description <span class="hljs-keyword">and </span>contact information
+
+/<span class="hljs-keyword">subscribe </span>url - <span class="hljs-keyword">subscribe </span>to feed
+
+/unsubscribe url - unsubscribe from feed
+
+/list_subscriptions - list your <span class="hljs-keyword">subscriptions
+</span>
+/help - show available commands
+
+/set_timezone - set your timezone. All received dates will <span class="hljs-keyword">be </span>converted to this timezone. <span class="hljs-keyword">It </span>should <span class="hljs-keyword">be </span>offset in minutes from UTC. For example, <span class="hljs-meta">if</span> you live in UTC +<span class="hljs-number">10</span> timezone, offset is equal to <span class="hljs-number">600</span>
+
+/get_timezone - <span class="hljs-meta">get</span> your timezone
+
+/set_template url template - set a template for all received <span class="hljs-keyword">items </span>for the specified <span class="hljs-keyword">subscription. </span>All new updates will <span class="hljs-keyword">be </span>converted to the format defined <span class="hljs-keyword">by </span>this <span class="hljs-keyword">subscription. </span>Supported fields you can use for templates:
+- <span class="hljs-keyword">bot_feed_name </span>- name of the feed
+- <span class="hljs-keyword">bot_feed_link </span>- url of the feed
+- <span class="hljs-keyword">bot_item_name </span>- name of the <span class="hljs-keyword">item
+</span>- <span class="hljs-keyword">bot_item_link </span>- url of the <span class="hljs-keyword">item
+</span>- <span class="hljs-keyword">bot_item_description </span>- description of the <span class="hljs-keyword">item
+</span>- <span class="hljs-keyword">bot_date </span>- publication date of the feed
+- <span class="hljs-keyword">bot_space </span>- defines a <span class="hljs-meta">space</span> character
+- <span class="hljs-keyword">bot_new_line </span>- defines a new line character
+<span class="hljs-symbol">Example</span>: /set_template https://www.<span class="hljs-keyword">badykov.com/feed.xml </span><span class="hljs-keyword">bot_datebot_spacebot_item_namebot_new_linebot_item_description.
+</span>
+/get_template url - <span class="hljs-meta">get</span> a template for the <span class="hljs-keyword">subscription
+</span>
+/set_global_template - set <span class="hljs-meta">global</span> template. This template will <span class="hljs-keyword">be </span>used for all <span class="hljs-keyword">subscriptions. </span><span class="hljs-meta">If</span> the <span class="hljs-keyword">subscription </span>has <span class="hljs-keyword">its </span>own template, the <span class="hljs-keyword">subscription </span>template will <span class="hljs-keyword">be </span>used. See /set_template for available fields.
+
+/get_global_template - <span class="hljs-meta">get</span> <span class="hljs-meta">global</span> template
+</code></pre><h3 id="common-info">Common info</h3>
+<ul>
+<li>Feed updates check interval is 1 minute.</li>
+<li>Unread items delivery interval is 1 minute.</li>
+<li>The number of subscriptions is limited to 20.</li>
+</ul>
+<h1 id="setup">Setup</h1>
+<p>You can deploy your instance of <code>el_monitorro</code> by:</p>
+<ol>
+<li>Set postgres db url (<code>DATABASE_URL</code>) and telegram bot token (<code>TELEGRAM_BOT_TOKEN</code>) to <code>.env</code> file in the root directory. For example:</li>
+</ol>
+<pre><code><span class="hljs-attr">DATABASE_URL</span>=postgres://admin:pass@localhost/el_monitorro
+<span class="hljs-attr">TELEGRAM_BOT_TOKEN</span>=MYTOKEN
+</code></pre><ol>
+<li>Setup database by running:</li>
+</ol>
+<pre><code>diesel database <span class="hljs-built_in">setup</span>
+</code></pre><p>You&#39;ll need diesel-cli for this</p>
+<ol>
+<li><p>Start a bot</p>
+</li>
+<li><p>Start the command bot</p>
+</li>
+</ol>
+<pre><code>RUST_LOG=info RUST_BACKTRACE=<span class="hljs-number">1</span> cargo <span class="hljs-built_in">run</span> <span class="hljs-comment">--bin el_monitorro</span>
+</code></pre><ul>
+<li>Start the sync binary</li>
+</ul>
+<pre><code>RUST_LOG=info RUST_BACKTRACE=<span class="hljs-number">1</span> cargo <span class="hljs-built_in">run</span> <span class="hljs-comment">--bin sync</span>
+</code></pre><ul>
+<li>Start the delivery binary</li>
+</ul>
+<pre><code>RUST_LOG=info RUST_BACKTRACE=<span class="hljs-number">1</span> cargo <span class="hljs-built_in">run</span> <span class="hljs-comment">--bin deliver</span>
+</code></pre><ul>
+<li>If you don&#39;t want to store all feed items that were synced and feeds without any subscriptions, start the cleaner binary</li>
+</ul>
+<pre><code>RUST_LOG=info RUST_BACKTRACE=<span class="hljs-number">1</span> cargo <span class="hljs-built_in">run</span> <span class="hljs-comment">--bin cleaner</span>
+</code></pre>
