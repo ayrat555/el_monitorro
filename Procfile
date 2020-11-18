@@ -8,6 +8,6 @@ release: ./target/release/diesel database setup
 #deliver: ./target/release/deliver
 
 ### Uncomment this to use with Heroku free tier (run 2 max at the same time)
-worker: ./target/release/el_monitorro
+worker: ./target/release/el_monitorro & ./target/release/deliver
 cleaner: ./target/release/cleaner
-syncdeliver: ./target/release/sync & ./target/release/deliver
+syncer: ./target/release/sync
