@@ -1,4 +1,4 @@
-release: ./target/release/diesel migration run
+#release: ./target/release/diesel migration run
 release: ./target/release/diesel database setup
 
 ### Uncomment this to use with Heroku paid tier
