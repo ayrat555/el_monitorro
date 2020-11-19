@@ -55,9 +55,8 @@ Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_ite
 
 ## Automatic deploy to Heroku
 
-To deploy this application on Heroku:
-
-**Click to deploy**
+1. Customize `.env` and `Procfile` with personal settings
+2. Click to deploy this application on Heroku:
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
