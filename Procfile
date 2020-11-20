@@ -1,7 +1,7 @@
 ### Following is not 100% accurate or tested
 ## Uncomment first line if first deploy, uncomment second for the following
 #release: ./target/release/diesel database setup
-#release: ./target/release/diesel migration run
+release: ./target/release/diesel migration run
 
 ### Uncomment this to use with Heroku paid tier
 #worker: ./target/release/el_monitorro
