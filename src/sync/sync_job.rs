@@ -70,14 +70,6 @@ pub fn sync_all_feeds() {
     }
 }
 
-pub async fn sync_feeds() {
-    let mut interval = time::interval(std::time::Duration::from_secs(60));
-    loop {
-        interval.tick().await;
-        sync_all_feeds();
-    }
-}
-
 pub async fn sync_feed(feed_id: i64) {
     match FeedSyncJob::new(feed_id).execute() {
         Err(FeedSyncError::StaleError) => {
