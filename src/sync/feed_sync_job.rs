@@ -31,13 +31,12 @@ impl FeedSyncJob {
         FeedSyncJob { feed_id }
     }
 
-    pub fn execute(&self) -> Result<(), FeedSyncError> {
-        let db_connection = db::establish_connection();
-        let feed = feeds::find(&db_connection, self.feed_id).unwrap();
+    pub fn execute(&self, db_connection: &PgConnection) -> Result<(), FeedSyncError> {
+        let feed = feeds::find(db_connection, self.feed_id).unwrap();
 
         match read_feed(&feed) {
             Ok(fetched_feed) => {
-                match feed_items::create(&db_connection, feed.id, fetched_feed.items) {
+                match feed_items::create(db_connection, feed.id, fetched_feed.items) {
                     Err(err) => {
                         error!(
                             "Error: failed to create feed items for feed with id {}: {:?}",
@@ -50,7 +49,7 @@ impl FeedSyncJob {
                         Err(error)
                     }
                     _ => match feeds::set_synced_at(
-                        &db_connection,
+                        db_connection,
                         &feed,
                         Some(fetched_feed.title),
                         Some(fetched_feed.description),
@@ -79,7 +78,7 @@ impl FeedSyncJob {
                 };
 
                 if db::current_time() - Duration::hours(2) < created_at_or_last_synced_at {
-                    let error = set_error(&db_connection, &feed, err);
+                    let error = set_error(db_connection, &feed, err);
 
                     Err(error)
                 } else {
@@ -149,7 +148,7 @@ mod tests {
         let feed = feeds::create(&connection, link, "rss".to_string()).unwrap();
         let sync_job = FeedSyncJob { feed_id: feed.id };
 
-        sync_job.execute().unwrap();
+        sync_job.execute(&connection).unwrap();
 
         let created_items = feed_items::find(&connection, feed.id).unwrap();
 
