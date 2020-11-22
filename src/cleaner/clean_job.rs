@@ -2,12 +2,11 @@ use crate::db;
 use crate::db::{feed_items, feeds};
 use diesel::result::Error;
 use diesel::PgConnection;
-use tokio::time;
 
 pub struct CleanJob {}
 
 pub struct CleanJobError {
-    msg: String,
+    pub msg: String,
 }
 
 impl From<Error> for CleanJobError {
@@ -23,8 +22,9 @@ impl CleanJob {
         CleanJob {}
     }
 
-    pub fn execute(&self) -> Result<(), CleanJobError> {
-        let db_connection = db::establish_connection();
+    pub async fn execute(&self) -> Result<(), CleanJobError> {
+        let semaphored_connection = db::get_semaphored_connection().await;
+        let db_connection = semaphored_connection.connection;
         let mut current_feed_ids: Vec<i64>;
         let mut page = 1;
         let mut total_number = 0;
@@ -57,7 +57,8 @@ impl CleanJob {
 }
 
 pub async fn remove_old_feed_items(feed_id: i64) {
-    let db_connection = db::establish_connection();
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
     match feed_items::delete_old_feed_items(&db_connection, feed_id, 1000) {
         Err(error) => log::error!(
@@ -69,13 +70,6 @@ pub async fn remove_old_feed_items(feed_id: i64) {
     }
 }
 
-fn clean_feeds() {
-    match CleanJob::new().execute() {
-        Err(error) => log::error!("Failed to clean feeds: {}", error.msg),
-        Ok(_) => (),
-    }
-}
-
 fn delete_feeds_without_subscriptions(conn: &PgConnection) {
     log::info!("Started removing feeds without subscriptions");
 
@@ -83,12 +77,4 @@ fn delete_feeds_without_subscriptions(conn: &PgConnection) {
         Ok(count) => log::info!("Removed {} feeds without subscriptions", count),
         Err(error) => log::error!("Failed to remove feeds without subscriptions {:?}", error),
     };
-}
-
-pub async fn clean() {
-    let mut interval = time::interval(std::time::Duration::from_secs(60 * 60 * 12));
-    loop {
-        interval.tick().await;
-        clean_feeds();
-    }
 }

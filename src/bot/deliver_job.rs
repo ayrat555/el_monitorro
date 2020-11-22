@@ -7,19 +7,11 @@ use crate::models::feed_item::FeedItem;
 use crate::models::telegram_subscription::TelegramSubscription;
 use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
+use diesel::result::Error;
 use handlebars::{to_json, Handlebars};
 use html2text::from_read;
 use htmlescape::decode_html;
 use serde_json::value::Map;
-
-use diesel::result::Error;
-use tokio::time;
-
-pub struct DeliverJob {}
-
-pub struct DeliverJobError {
-    msg: String,
-}
 
 static BLOCKED_ERROR: &str = "Forbidden: bot was blocked by the user";
 static CHAT_NOT_FOUND: &str = "Bad Request: chat not found";
@@ -32,6 +24,12 @@ static BOT_IS_KICKED: &str = "Forbidden: bot was kicked from the channel chat";
 static BOT_IS_KICKED_GROUP: &str = "Forbidden: bot was kicked from the group chat";
 
 static DISCRIPTION_LIMIT: usize = 3500;
+
+pub struct DeliverJob {}
+
+pub struct DeliverJobError {
+    pub msg: String,
+}
 
 impl From<Error> for DeliverJobError {
     fn from(error: Error) -> Self {
@@ -46,8 +44,9 @@ impl DeliverJob {
         DeliverJob {}
     }
 
-    pub fn execute(&self) -> Result<(), DeliverJobError> {
-        let db_connection = db::establish_connection();
+    pub async fn execute(&self) -> Result<(), DeliverJobError> {
+        let semaphored_connection = db::get_semaphored_connection().await;
+        let db_connection = semaphored_connection.connection;
         let mut current_subscriptions: Vec<TelegramSubscription>;
         let mut page = 1;
         let mut total_number = 0;
@@ -82,16 +81,19 @@ impl DeliverJob {
 async fn deliver_subscription_updates(
     subscription: TelegramSubscription,
 ) -> Result<(), DeliverJobError> {
-    let connection = db::establish_connection();
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let connection = semaphored_connection.connection;
     let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
     let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
     let chat_id = subscription.chat_id;
+    let feed = feeds::find(&connection, subscription.feed_id).unwrap();
 
     if feed_items.len() < undelivered_count as usize {
         let message = format!(
-            "You have {} unread items, below {} last items",
+            "You have {} unread items, below {} last items for {}",
             undelivered_count,
-            feed_items.len()
+            feed_items.len(),
+            feed.link
         );
 
         match api::send_message(chat_id, message).await {
@@ -128,8 +130,6 @@ async fn deliver_subscription_updates(
                 }
             }
         };
-
-        let feed = feeds::find(&connection, subscription.feed_id).unwrap();
 
         let template = match subscription.template.clone() {
             Some(template) => Some(template),
@@ -261,17 +261,6 @@ fn truncate(s: &str, max_chars: usize) -> String {
             string.push_str("...");
 
             string
-        }
-    }
-}
-
-pub async fn deliver_updates() {
-    let mut interval = time::interval(std::time::Duration::from_secs(60));
-    loop {
-        interval.tick().await;
-        match DeliverJob::new().execute() {
-            Err(error) => log::error!("Failed to send updates: {}", error.msg),
-            Ok(_) => (),
         }
     }
 }

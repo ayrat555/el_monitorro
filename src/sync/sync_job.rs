@@ -3,14 +3,12 @@ use crate::db;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
-
 use diesel::result::Error;
-use tokio::time;
 
 pub struct SyncJob {}
 
 pub struct SyncError {
-    msg: String,
+    pub msg: String,
 }
 
 impl From<Error> for SyncError {
@@ -26,8 +24,9 @@ impl SyncJob {
         SyncJob {}
     }
 
-    pub fn execute(&self) -> Result<usize, SyncError> {
-        let db_connection = db::establish_connection();
+    pub async fn execute(&self) -> Result<usize, SyncError> {
+        let semaphored_connection = db::get_semaphored_connection().await;
+        let db_connection = semaphored_connection.connection;
 
         let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;
@@ -63,27 +62,15 @@ impl SyncJob {
     }
 }
 
-pub fn sync_all_feeds() {
-    match SyncJob::new().execute() {
-        Err(error) => log::error!("Failed to sync feeds: {}", error.msg),
-        Ok(_) => (),
-    }
-}
-
-pub async fn sync_feeds() {
-    let mut interval = time::interval(std::time::Duration::from_secs(60));
-    loop {
-        interval.tick().await;
-        sync_all_feeds();
-    }
-}
-
 pub async fn sync_feed(feed_id: i64) {
-    match FeedSyncJob::new(feed_id).execute() {
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
+    let feed_sync_result = FeedSyncJob::new(feed_id).execute(&db_connection);
+
+    match feed_sync_result {
         Err(FeedSyncError::StaleError) => {
             log::error!("Feed can not be processed for a long time {}", feed_id);
 
-            let db_connection = db::establish_connection();
             let feed = feeds::find(&db_connection, feed_id).unwrap();
             let chats = telegram::find_chats_by_feed_id(&db_connection, feed_id).unwrap();
 

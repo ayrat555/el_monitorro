@@ -6,7 +6,7 @@ extern crate failure;
 
 pub mod bot;
 pub mod cleaner;
-mod db;
+pub mod db;
 mod models;
 mod schema;
 pub mod sync;
