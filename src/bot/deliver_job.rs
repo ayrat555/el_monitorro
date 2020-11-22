@@ -12,6 +12,8 @@ use handlebars::{to_json, Handlebars};
 use html2text::from_read;
 use htmlescape::decode_html;
 use serde_json::value::Map;
+use std::time::Duration;
+use tokio::time;
 
 static BLOCKED_ERROR: &str = "Forbidden: bot was blocked by the user";
 static CHAT_NOT_FOUND: &str = "Bad Request: chat not found";
@@ -140,6 +142,8 @@ async fn deliver_subscription_updates(
         messages.reverse();
 
         for message in messages {
+            time::delay_for(Duration::from_millis(250)).await;
+
             match api::send_message(chat_id, message).await {
                 Ok(_) => (),
                 Err(error) => {
