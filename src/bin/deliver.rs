@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 use el_monitorro;
-use el_monitorro::bot::deliver_job;
 use el_monitorro::bot::deliver_job::DeliverJob;
+use el_monitorro::db;
 use tokio::runtime;
 use tokio::time;
 
@@ -22,9 +22,13 @@ fn main() {
         loop {
             interval.tick().await;
 
-            match DeliverJob::new().execute().await {
-                Err(error) => log::error!("Failed to send updates: {}", error.msg),
-                Ok(_) => (),
+            if db::semaphore().available_permits() == *db::pool_connection_number() {
+                match DeliverJob::new().execute().await {
+                    Err(error) => log::error!("Failed to send updates: {}", error.msg),
+                    Ok(_) => (),
+                }
+            } else {
+                log::error!("The previous delivery job did not finish");
             }
         }
     })

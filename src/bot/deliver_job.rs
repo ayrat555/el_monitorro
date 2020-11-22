@@ -11,12 +11,7 @@ use diesel::result::Error;
 use handlebars::{to_json, Handlebars};
 use html2text::from_read;
 use htmlescape::decode_html;
-use once_cell::sync::OnceCell;
 use serde_json::value::Map;
-use std::env;
-use std::sync::Arc;
-use tokio::sync::Semaphore;
-use tokio::sync::SemaphorePermit;
 
 static BLOCKED_ERROR: &str = "Forbidden: bot was blocked by the user";
 static CHAT_NOT_FOUND: &str = "Bad Request: chat not found";
@@ -50,7 +45,8 @@ impl DeliverJob {
     }
 
     pub async fn execute(&self) -> Result<(), DeliverJobError> {
-        let db_connection = db::establish_connection();
+        let semaphored_connection = db::get_semaphored_connection().await;
+        let db_connection = semaphored_connection.connection;
         let mut current_subscriptions: Vec<TelegramSubscription>;
         let mut page = 1;
         let mut total_number = 0;
@@ -69,9 +65,7 @@ impl DeliverJob {
             total_number += current_subscriptions.len();
 
             for subscription in current_subscriptions {
-                let permit = semaphore().acquire().await;
-
-                tokio::spawn(deliver_subscription_updates(subscription, permit));
+                tokio::spawn(deliver_subscription_updates(subscription));
             }
         }
 
@@ -84,23 +78,11 @@ impl DeliverJob {
     }
 }
 
-static SEMAPHORE: OnceCell<Semaphore> = OnceCell::new();
-
-pub fn semaphore() -> &'static Semaphore {
-    SEMAPHORE.get_or_init(|| {
-        let database_pool_size_str = env::var("DATABASE_POOL_SIZE").unwrap_or("10".to_string());
-        let database_pool_size: usize = database_pool_size_str.parse().unwrap();
-
-        Semaphore::new(database_pool_size - 1)
-    })
-}
-
 async fn deliver_subscription_updates<'a>(
     subscription: TelegramSubscription,
-    permit: SemaphorePermit<'a>,
 ) -> Result<(), DeliverJobError> {
-    let _permit = permit;
-    let connection = db::establish_connection();
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let connection = semaphored_connection.connection;
     let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
     let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
     let chat_id = subscription.chat_id;
