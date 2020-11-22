@@ -78,7 +78,7 @@ impl DeliverJob {
     }
 }
 
-async fn deliver_subscription_updates<'a>(
+async fn deliver_subscription_updates(
     subscription: TelegramSubscription,
 ) -> Result<(), DeliverJobError> {
     let semaphored_connection = db::get_semaphored_connection().await;

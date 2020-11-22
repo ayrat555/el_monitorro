@@ -162,8 +162,11 @@ async fn unknown_command(api: Api, message: MessageOrChannelPost) -> Result<(), 
 }
 
 async fn subscribe(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
+
     let response = match logic::create_subscription(
-        &db::establish_connection(),
+        &db_connection,
         message.clone().into(),
         Some(data.clone()),
     ) {
@@ -189,14 +192,14 @@ async fn subscribe(api: Api, message: MessageOrChannelPost, data: String) -> Res
 
 async fn unsubscribe(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
-    let response =
-        match logic::delete_subscription(&db::establish_connection(), chat_id.into(), data.clone())
-        {
-            Ok(_) => format!("Successfully unsubscribed from {}", data),
-            Err(DeleteSubscriptionError::DbError) => format!("Failed to unsubscribe from {}", data),
-            _ => "Subscription does not exist".to_string(),
-        };
+    let response = match logic::delete_subscription(&db_connection, chat_id.into(), data.clone()) {
+        Ok(_) => format!("Successfully unsubscribed from {}", data),
+        Err(DeleteSubscriptionError::DbError) => format!("Failed to unsubscribe from {}", data),
+        _ => "Subscription does not exist".to_string(),
+    };
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -204,8 +207,10 @@ async fn unsubscribe(api: Api, message: MessageOrChannelPost, data: String) -> R
 
 async fn list_subscriptions(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
-    let response = logic::find_feeds_by_chat_id(&db::establish_connection(), chat_id.into());
+    let response = logic::find_feeds_by_chat_id(&db_connection, chat_id.into());
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -213,8 +218,10 @@ async fn list_subscriptions(api: Api, message: MessageOrChannelPost) -> Result<(
 
 async fn set_timezone(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
-    let response = match logic::set_timezone(&db::establish_connection(), chat_id, data) {
+    let response = match logic::set_timezone(&db_connection, chat_id, data) {
         Ok(_) => "Your timezone was updated".to_string(),
         Err(err_string) => err_string.to_string(),
     };
@@ -225,8 +232,10 @@ async fn set_timezone(api: Api, message: MessageOrChannelPost, data: String) -> 
 
 async fn set_template(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
-    let response = logic::set_template(&db::establish_connection(), chat_id, data);
+    let response = logic::set_template(&db_connection, chat_id, data);
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -234,8 +243,10 @@ async fn set_template(api: Api, message: MessageOrChannelPost, data: String) -> 
 
 async fn get_timezone(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
-    let response = logic::get_timezone(&db::establish_connection(), chat_id);
+    let response = logic::get_timezone(&db_connection, chat_id);
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -243,8 +254,10 @@ async fn get_timezone(api: Api, message: MessageOrChannelPost) -> Result<(), Err
 
 async fn get_global_template(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
-    let response = logic::get_global_template(&db::establish_connection(), chat_id);
+    let response = logic::get_global_template(&db_connection, chat_id);
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -256,8 +269,10 @@ async fn set_global_template(
     data: String,
 ) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
-    let response = logic::set_global_template(&db::establish_connection(), chat_id, data);
+    let response = logic::set_global_template(&db_connection, chat_id, data);
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -265,8 +280,10 @@ async fn set_global_template(
 
 async fn get_template(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
 
-    let response = logic::get_template(&db::establish_connection(), chat_id, data);
+    let response = logic::get_template(&db_connection, chat_id, data);
 
     api.send(message.text_reply(response)).await?;
     Ok(())
