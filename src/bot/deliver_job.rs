@@ -11,9 +11,12 @@ use diesel::result::Error;
 use handlebars::{to_json, Handlebars};
 use html2text::from_read;
 use htmlescape::decode_html;
+use once_cell::sync::OnceCell;
 use serde_json::value::Map;
+use std::env;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
+use tokio::sync::SemaphorePermit;
 
 static BLOCKED_ERROR: &str = "Forbidden: bot was blocked by the user";
 static CHAT_NOT_FOUND: &str = "Bad Request: chat not found";
@@ -27,9 +30,7 @@ static BOT_IS_KICKED_GROUP: &str = "Forbidden: bot was kicked from the group cha
 
 static DISCRIPTION_LIMIT: usize = 3500;
 
-pub struct DeliverJob {
-    semaphore: Arc<Semaphore>,
-}
+pub struct DeliverJob {}
 
 pub struct DeliverJobError {
     pub msg: String,
@@ -45,55 +46,60 @@ impl From<Error> for DeliverJobError {
 
 impl DeliverJob {
     pub fn new() -> Self {
-        let semaphore = Arc::new(Semaphore::new(10));
-
-        DeliverJob { semaphore }
+        DeliverJob {}
     }
 
-    pub fn execute(&self) -> Result<(), DeliverJobError> {
-        do_execute(self.semaphore)
+    pub async fn execute(&self) -> Result<(), DeliverJobError> {
+        let db_connection = db::establish_connection();
+        let mut current_subscriptions: Vec<TelegramSubscription>;
+        let mut page = 1;
+        let mut total_number = 0;
+
+        log::info!("Started delivering feed items");
+
+        loop {
+            current_subscriptions = telegram::fetch_subscriptions(&db_connection, page, 1000)?;
+
+            page += 1;
+
+            if current_subscriptions.is_empty() {
+                break;
+            }
+
+            total_number += current_subscriptions.len();
+
+            for subscription in current_subscriptions {
+                let permit = semaphore().acquire().await;
+
+                tokio::spawn(deliver_subscription_updates(subscription, permit));
+            }
+        }
+
+        log::info!(
+            "Started checking delivery for {} subscriptions",
+            total_number
+        );
+
+        Ok(())
     }
 }
 
-async fn do_execute(sem: Arc<Semaphore>) {
-    let db_connection = db::establish_connection();
-    let mut current_subscriptions: Vec<TelegramSubscription>;
-    let mut page = 1;
-    let mut total_number = 0;
+static SEMAPHORE: OnceCell<Semaphore> = OnceCell::new();
 
-    log::info!("Started delivering feed items");
+pub fn semaphore() -> &'static Semaphore {
+    SEMAPHORE.get_or_init(|| {
+        let database_pool_size_str = env::var("DATABASE_POOL_SIZE").unwrap_or("10".to_string());
+        let database_pool_size: usize = database_pool_size_str.parse().unwrap();
 
-    loop {
-        current_subscriptions = telegram::fetch_subscriptions(&db_connection, page, 1000)?;
-
-        page += 1;
-
-        if current_subscriptions.is_empty() {
-            break;
-        }
-
-        total_number += current_subscriptions.len();
-
-        for subscription in current_subscriptions {
-            let semaphore = Arc::clone(&self.semaphore);
-            tokio::spawn(deliver_subscription_updates(subscription, semaphore));
-        }
-    }
-
-    log::info!(
-        "Started checking delivery for {} subscriptions",
-        total_number
-    );
-
-    Ok(())
+        Semaphore::new(database_pool_size - 1)
+    })
 }
 
-async fn deliver_subscription_updates(
+async fn deliver_subscription_updates<'a>(
     subscription: TelegramSubscription,
-    sem: Arc<Semaphore>,
+    permit: SemaphorePermit<'a>,
 ) -> Result<(), DeliverJobError> {
-    let _permit = sem.acquire().await;
-
+    let _permit = permit;
     let connection = db::establish_connection();
     let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
     let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
@@ -117,12 +123,12 @@ async fn deliver_subscription_updates(
 
                 log::error!("Failed to deliver updates: {} {}", chat_id, error_message);
 
-                // if bot_blocked(&error_message) {
-                //     match telegram::remove_chat(&connection, chat_id) {
-                //         Ok(_) => log::info!("Successfully removed chat {}", chat_id),
-                //         Err(error) => log::error!("Failed to remove a chat {}", error),
-                //     }
-                // };
+                if bot_blocked(&error_message) {
+                    match telegram::remove_chat(&connection, chat_id) {
+                        Ok(_) => log::info!("Successfully removed chat {}", chat_id),
+                        Err(error) => log::error!("Failed to remove a chat {}", error),
+                    }
+                };
 
                 return Err(DeliverJobError {
                     msg: format!("Failed to send updates : {}", error),
@@ -162,10 +168,10 @@ async fn deliver_subscription_updates(
                     log::error!("Failed to deliver updates: {}", error_message);
 
                     if bot_blocked(&error_message) {
-                        // match telegram::remove_chat(&connection, chat_id) {
-                        //     Ok(_) => log::info!("Successfully removed chat {}", chat_id),
-                        //     Err(error) => log::error!("Failed to remove a chat {}", error),
-                        // }
+                        match telegram::remove_chat(&connection, chat_id) {
+                            Ok(_) => log::info!("Successfully removed chat {}", chat_id),
+                            Err(error) => log::error!("Failed to remove a chat {}", error),
+                        }
                     };
 
                     return Err(DeliverJobError {
