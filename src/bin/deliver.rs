@@ -12,9 +12,6 @@ fn main() {
     let mut tokio_runtime = runtime::Builder::new()
         .thread_name("deliver-pool")
         .threaded_scheduler()
-        .on_thread_start(|| {
-            println!("thread started");
-        })
         .enable_all()
         .build()
         .unwrap();

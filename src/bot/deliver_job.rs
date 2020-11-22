@@ -106,8 +106,6 @@ async fn deliver_subscription_updates<'a>(
     let chat_id = subscription.chat_id;
     let feed = feeds::find(&connection, subscription.feed_id).unwrap();
 
-    log::info!("Running");
-
     if feed_items.len() < undelivered_count as usize {
         let message = format!(
             "You have {} unread items, below {} last items for {}",
