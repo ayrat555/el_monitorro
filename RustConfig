@@ -1,0 +1,3 @@
+VERSION=nightly
+RUST_INSTALL_DIESEL=1
+DIESEL_FLAGS="--no-default-features --features postgres"

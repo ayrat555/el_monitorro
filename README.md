@@ -53,6 +53,15 @@ Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_ite
 
 # Setup
 
+## Automatic deploy to Heroku
+
+1. Customize `.env` and `Procfile` with personal settings
+2. Click to deploy this application on Heroku:
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+## Manually setup
+
 You can deploy your instance of `el_monitorro` by:
 
 1. Set postgres db url (`DATABASE_URL`) and telegram bot token (`TELEGRAM_BOT_TOKEN`) to `.env` file in the root directory. For example:
