@@ -2,6 +2,7 @@ use dotenv::dotenv;
 use el_monitorro;
 use el_monitorro::cleaner::clean_job::CleanJob;
 use el_monitorro::db;
+use std::env;
 use tokio::runtime;
 use tokio::time;
 
@@ -10,14 +11,19 @@ fn main() {
     env_logger::init();
 
     let mut tokio_runtime = runtime::Builder::new()
-        .thread_name("-pool")
+        .thread_name("clean-pool")
         .threaded_scheduler()
         .enable_all()
         .build()
         .unwrap();
 
+    let period: u64 = env::var("CLEAN_INTERVAL_SECONDS")
+        .unwrap_or("3600".to_string())
+        .parse()
+        .unwrap();
+
     tokio_runtime.block_on(async {
-        let mut interval = time::interval(std::time::Duration::from_secs(60 * 60 * 12));
+        let mut interval = time::interval(std::time::Duration::from_secs(period));
 
         loop {
             interval.tick().await;
