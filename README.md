@@ -60,7 +60,7 @@ Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_ite
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-## Manually setup
+## Manual setup
 
 You can deploy your instance of `el_monitorro` by:
 
@@ -113,8 +113,8 @@ All configuration is done through env variables
 | DATABASE_URL             |   yes    |  --           |  postgres://postgres:postgres@localhost/el_monitorro                                                                                                                                 |
 | DATABASE_POOL_SIZE       |   no     |  10           |                                                                                                                                                                                      |
 | TELEGRAM_BOT_TOKEN       |   yes    |  --           |  6666618370:AAGx5YhNQvUG4eUcQXN-OB_a09ZzYl6aaaa                                                                                                                                      |
-| TELEGRAM_BOT_HANDLE      |   no     |  --           |  This value is used during parsing of commands if you set autocompletion menu for your bot,  The bot will understands commands like `/subscribe@handle` along with just `/subscribe` |
+| TELEGRAM_BOT_HANDLE      |   no     |  --           |  This value is used during parsing of commands. If you set autocompletion menu for your bot,  the bot will understand commands like `/subscribe@handle` along with just `/subscribe` |
 | SUBSCRIPTION_LIMIT       |   no     |  20           |                                                                                                                                                                                      |
 | SYNC_INTERVAL_SECONDS    |   no     |  60           |  The bot tries to sync feeds every `SYNC_INTERVAL_SECONDS` seconds                                                                                                                   |
 | DELIVER_INTERVAL_SECONDS |   no     |  60           |  The bot tries to deliver new feed items every `DELIVER_INTERVAL_SECONDS` seconds                                                                                                    |
-| CLEAN_INTERVAL_SECONDS   |   no     |  3600         |  The bot cleans old feed items and feeds without subscription every `CLEAN_INTERVAL_SECONDS` seconds                                                                                 |
+| CLEAN_INTERVAL_SECONDS   |   no     |  3600         |  The bot cleans old feed items and feeds without subscriptions every `CLEAN_INTERVAL_SECONDS` seconds                                                                                 |
