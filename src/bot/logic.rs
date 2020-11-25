@@ -5,9 +5,13 @@ use crate::models::telegram_subscription::TelegramSubscription;
 use crate::sync::reader;
 use diesel::{Connection, PgConnection};
 use handlebars::{to_json, Handlebars};
+use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde_json::value::Map;
+use std::env;
 use url::Url;
+
+static SUB_LIMIT: OnceCell<i64> = OnceCell::new();
 
 #[derive(Debug, PartialEq)]
 pub enum SubscriptionError {
@@ -362,11 +366,18 @@ fn check_number_of_subscriptions(
 ) -> Result<(), SubscriptionError> {
     let result = telegram::count_subscriptions_for_chat(connection, chat_id);
 
-    if result <= 20 {
+    if result <= *sub_limit() {
         Ok(())
     } else {
         Err(SubscriptionError::SubscriptionCountLimit)
     }
+}
+
+pub fn sub_limit() -> &'static i64 {
+    SUB_LIMIT.get_or_init(|| {
+        let subscription_limit = env::var("SUBSCRIPTION_LIMIT").unwrap_or("20".to_string());
+        subscription_limit.parse().unwrap()
+    })
 }
 
 #[cfg(test)]

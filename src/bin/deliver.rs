@@ -2,6 +2,7 @@ use dotenv::dotenv;
 use el_monitorro;
 use el_monitorro::bot::deliver_job::DeliverJob;
 use el_monitorro::db;
+use std::env;
 use tokio::runtime;
 use tokio::time;
 
@@ -16,8 +17,13 @@ fn main() {
         .build()
         .unwrap();
 
+    let period: u64 = env::var("DELIVER_INTERVAL_SECONDS")
+        .unwrap_or("60".to_string())
+        .parse()
+        .unwrap();
+
     tokio_runtime.block_on(async {
-        let mut interval = time::interval(std::time::Duration::from_secs(60));
+        let mut interval = time::interval(std::time::Duration::from_secs(period));
 
         loop {
             interval.tick().await;
