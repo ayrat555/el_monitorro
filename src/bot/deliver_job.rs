@@ -315,7 +315,7 @@ fn get_max_publication_date(items: Vec<FeedItem>) -> DateTime<Utc> {
 fn delay_period(chat: &TelegramChat) -> Duration {
     match chat.kind.as_str() {
         "group" | "supergroup" => Duration::from_millis(3000),
-        _ => Duration::from_millis(100),
+        _ => Duration::from_millis(35),
     }
 }
 
