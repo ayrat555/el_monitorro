@@ -134,6 +134,15 @@ pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
         .unwrap()
 }
 
+pub fn find_subscriptions_for_chat(
+    conn: &PgConnection,
+    chat_id: i64,
+) -> Result<Vec<TelegramSubscription>, Error> {
+    telegram_subscriptions::table
+        .filter(telegram_subscriptions::chat_id.eq(chat_id))
+        .get_results::<TelegramSubscription>(conn)
+}
+
 pub fn find_feeds_by_chat_id(conn: &PgConnection, chat_id: i64) -> Result<Vec<Feed>, Error> {
     let feed_ids = telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(chat_id))
@@ -166,6 +175,23 @@ pub fn fetch_subscriptions(
 
     telegram_subscriptions::table
         .order(telegram_subscriptions::chat_id)
+        .limit(count)
+        .offset(offset)
+        .get_results(conn)
+}
+
+pub fn fetch_chats_with_subscriptions(
+    conn: &PgConnection,
+    page: i64,
+    count: i64,
+) -> Result<Vec<i64>, Error> {
+    let offset = (page - 1) * count;
+
+    telegram_chats::table
+        .inner_join(telegram_subscriptions::table)
+        .order(telegram_chats::id)
+        .select(telegram_chats::id)
+        .distinct()
         .limit(count)
         .offset(offset)
         .get_results(conn)
@@ -384,10 +410,11 @@ mod tests {
     fn find_subscription_finds_subscription() {
         let connection = db::establish_connection();
 
-        let new_chat = build_new_chat();
+        let new_chat = build_new_chat_with_id(999);
 
         connection.test_transaction::<(), Error, _>(|| {
-            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed =
+                feeds::create(&connection, "Link11111".to_string(), "rss".to_string()).unwrap();
             let chat = super::create_chat(&connection, new_chat).unwrap();
 
             let new_subscription = NewTelegramSubscription {
@@ -437,6 +464,121 @@ mod tests {
     }
 
     #[test]
+    fn fetch_chats_with_subscriptions_fetches_chat_with_subscription() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let new_chat = build_new_chat();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+            let feed = feeds::create(&connection, "Link99".to_string(), "rss".to_string()).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            super::create_subscription(&connection, new_subscription.clone()).unwrap();
+
+            let result = super::fetch_chats_with_subscriptions(&connection, 1, 1).unwrap();
+
+            assert_eq!(result.len(), 1);
+            assert_eq!(result[0], chat.id);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn fetch_chats_with_subscriptions_does_not_fetch_chat_without_subscription() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let new_chat = build_new_chat();
+            super::create_chat(&connection, new_chat).unwrap();
+
+            let result = super::fetch_chats_with_subscriptions(&connection, 1, 1).unwrap();
+
+            assert_eq!(result.len(), 0);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn fetch_chats_with_subscriptions_paginates_result() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed =
+                feeds::create(&connection, "Link98".to_string(), "atom".to_string()).unwrap();
+            let chat1 = super::create_chat(&connection, build_new_chat_with_id(10)).unwrap();
+
+            let new_subscription1 = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat1.id,
+            };
+
+            super::create_subscription(&connection, new_subscription1).unwrap();
+
+            let chat2 = super::create_chat(&connection, build_new_chat_with_id(20)).unwrap();
+
+            let new_subscription2 = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat2.id,
+            };
+
+            super::create_subscription(&connection, new_subscription2).unwrap();
+
+            let result1 = super::fetch_chats_with_subscriptions(&connection, 1, 1).unwrap();
+
+            assert_eq!(result1[0], chat1.id);
+
+            let result2 = super::fetch_chats_with_subscriptions(&connection, 2, 1).unwrap();
+
+            assert_eq!(result2[0], chat2.id);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn fetch_chats_with_subscriptions_does_no_return_duplicates() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed1 =
+                feeds::create(&connection, "Link97".to_string(), "atom".to_string()).unwrap();
+            let feed2 =
+                feeds::create(&connection, "Link96".to_string(), "atom".to_string()).unwrap();
+            let chat = super::create_chat(&connection, build_new_chat()).unwrap();
+
+            let new_subscription1 = NewTelegramSubscription {
+                feed_id: feed1.id,
+                chat_id: chat.id,
+            };
+
+            super::create_subscription(&connection, new_subscription1).unwrap();
+
+            let new_subscription2 = NewTelegramSubscription {
+                feed_id: feed2.id,
+                chat_id: chat.id,
+            };
+
+            super::create_subscription(&connection, new_subscription2).unwrap();
+
+            let result1 = super::fetch_chats_with_subscriptions(&connection, 1, 1).unwrap();
+
+            assert_eq!(result1[0], chat.id);
+
+            let result2 = super::fetch_chats_with_subscriptions(&connection, 2, 1).unwrap();
+
+            assert_eq!(result2.len(), 0);
+
+            Ok(())
+        });
+    }
+
+    #[test]
     fn count_subscriptions_for_chat_counts_the_number_of_subscriptions() {
         let connection = db::establish_connection();
 
@@ -457,6 +599,69 @@ mod tests {
 
             assert_eq!(result, 1);
             assert_eq!(super::count_subscriptions_for_chat(&connection, 99), 0);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn find_subscriptions_for_chat_finds_subscriptions_for_chat() {
+        let connection = db::establish_connection();
+
+        let new_chat = build_new_chat();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed1 =
+                feeds::create(&connection, "Link80".to_string(), "atom".to_string()).unwrap();
+            let feed2 =
+                feeds::create(&connection, "Link79".to_string(), "atom".to_string()).unwrap();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+
+            let new_subscription1 = NewTelegramSubscription {
+                feed_id: feed1.id,
+                chat_id: chat.id,
+            };
+
+            super::create_subscription(&connection, new_subscription1).unwrap();
+
+            let new_subscription2 = NewTelegramSubscription {
+                feed_id: feed2.id,
+                chat_id: chat.id,
+            };
+
+            super::create_subscription(&connection, new_subscription2).unwrap();
+
+            let result = super::find_subscriptions_for_chat(&connection, chat.id).unwrap();
+
+            assert_eq!(result.len(), 2);
+            assert_eq!(result[0].feed_id, feed1.id);
+            assert_eq!(result[1].feed_id, feed2.id);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn find_subscriptions_for_chat_does_not_return_wrong_chats() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed =
+                feeds::create(&connection, "Link80".to_string(), "atom".to_string()).unwrap();
+            let chat1 = super::create_chat(&connection, build_new_chat_with_id(99)).unwrap();
+
+            let chat2 = super::create_chat(&connection, build_new_chat_with_id(89)).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat1.id,
+            };
+
+            super::create_subscription(&connection, new_subscription).unwrap();
+
+            let result = super::find_subscriptions_for_chat(&connection, chat2.id).unwrap();
+
+            assert_eq!(result.len(), 0);
 
             Ok(())
         });
