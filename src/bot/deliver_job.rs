@@ -29,6 +29,7 @@ static DISCRIPTION_LIMIT: usize = 3500;
 
 pub struct DeliverJob {}
 
+#[derive(Debug)]
 pub struct DeliverJobError {
     pub msg: String,
 }
@@ -49,39 +50,55 @@ impl DeliverJob {
     pub async fn execute(&self) -> Result<(), DeliverJobError> {
         let semaphored_connection = db::get_semaphored_connection().await;
         let db_connection = semaphored_connection.connection;
-        let mut current_subscriptions: Vec<TelegramSubscription>;
+        let mut current_chats: Vec<i64>;
         let mut page = 1;
         let mut total_number = 0;
 
         log::info!("Started delivering feed items");
 
         loop {
-            current_subscriptions = telegram::fetch_subscriptions(&db_connection, page, 1000)?;
+            current_chats = telegram::fetch_chats_with_subscriptions(&db_connection, page, 1000)?;
 
             page += 1;
 
-            if current_subscriptions.is_empty() {
+            if current_chats.is_empty() {
                 break;
             }
 
-            total_number += current_subscriptions.len();
+            total_number += current_chats.len();
 
-            for subscription in current_subscriptions {
-                tokio::spawn(deliver_subscription_updates(subscription));
+            for chat_id in current_chats {
+                tokio::spawn(deliver_updates_for_chat(chat_id));
             }
         }
 
-        log::info!(
-            "Started checking delivery for {} subscriptions",
-            total_number
-        );
+        log::info!("Started checking delivery for {} chats", total_number);
 
         Ok(())
     }
 }
 
+async fn deliver_updates_for_chat(chat_id: i64) -> Result<(), DeliverJobError> {
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let connection = semaphored_connection.connection;
+    let subscriptions = telegram::find_subscriptions_for_chat(&connection, chat_id)?;
+
+    for subscription in subscriptions {
+        match deliver_subscription_updates(&subscription).await {
+            Ok(()) => (),
+            Err(error) => log::error!(
+                "Failed to deliver updates for subscription: {:?} {:?}",
+                subscription,
+                error
+            ),
+        }
+    }
+
+    Ok(())
+}
+
 async fn deliver_subscription_updates(
-    subscription: TelegramSubscription,
+    subscription: &TelegramSubscription,
 ) -> Result<(), DeliverJobError> {
     let semaphored_connection = db::get_semaphored_connection().await;
     let connection = semaphored_connection.connection;
