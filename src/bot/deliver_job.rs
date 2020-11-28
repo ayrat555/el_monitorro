@@ -4,6 +4,7 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::models::feed::Feed;
 use crate::models::feed_item::FeedItem;
+use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
 use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
@@ -107,6 +108,9 @@ async fn deliver_subscription_updates(
     let chat_id = subscription.chat_id;
     let feed = feeds::find(&connection, subscription.feed_id).unwrap();
 
+    let chat = telegram::find_chat(&connection, chat_id).unwrap();
+    let delay = delay_period(&chat);
+
     if feed_items.len() < undelivered_count as usize {
         let message = format!(
             "You have {} unread items, below {} last items for {}",
@@ -116,7 +120,10 @@ async fn deliver_subscription_updates(
         );
 
         match api::send_message(chat_id, message).await {
-            Ok(_) => (),
+            Ok(_) => {
+                time::delay_for(delay).await;
+                ()
+            }
             Err(error) => {
                 let error_message = format!("{}", error);
 
@@ -137,8 +144,6 @@ async fn deliver_subscription_updates(
     }
 
     if !feed_items.is_empty() {
-        let chat = telegram::find_chat(&connection, chat_id).unwrap();
-
         let offset = match chat.utc_offset_minutes {
             None => FixedOffset::west(0),
             Some(value) => {
@@ -159,10 +164,11 @@ async fn deliver_subscription_updates(
         messages.reverse();
 
         for message in messages {
-            time::delay_for(Duration::from_millis(250)).await;
-
             match api::send_message(chat_id, message).await {
-                Ok(_) => (),
+                Ok(_) => {
+                    time::delay_for(delay).await;
+                    ()
+                }
                 Err(error) => {
                     let error_message = format!("{}", error);
 
@@ -304,6 +310,13 @@ fn get_max_publication_date(items: Vec<FeedItem>) -> DateTime<Utc> {
         .max_by(|item1, item2| item1.publication_date.cmp(&item2.publication_date))
         .unwrap()
         .publication_date
+}
+
+fn delay_period(chat: &TelegramChat) -> Duration {
+    match chat.kind.as_str() {
+        "group" | "supergroup" => Duration::from_millis(3000),
+        _ => Duration::from_millis(100),
+    }
 }
 
 #[cfg(test)]
