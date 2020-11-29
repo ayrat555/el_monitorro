@@ -53,7 +53,8 @@ impl DeliverJob {
         let db_connection = semaphored_connection.connection;
         let mut current_chats: Vec<i64>;
         let mut page = 1;
-        let mut total_number = 0;
+        let mut total_chat_number = 0;
+        let mut total_subscription_number = 0;
 
         log::info!("Started delivering feed items");
 
@@ -66,25 +67,31 @@ impl DeliverJob {
                 break;
             }
 
-            total_number += current_chats.len();
+            total_chat_number += current_chats.len();
 
             for chat_id in current_chats {
-                tokio::spawn(deliver_updates_for_chat(chat_id));
+                let subscriptions = telegram::find_subscriptions_for_chat(&db_connection, chat_id)?;
+
+                total_subscription_number += subscriptions.len();
+
+                tokio::spawn(deliver_updates_for_chat(subscriptions));
             }
         }
 
-        log::info!("Started checking delivery for {} chats", total_number);
+        log::info!(
+            "Started checking delivery for {} chats and {} subscriptions",
+            total_chat_number,
+            total_subscription_number
+        );
 
         Ok(())
     }
 }
 
-async fn deliver_updates_for_chat(chat_id: i64) -> Result<(), DeliverJobError> {
-    let semaphored_connection = db::get_semaphored_connection().await;
-    let connection = semaphored_connection.connection;
-    let subscriptions = telegram::find_subscriptions_for_chat(&connection, chat_id)?;
-
-    for subscription in subscriptions {
+async fn deliver_updates_for_chat(
+    telegram_subscriptions: Vec<TelegramSubscription>,
+) -> Result<(), DeliverJobError> {
+    for subscription in telegram_subscriptions {
         match deliver_subscription_updates(&subscription).await {
             Ok(()) => (),
             Err(error) => log::error!(
