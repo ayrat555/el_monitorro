@@ -120,7 +120,13 @@ fn commands_string() -> String {
 }
 
 async fn help(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
-    let response = commands_string();
+    let response_help = commands_string();
+
+    let response = format!(
+        "{}\n\
+        If you still have questions please join https://t.me/el_monitorro or contact the author (@Ayrat555)\n",
+        response_help
+    );
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -136,7 +142,7 @@ async fn start(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
          When you subscribe to a new feed, you'll receive 10 last messages from it. After that, you'll start receiving only new feed items.\n\
          Feed updates check interval is 1 minute. Unread items delivery interval is also 1 minute.\n\
          Currently, the number of subscriptions is limited to {}.\n\n\
-         Contact @Ayrat555 with your feedback, suggestions, found bugs, etc. The bot is open source. You can find it at https://github.com/ayrat555/el_monitorro\n\n\
+         Join https://t.me/el_monitorro or contact the author (@Ayrat555) with your feedback, suggestions, found bugs, etc. The bot is open source. You can find it at https://github.com/ayrat555/el_monitorro\n\n\
          Unlike other similar projects, El Monitorro is completely open and it's free of charge. I develop it in my free time and pay for hosting myself. Consider donating to the project - https://paypal.me/ayrat555",
         commands_string(),
         logic::sub_limit()
