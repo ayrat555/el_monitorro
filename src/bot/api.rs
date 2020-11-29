@@ -3,6 +3,7 @@ use crate::bot::logic::{DeleteSubscriptionError, SubscriptionError};
 use crate::db;
 use crate::db::telegram::NewTelegramChat;
 use futures::StreamExt;
+use once_cell::sync::OnceCell;
 use std::env;
 use telegram_bot::prelude::*;
 use telegram_bot::{
@@ -21,6 +22,7 @@ static GET_GLOBAL_TEMPLATE: &str = "/get_global_template";
 static UNSUBSCRIBE: &str = "/unsubscribe";
 static HELP: &str = "/help";
 static START: &str = "/start";
+static OWNER_TELEGRAM_ID: OnceCell<Option<i64>> = OnceCell::new();
 
 static COMMANDS: [&str; 11] = [
     SUBSCRIBE,
@@ -296,14 +298,6 @@ fn process_message(api: Api, orig_message: Message) {
             let command = data.clone();
             let message = MessageOrChannelPost::Message(orig_message.clone());
 
-            let is_known_command = COMMANDS
-                .iter()
-                .any(|command_name| command.contains(command_name));
-
-            if is_known_command {
-                log::info!("{:?} wrote: {}", get_chat_id(&message), command);
-            }
-
             tokio::spawn(process_message_or_channel_post(api, message, command));
         }
         _ => (),
@@ -325,12 +319,37 @@ fn process_channel_post(api: Api, post: ChannelPost) {
     };
 }
 
+fn owner_telegram_id() -> &'static Option<i64> {
+    OWNER_TELEGRAM_ID.get_or_init(|| match env::var("OWNER_TELEGRAM_ID") {
+        Ok(val) => {
+            let parsed_value: i64 = val.parse().unwrap();
+            Some(parsed_value)
+        }
+        Err(_error) => None,
+    })
+}
+
 async fn process_message_or_channel_post(
     api: Api,
     message: MessageOrChannelPost,
     command_string: String,
 ) -> Result<(), Error> {
     let command = &command_string;
+    let chat_id = get_chat_id(&message);
+
+    if let Some(id) = owner_telegram_id() {
+        if *id != chat_id {
+            return Ok(());
+        }
+    }
+
+    let is_known_command = COMMANDS
+        .iter()
+        .any(|command_name| command.contains(command_name));
+
+    if is_known_command {
+        log::info!("{:?} wrote: {}", chat_id, command);
+    }
 
     if command.starts_with(SUBSCRIBE) {
         let argument = parse_argument(command, SUBSCRIBE);
