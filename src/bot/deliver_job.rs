@@ -4,6 +4,7 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::models::feed::Feed;
 use crate::models::feed_item::FeedItem;
+use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
 use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
@@ -29,6 +30,7 @@ static DISCRIPTION_LIMIT: usize = 3500;
 
 pub struct DeliverJob {}
 
+#[derive(Debug)]
 pub struct DeliverJobError {
     pub msg: String,
 }
@@ -49,39 +51,62 @@ impl DeliverJob {
     pub async fn execute(&self) -> Result<(), DeliverJobError> {
         let semaphored_connection = db::get_semaphored_connection().await;
         let db_connection = semaphored_connection.connection;
-        let mut current_subscriptions: Vec<TelegramSubscription>;
+        let mut current_chats: Vec<i64>;
         let mut page = 1;
-        let mut total_number = 0;
+        let mut total_chat_number = 0;
+        let mut total_subscription_number = 0;
 
         log::info!("Started delivering feed items");
 
         loop {
-            current_subscriptions = telegram::fetch_subscriptions(&db_connection, page, 1000)?;
+            current_chats = telegram::fetch_chats_with_subscriptions(&db_connection, page, 1000)?;
 
             page += 1;
 
-            if current_subscriptions.is_empty() {
+            if current_chats.is_empty() {
                 break;
             }
 
-            total_number += current_subscriptions.len();
+            total_chat_number += current_chats.len();
 
-            for subscription in current_subscriptions {
-                tokio::spawn(deliver_subscription_updates(subscription));
+            for chat_id in current_chats {
+                let subscriptions = telegram::find_subscriptions_for_chat(&db_connection, chat_id)?;
+
+                total_subscription_number += subscriptions.len();
+
+                tokio::spawn(deliver_updates_for_chat(subscriptions));
             }
         }
 
         log::info!(
-            "Started checking delivery for {} subscriptions",
-            total_number
+            "Started checking delivery for {} chats and {} subscriptions",
+            total_chat_number,
+            total_subscription_number
         );
 
         Ok(())
     }
 }
 
+async fn deliver_updates_for_chat(
+    telegram_subscriptions: Vec<TelegramSubscription>,
+) -> Result<(), DeliverJobError> {
+    for subscription in telegram_subscriptions {
+        match deliver_subscription_updates(&subscription).await {
+            Ok(()) => (),
+            Err(error) => log::error!(
+                "Failed to deliver updates for subscription: {:?} {:?}",
+                subscription,
+                error
+            ),
+        }
+    }
+
+    Ok(())
+}
+
 async fn deliver_subscription_updates(
-    subscription: TelegramSubscription,
+    subscription: &TelegramSubscription,
 ) -> Result<(), DeliverJobError> {
     let semaphored_connection = db::get_semaphored_connection().await;
     let connection = semaphored_connection.connection;
@@ -89,6 +114,9 @@ async fn deliver_subscription_updates(
     let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
     let chat_id = subscription.chat_id;
     let feed = feeds::find(&connection, subscription.feed_id).unwrap();
+
+    let chat = telegram::find_chat(&connection, chat_id).unwrap();
+    let delay = delay_period(&chat);
 
     if feed_items.len() < undelivered_count as usize {
         let message = format!(
@@ -99,7 +127,10 @@ async fn deliver_subscription_updates(
         );
 
         match api::send_message(chat_id, message).await {
-            Ok(_) => (),
+            Ok(_) => {
+                time::delay_for(delay).await;
+                ()
+            }
             Err(error) => {
                 let error_message = format!("{}", error);
 
@@ -120,8 +151,6 @@ async fn deliver_subscription_updates(
     }
 
     if !feed_items.is_empty() {
-        let chat = telegram::find_chat(&connection, chat_id).unwrap();
-
         let offset = match chat.utc_offset_minutes {
             None => FixedOffset::west(0),
             Some(value) => {
@@ -142,10 +171,11 @@ async fn deliver_subscription_updates(
         messages.reverse();
 
         for message in messages {
-            time::delay_for(Duration::from_millis(250)).await;
-
             match api::send_message(chat_id, message).await {
-                Ok(_) => (),
+                Ok(_) => {
+                    time::delay_for(delay).await;
+                    ()
+                }
                 Err(error) => {
                     let error_message = format!("{}", error);
 
@@ -287,6 +317,13 @@ fn get_max_publication_date(items: Vec<FeedItem>) -> DateTime<Utc> {
         .max_by(|item1, item2| item1.publication_date.cmp(&item2.publication_date))
         .unwrap()
         .publication_date
+}
+
+fn delay_period(chat: &TelegramChat) -> Duration {
+    match chat.kind.as_str() {
+        "group" | "supergroup" => Duration::from_millis(2050),
+        _ => Duration::from_millis(35),
+    }
 }
 
 #[cfg(test)]
