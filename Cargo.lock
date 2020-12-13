@@ -2004,9 +2004,8 @@ dependencies = [
 
 [[package]]
 name = "telegram-bot"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb29fb11ef40c839c1c6b4e9c2ec4f357f9f674491e9df5a8c94f8cc2005f860"
+version = "0.8.0"
+source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/fix-uknown-sender-name#16a1c4d470ed3cb43a975181e3dbe4cd3ce74e6d"
 dependencies = [
  "bytes",
  "futures",
@@ -2021,9 +2020,8 @@ dependencies = [
 
 [[package]]
 name = "telegram-bot-raw"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "add65834bee405351f092b18a4647cae05d1c40699570054eadc6d4035d9692c"
+version = "0.8.0"
+source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/fix-uknown-sender-name#16a1c4d470ed3cb43a975181e3dbe4cd3ce74e6d"
 dependencies = [
  "bytes",
  "serde",
