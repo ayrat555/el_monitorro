@@ -1,6 +1,7 @@
 use crate::db;
 use crate::sync::reader;
 use crate::sync::reader::{FeedReaderError, FetchedFeed, FetchedFeedItem, ReadFeed};
+use atom_syndication::Entry;
 use atom_syndication::Feed as AtomFeed;
 use atom_syndication::Link;
 use chrono::{DateTime, FixedOffset, Utc};
@@ -47,7 +48,7 @@ impl From<AtomFeed> for FetchedFeed {
 
                 FetchedFeedItem {
                     title: item.title().to_string(),
-                    description: item.summary().map(|s| s.to_string()),
+                    description: parse_description(&item),
                     link: find_link(item.links(), "alternate")
                         .unwrap()
                         .href()
@@ -78,6 +79,20 @@ impl From<AtomFeed> for FetchedFeed {
             feed_type: "atom".to_string(),
         }
     }
+}
+
+fn parse_description(item: &Entry) -> Option<String> {
+    if let Some(value) = item.summary() {
+        return Some(value.to_string());
+    }
+
+    if let Some(content) = item.content() {
+        if let Some(value) = content.value() {
+            return Some(value.to_string());
+        }
+    }
+
+    None
 }
 
 fn find_link<'a>(links: &'a [Link], link_type: &str) -> Option<&'a Link> {
@@ -141,5 +156,16 @@ mod tests {
         let item = fetched_feed.items.first().unwrap();
 
         assert_eq!(item.link, "https://www.sekolahdasar.net/2020/11/latihan-soal-ulangan-pts-kelas-4-bahasa-jawa.html".to_string());
+    }
+
+    #[test]
+    fn it_uses_content_as_description_if_summarry_is_not_set() {
+        let xml_feed = fs::read_to_string("./tests/support/atom_feed_content.xml").unwrap();
+        let channel = AtomFeed::from_str(&xml_feed).unwrap();
+
+        let fetched_feed: FetchedFeed = channel.into();
+        let item = fetched_feed.items.first().unwrap();
+
+        assert_eq!(item.description, Some("30/12/2020".to_string()));
     }
 }
