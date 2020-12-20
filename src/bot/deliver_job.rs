@@ -272,20 +272,14 @@ fn format_messages(
             match reg.render_template(&templ, &data) {
                 Err(error) => {
                     log::error!("Failed to render template {:?}", error);
-                    (
-                        "Failed to render a message".to_string(),
-                        item.publication_date,
-                    )
+                    ("Failed to render a message".to_string(), item.created_at)
                 }
                 Ok(result) => match decode_html(&result) {
                     Err(error) => {
                         log::error!("Failed to render template {:?}", error);
-                        (
-                            "Failed to render a message".to_string(),
-                            item.publication_date,
-                        )
+                        ("Failed to render a message".to_string(), item.created_at)
                     }
-                    Ok(string) => (string, item.publication_date),
+                    Ok(string) => (string, item.created_at),
                 },
             }
         })
@@ -350,7 +344,7 @@ mod tests {
             author: None,
             guid: None,
             publication_date: publication_date.clone(),
-            created_at: db::current_time(),
+            created_at: publication_date.clone(),
             updated_at: db::current_time(),
         }];
         let feed = Feed {
@@ -381,6 +375,7 @@ mod tests {
             DateTime::parse_from_rfc2822("Wed, 13 May 2020 15:54:02 EDT")
                 .unwrap()
                 .into();
+        let current_time = db::current_time();
         let feed_items = vec![FeedItem {
             feed_id: 1,
             title: "Title".to_string(),
@@ -389,8 +384,8 @@ mod tests {
             author: None,
             guid: None,
             publication_date: publication_date.clone(),
-            created_at: db::current_time(),
-            updated_at: db::current_time(),
+            created_at: current_time.clone(),
+            updated_at: current_time.clone(),
         }];
 
         let feed = Feed {
@@ -412,6 +407,6 @@ mod tests {
             "FeedTitle link 2020-05-14 05:54:02 +10:00 dsd Description Title Title".to_string()
         );
 
-        assert_eq!(result[0].1, publication_date);
+        assert_eq!(result[0].1, current_time);
     }
 }
