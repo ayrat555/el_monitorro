@@ -23,4 +23,4 @@ RUN diesel database setup
 
 RUN diesel migration run
 
-CMD ["bash", "start.sh"]
+CMD ["bash", "/app/src/start.sh"]
