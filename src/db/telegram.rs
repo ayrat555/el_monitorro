@@ -227,7 +227,7 @@ pub fn count_undelivered_feed_items(
     };
 
     feed_items::table
-        .filter(feed_items::publication_date.gt(last_delivered_at))
+        .filter(feed_items::created_at.gt(last_delivered_at))
         .filter(feed_items::feed_id.eq(subscription.feed_id))
         .count()
         .get_result::<i64>(conn)
