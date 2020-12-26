@@ -1,1 +1,1 @@
-DROP INDEX feed_items_created_at_index_index;
+DROP INDEX feed_items_created_at_index;
