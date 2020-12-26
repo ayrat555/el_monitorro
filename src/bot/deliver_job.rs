@@ -17,15 +17,18 @@ use serde_json::value::Map;
 use std::time::Duration;
 use tokio::time;
 
-static BLOCKED_ERROR: &str = "Forbidden: bot was blocked by the user";
-static CHAT_NOT_FOUND: &str = "Bad Request: chat not found";
-static KICKED_ERROR: &str = "Forbidden: bot was kicked from the supergroup chat";
-static DEACTIVATED_ERROR: &str = "Forbidden: user is deactivated";
-static CHAT_UPGRADED_ERROR: &str = "Bad Request: group chat was upgraded to a supergroup chat";
-static BOT_IS_NOT_MEMBER: &str = "Forbidden: bot is not a member of the supergroup chat";
-static BOT_IS_NOT_IN_CHANNEL: &str = "Forbidden: bot is not a member of the channel chat";
-static BOT_IS_KICKED: &str = "Forbidden: bot was kicked from the channel chat";
-static BOT_IS_KICKED_GROUP: &str = "Forbidden: bot was kicked from the group chat";
+static TELEGRAM_ERRORS: [&'static str; 10] = [
+    "Forbidden: bot was blocked by the user",
+    "Bad Request: chat not found",
+    "Forbidden: bot was kicked from the supergroup chat",
+    "Forbidden: user is deactivated",
+    "Bad Request: group chat was upgraded to a supergroup chat",
+    "Forbidden: bot is not a member of the supergroup chat",
+    "Forbidden: bot is not a member of the channel chat",
+    "Forbidden: bot was kicked from the channel chat",
+    "Forbidden: bot was kicked from the group chat",
+    "Bad Request: have no rights to send a message",
+];
 
 static DISCRIPTION_LIMIT: usize = 3500;
 
@@ -304,15 +307,9 @@ fn truncate(s: &str, max_chars: usize) -> String {
 }
 
 fn bot_blocked(error_message: &str) -> bool {
-    error_message == BLOCKED_ERROR
-        || error_message == CHAT_NOT_FOUND
-        || error_message == KICKED_ERROR
-        || error_message == DEACTIVATED_ERROR
-        || error_message == BOT_IS_NOT_MEMBER
-        || error_message == BOT_IS_KICKED
-        || error_message == BOT_IS_KICKED_GROUP
-        || error_message == BOT_IS_NOT_IN_CHANNEL
-        || error_message.contains(CHAT_UPGRADED_ERROR)
+    TELEGRAM_ERRORS
+        .iter()
+        .any(|&message| message == error_message)
 }
 
 fn delay_period(chat: &TelegramChat) -> Duration {
