@@ -209,7 +209,10 @@ pub fn find_undelivered_feed_items(
     feed_items::table
         .filter(feed_items::created_at.gt(last_delivered_at))
         .filter(feed_items::feed_id.eq(subscription.feed_id))
-        .order(feed_items::created_at.desc())
+        .order((
+            feed_items::created_at.desc(),
+            feed_items::publication_date.desc(),
+        ))
         .limit(10)
         .get_results(conn)
 }
