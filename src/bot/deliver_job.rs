@@ -30,7 +30,7 @@ static TELEGRAM_ERRORS: [&'static str; 10] = [
     "Bad Request: have no rights to send a message",
 ];
 
-static DISCRIPTION_LIMIT: usize = 3500;
+static DISCRIPTION_LIMIT: usize = 1500;
 
 pub struct DeliverJob {}
 
