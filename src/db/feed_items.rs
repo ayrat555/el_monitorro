@@ -57,22 +57,25 @@ pub fn delete_old_feed_items(
     feed_id: i64,
     offset: i64,
 ) -> Result<usize, Error> {
-    let publication_date_result = feed_items::table
+    let creation_date_result = feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
-        .order(feed_items::publication_date.desc())
+        .order((
+            feed_items::created_at.desc(),
+            feed_items::publication_date.desc(),
+        ))
         .offset(offset)
         .limit(1)
-        .select(feed_items::publication_date)
+        .select(feed_items::created_at)
         .load::<DateTime<Utc>>(conn);
 
-    match publication_date_result {
-        Ok(publication_dates) => {
-            if publication_dates.len() > 0 {
-                let publication_date = publication_dates[0];
+    match creation_date_result {
+        Ok(creation_dates) => {
+            if creation_dates.len() > 0 {
+                let creation_date = creation_dates[0];
 
                 let delete_query = feed_items::table
                     .filter(feed_items::feed_id.eq(feed_id))
-                    .filter(feed_items::publication_date.le(publication_date));
+                    .filter(feed_items::created_at.le(creation_date));
 
                 diesel::delete(delete_query).execute(conn)
             } else {
@@ -88,7 +91,6 @@ mod tests {
     use crate::db;
     use crate::db::feeds;
     use crate::sync::FetchedFeedItem;
-    use chrono::Duration;
     use diesel::connection::Connection;
     use diesel::result::Error;
 
@@ -209,18 +211,17 @@ mod tests {
                     link: "Link2".to_string(),
                     author: Some("Author2".to_string()),
                     guid: Some("Guid2".to_string()),
-                    publication_date: db::current_time() - Duration::days(1),
+                    publication_date: db::current_time(),
                 },
             ];
 
             super::create(&connection, feed.id, feed_items.clone()).unwrap();
 
             let result = super::delete_old_feed_items(&connection, feed.id, 1).unwrap();
-            assert_eq!(result, 1);
+            assert_eq!(result, 2);
 
             let found_feed_items = super::find(&connection, feed.id).unwrap();
-            assert_eq!(found_feed_items.len(), 1);
-            assert_eq!(found_feed_items[0].guid, Some("Guid1".to_string()));
+            assert_eq!(found_feed_items.len(), 0);
 
             Ok(())
         });
@@ -247,7 +248,7 @@ mod tests {
                     link: "Link2".to_string(),
                     author: Some("Author2".to_string()),
                     guid: Some("Guid2".to_string()),
-                    publication_date: db::current_time() - Duration::days(1),
+                    publication_date: db::current_time(),
                 },
             ];
 
