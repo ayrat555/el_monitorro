@@ -30,7 +30,7 @@ static TELEGRAM_ERRORS: [&'static str; 10] = [
     "Bad Request: have no rights to send a message",
 ];
 
-static DISCRIPTION_LIMIT: usize = 1500;
+static DISCRIPTION_LIMIT: usize = 2500;
 
 pub struct DeliverJob {}
 
@@ -282,7 +282,7 @@ fn format_messages(
                         log::error!("Failed to render template {:?}", error);
                         ("Failed to render a message".to_string(), item.created_at)
                     }
-                    Ok(string) => (string, item.created_at),
+                    Ok(string) => (truncate(&string, 4000), item.created_at),
                 },
             }
         })
