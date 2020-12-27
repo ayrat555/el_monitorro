@@ -4,6 +4,7 @@ use crate::sync::FetchedFeedItem;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
+use html2text::from_read;
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feed_items"]
@@ -26,7 +27,9 @@ pub fn create(
         .into_iter()
         .map(|fetched_feed_item| NewFeedItem {
             feed_id: feed_id,
-            title: fetched_feed_item.title,
+            title: from_read(&fetched_feed_item.title.as_bytes()[..], 500)
+                .trim()
+                .to_string(),
             description: fetched_feed_item.description,
             link: fetched_feed_item.link,
             author: fetched_feed_item.author,
