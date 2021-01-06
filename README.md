@@ -119,4 +119,4 @@ All configuration is done through env variables
 | DELIVER_INTERVAL_SECONDS |   no     |  60           |  The bot tries to deliver new feed items every `DELIVER_INTERVAL_SECONDS` seconds                                                                                                    |
 | CLEAN_INTERVAL_SECONDS   |   no     |  3600         |  The bot cleans old feed items and feeds without subscriptions every `CLEAN_INTERVAL_SECONDS` seconds                                                                                |
 | OWNER_TELEGRAM_ID        |   no     |  --           |  If this value is set, the bot will process commands from the specified chat id
-                                      
+| REQUEST_TIMEOUT          |   no     |  5            |  Timeout in seconds for feed syncing requests
