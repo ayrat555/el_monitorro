@@ -2,14 +2,19 @@ use self::atom::AtomReader;
 use self::json::JsonReader;
 use self::rss::RssReader;
 use chrono::{DateTime, Utc};
+use dotenv::dotenv;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
+use once_cell::sync::OnceCell;
+use std::env;
 use std::io;
 use std::time::Duration;
 
 pub mod atom;
 pub mod json;
 pub mod rss;
+
+static REQUEST_TIMEOUT: OnceCell<u64> = OnceCell::new();
 
 #[derive(Debug)]
 pub struct FeedReaderError {
@@ -41,7 +46,7 @@ pub trait ReadFeed {
 
 pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
     let client = match HttpClient::builder()
-        .timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(*request_timeout_seconds()))
         .default_header("User-Agent", "el_monitorro/0.1.0")
         .redirect_policy(RedirectPolicy::Limit(10))
         .build()
@@ -101,5 +106,16 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
 
     Err(FeedReaderError {
         msg: "Url is not a feed".to_string(),
+    })
+}
+
+fn request_timeout_seconds() -> &'static u64 {
+    REQUEST_TIMEOUT.get_or_init(|| {
+        dotenv().ok();
+
+        let timeout_str = env::var("REQUEST_TIMEOUT").unwrap_or("5".to_string());
+        let timeout: u64 = timeout_str.parse().unwrap();
+
+        timeout
     })
 }
