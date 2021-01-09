@@ -1,9 +1,11 @@
-FROM rustlang/rust:nightly-alpine3.12
-
-RUN apk add openssl-dev build-base postgresql-dev
+FROM rustlang/rust:nightly-buster
 
 WORKDIR /app
 
-COPY . .
+COPY ./. .
+
+RUN cargo install diesel_cli --no-default-features --features postgres
 
 RUN cargo build --release
+
+CMD ["bash", "/app/docker/start.sh"]
