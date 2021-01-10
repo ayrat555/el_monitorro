@@ -120,3 +120,36 @@ All configuration is done through env variables
 | CLEAN_INTERVAL_SECONDS   |   no     |  3600         |  The bot cleans old feed items and feeds without subscriptions every `CLEAN_INTERVAL_SECONDS` seconds                                                                                |
 | OWNER_TELEGRAM_ID        |   no     |  --           |  If this value is set, the bot will process commands from the specified chat id
 | REQUEST_TIMEOUT          |   no     |  5            |  Timeout in seconds for feed syncing requests
+
+### Using docker image
+
+Docker image is not published to docker hub yet. So the image should be built manually. Run the following command in the `el_monitorro` directory:
+
+```sh
+docker build ./
+```
+
+It accepts additional env variables:
+
+- `RUN_MIGRATION` - if this variable is not empty, `diesel database setup` is run. It creates DB and runs migrations.
+- `BOT_BINARY` - depending on this variable, docker container will run one of four binaries. Possible values are `commands`, `sync`, `deliver`, `cleaner`.
+
+You'll have to set these variables in the `.env` file. For example:
+
+```
+...
+
+RUN_MIGRATION=true
+BOT_BINARY=commands
+```
+
+Now you can run the docker container:
+
+```sh
+docker run --env-file ./.env --network host -t generated_tag
+```
+
+Notes:
+
+- `generated_tag` is a tag returned by `docker build` command.
+- `--network host` is used so the docker container can access a host network if you're running Postgres on the same machine
