@@ -17,7 +17,7 @@ use serde_json::value::Map;
 use std::time::Duration;
 use tokio::time;
 
-static TELEGRAM_ERRORS: [&'static str; 10] = [
+static TELEGRAM_ERRORS: [&'static str; 11] = [
     "Forbidden: bot was blocked by the user",
     "Bad Request: chat not found",
     "Forbidden: bot was kicked from the supergroup chat",
@@ -28,6 +28,7 @@ static TELEGRAM_ERRORS: [&'static str; 10] = [
     "Forbidden: bot was kicked from the channel chat",
     "Forbidden: bot was kicked from the group chat",
     "Bad Request: have no rights to send a message",
+    "Bad Request: group chat was upgraded to a supergroup chat, migrate to chat id",
 ];
 
 static DISCRIPTION_LIMIT: usize = 2500;
@@ -309,7 +310,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
 fn bot_blocked(error_message: &str) -> bool {
     TELEGRAM_ERRORS
         .iter()
-        .any(|&message| message == error_message)
+        .any(|&message| error_message.contains(message))
 }
 
 fn delay_period(chat: &TelegramChat) -> Duration {
