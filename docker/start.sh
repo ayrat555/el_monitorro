@@ -12,16 +12,16 @@ fi
 
 case "$BOT_BINARY" in
     commands*)
-        ./target/release/el_monitorro
+        ./el_monitorro
         ;;
     sync*)
-        ./target/release/sync
+        ./sync
         ;;
     deliver*)
-        ./target/release/deliver
+        ./deliver
         ;;
     cleaner*)
-        ./target/release/cleaner
+        ./cleaner
         ;;
     *)
         echo "Unknown binary"

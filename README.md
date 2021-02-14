@@ -123,13 +123,7 @@ All configuration is done through env variables
 
 ### Using docker image
 
-Docker image is not published to docker hub yet. So the image should be built manually. Run the following command in the `el_monitorro` directory:
-
-```sh
-docker build ./
-```
-
-It accepts additional env variables:
+The image is published on docker hub under [ayratbadykov/el_monitorro](https://hub.docker.com/r/ayratbadykov/el_monitorro). It accepts additional env variables:
 
 - `RUN_MIGRATION` - if this variable is not empty, `diesel database setup` is run. It creates DB and runs migrations.
 - `BOT_BINARY` - depending on this variable, docker container will run one of four binaries. Possible values are `commands`, `sync`, `deliver`, `cleaner`.
@@ -143,13 +137,21 @@ RUN_MIGRATION=true
 BOT_BINARY=commands
 ```
 
-Now you can run the docker container:
+Run the docker container:
 
 ```sh
-docker run --env-file ./.env --network host -t generated_tag
+docker run --env-file ./.env --network host -t ayratbadykov/el_monitorro:latest
 ```
 
 Notes:
 
-- `generated_tag` is a tag returned by `docker build` command.
 - `--network host` is used so the docker container can access a host network if you're running Postgres on the same machine
+- To run all binaries (commands, sync, deliver and cleaner), you'll have to start 4 containers replacing `BOT_BINARY` variable.
+
+#### Creating a docker image from the latest master branch
+
+Run the following command in the `el_monitorro` directory to build the image from the master branch:
+
+```sh
+docker build ./ -t ayratbadykov/el_monitorro:latest
+```
