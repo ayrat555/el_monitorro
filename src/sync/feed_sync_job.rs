@@ -16,7 +16,7 @@ pub struct FeedSyncJob {
     feed_id: i64,
 }
 
-#[derive(Debug, Fail)]
+#[derive(Debug, Fail, PartialEq, Eq)]
 pub enum FeedSyncError {
     #[fail(display = "failed to sync a feed: {}", msg)]
     FeedError { msg: String },
@@ -32,7 +32,15 @@ impl FeedSyncJob {
     }
 
     pub fn execute(&self, db_connection: &PgConnection) -> Result<(), FeedSyncError> {
-        let feed = feeds::find(db_connection, self.feed_id).unwrap();
+        let feed = match feeds::find(db_connection, self.feed_id) {
+            None => {
+                let error = FeedSyncError::FeedError {
+                    msg: format!("Error: feed not found {:?}", self.feed_id),
+                };
+                return Err(error);
+            }
+            Some(found_feed) => found_feed,
+        };
 
         match read_feed(&feed) {
             Ok(fetched_feed) => {
@@ -135,6 +143,7 @@ fn read_feed(feed: &Feed) -> Result<FetchedFeed, FeedReaderError> {
 
 #[cfg(test)]
 mod tests {
+    use super::FeedSyncError::FeedError;
     use super::FeedSyncJob;
     use crate::db;
     use crate::db::{feed_items, feeds};
@@ -158,5 +167,20 @@ mod tests {
         assert!(updated_feed.synced_at.is_some());
         assert!(updated_feed.title.is_some());
         assert!(updated_feed.description.is_some());
+    }
+
+    #[test]
+    fn it_returns_error_feed_is_not_found() {
+        let connection = db::establish_connection();
+        let sync_job = FeedSyncJob { feed_id: 5 };
+
+        let result = sync_job.execute(&connection);
+
+        assert_eq!(
+            Err(FeedError {
+                msg: "Error: feed not found 5".to_string()
+            }),
+            result
+        );
     }
 }
