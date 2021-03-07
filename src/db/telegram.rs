@@ -86,6 +86,16 @@ pub fn set_template(
         .get_result::<TelegramSubscription>(conn)
 }
 
+pub fn set_filter(
+    conn: &PgConnection,
+    chat: &TelegramSubscription,
+    filter_words: Vec<String>,
+) -> Result<TelegramSubscription, Error> {
+    diesel::update(chat)
+        .set(telegram_subscriptions::filter_words.eq(filter_words))
+        .get_result::<TelegramSubscription>(conn)
+}
+
 pub fn create_subscription(
     conn: &PgConnection,
     subscription: NewTelegramSubscription,
@@ -811,6 +821,36 @@ mod tests {
                 updated_subscription.template,
                 Some("my_template".to_string())
             );
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn set_filter_sets_filter() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let new_chat = build_new_chat();
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+
+            let new_subscription = NewTelegramSubscription {
+                feed_id: feed.id,
+                chat_id: chat.id,
+            };
+
+            let subscription =
+                super::create_subscription(&connection, new_subscription.clone()).unwrap();
+
+            assert_eq!(subscription.filter_words, None);
+
+            let filter = vec!["filter1".to_string(), "filter2".to_string()];
+
+            let updated_subscription =
+                super::set_filter(&connection, &subscription, filter.clone()).unwrap();
+
+            assert_eq!(updated_subscription.filter_words, Some(filter));
 
             Ok(())
         });

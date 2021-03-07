@@ -17,6 +17,8 @@ static SET_TIMEZONE: &str = "/set_timezone";
 static GET_TIMEZONE: &str = "/get_timezone";
 static SET_TEMPLATE: &str = "/set_template";
 static GET_TEMPLATE: &str = "/get_template";
+static SET_FILTER: &str = "/set_filter";
+static GET_FILTER: &str = "/get_filter";
 static SET_GLOBAL_TEMPLATE: &str = "/set_global_template";
 static GET_GLOBAL_TEMPLATE: &str = "/get_global_template";
 static UNSUBSCRIBE: &str = "/unsubscribe";
@@ -24,13 +26,15 @@ static HELP: &str = "/help";
 static START: &str = "/start";
 static OWNER_TELEGRAM_ID: OnceCell<Option<i64>> = OnceCell::new();
 
-static COMMANDS: [&str; 11] = [
+static COMMANDS: [&str; 13] = [
     SUBSCRIBE,
     LIST_SUBSCRIPTIONS,
     SET_TIMEZONE,
     GET_TIMEZONE,
     SET_TEMPLATE,
     GET_TEMPLATE,
+    SET_FILTER,
+    GET_FILTER,
     SET_GLOBAL_TEMPLATE,
     GET_GLOBAL_TEMPLATE,
     UNSUBSCRIBE,
@@ -250,6 +254,17 @@ async fn set_template(api: Api, message: MessageOrChannelPost, data: String) -> 
     Ok(())
 }
 
+async fn set_filter(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
+
+    let response = logic::set_filter(&db_connection, chat_id, data);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
 async fn get_timezone(api: Api, message: MessageOrChannelPost) -> Result<(), Error> {
     let chat_id = get_chat_id(&message);
     let semaphored_connection = db::get_semaphored_connection().await;
@@ -293,6 +308,17 @@ async fn get_template(api: Api, message: MessageOrChannelPost, data: String) -> 
     let db_connection = semaphored_connection.connection;
 
     let response = logic::get_template(&db_connection, chat_id, data);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
+async fn get_filter(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
+
+    let response = logic::get_filter(&db_connection, chat_id, data);
 
     api.send(message.text_reply(response)).await?;
     Ok(())
@@ -377,6 +403,12 @@ async fn process_message_or_channel_post(
     } else if command.starts_with(GET_TEMPLATE) {
         let argument = parse_argument(command, GET_TEMPLATE);
         tokio::spawn(get_template(api, message, argument));
+    } else if command.starts_with(GET_FILTER) {
+        let argument = parse_argument(command, GET_FILTER);
+        tokio::spawn(get_filter(api, message, argument));
+    } else if command.starts_with(SET_FILTER) {
+        let argument = parse_argument(command, SET_FILTER);
+        tokio::spawn(set_filter(api, message, argument));
     } else if command.starts_with(SET_TEMPLATE) {
         let argument = parse_argument(command, SET_TEMPLATE);
         tokio::spawn(set_template(api, message, argument));
