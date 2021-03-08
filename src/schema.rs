@@ -49,6 +49,7 @@ table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         template -> Nullable<Text>,
+        filter_words -> Nullable<Array<Text>>,
     }
 }
 

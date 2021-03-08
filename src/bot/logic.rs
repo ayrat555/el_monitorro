@@ -80,64 +80,30 @@ pub fn get_timezone(db_connection: &PgConnection, chat_id: i64) -> String {
 }
 
 pub fn get_template(db_connection: &PgConnection, chat_id: i64, feed_url: String) -> String {
-    let not_exists_error = "Subscription does not exist".to_string();
-    let feed = match feeds::find_by_link(db_connection, feed_url) {
-        Some(feed) => feed,
-        None => return not_exists_error,
-    };
-
-    let chat = match telegram::find_chat(db_connection, chat_id) {
-        Some(chat) => chat,
-        None => return not_exists_error,
-    };
-
-    let telegram_subscription = NewTelegramSubscription {
-        chat_id: chat.id,
-        feed_id: feed.id,
-    };
-
-    let subscription = match telegram::find_subscription(db_connection, telegram_subscription) {
-        Some(subscription) => subscription,
-        None => return not_exists_error,
-    };
-
-    match subscription.template {
-        None => "You did not set a template for this subcription".to_string(),
-        Some(template) => template,
+    match find_subscription(db_connection, chat_id, feed_url) {
+        Err(message) => message,
+        Ok(subscription) => match subscription.template {
+            None => "You did not set a template for this subcription".to_string(),
+            Some(template) => template,
+        },
     }
 }
 
 pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) -> String {
-    let not_exists_error = "Subscription does not exist".to_string();
     let vec: Vec<&str> = params.split(' ').collect();
 
     if vec.len() != 2 {
         return "Wrong number of parameters".to_string();
     }
 
-    let feed = match feeds::find_by_link(db_connection, vec[0].to_string()) {
-        Some(feed) => feed,
-        None => return not_exists_error,
-    };
-
-    let chat = match telegram::find_chat(db_connection, chat_id) {
-        Some(chat) => chat,
-        None => return not_exists_error,
-    };
-
-    let telegram_subscription = NewTelegramSubscription {
-        chat_id: chat.id,
-        feed_id: feed.id,
-    };
-
-    let subscription = match telegram::find_subscription(db_connection, telegram_subscription) {
-        Some(subscription) => subscription,
-        None => return not_exists_error,
-    };
-
     if vec[1] == "" {
         return "Template can not be empty".to_string();
     }
+
+    let subscription = match find_subscription(db_connection, chat_id, vec[0].to_string()) {
+        Err(message) => return message,
+        Ok(subscription) => subscription,
+    };
 
     match parse_template_and_send_example(vec[1].to_string()) {
         Ok((template, example)) => {
@@ -152,6 +118,55 @@ pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) 
         }
 
         Err(error) => error,
+    }
+}
+
+pub fn get_filter(db_connection: &PgConnection, chat_id: i64, feed_url: String) -> String {
+    match find_subscription(db_connection, chat_id, feed_url) {
+        Err(message) => message,
+        Ok(subscription) => match subscription.filter_words {
+            None => "You did not set a filter for this subcription".to_string(),
+            Some(filter_words) => filter_words.join(", "),
+        },
+    }
+}
+
+pub fn remove_filter(db_connection: &PgConnection, chat_id: i64, feed_url: String) -> String {
+    let subscription = match find_subscription(db_connection, chat_id, feed_url) {
+        Err(message) => return message,
+        Ok(subscription) => subscription,
+    };
+
+    match telegram::set_filter(db_connection, &subscription, None) {
+        Ok(_) => "The filter was removed".to_string(),
+        Err(_) => "Failed to update the filter".to_string(),
+    }
+}
+
+pub fn set_filter(db_connection: &PgConnection, chat_id: i64, params: String) -> String {
+    let vec: Vec<&str> = params.split(' ').collect();
+
+    if vec.len() != 2 {
+        return "Wrong number of parameters".to_string();
+    }
+
+    if vec[1] == "" {
+        return "Filter can not be empty".to_string();
+    }
+
+    let subscription = match find_subscription(db_connection, chat_id, vec[0].to_string()) {
+        Err(message) => return message,
+        Ok(subscription) => subscription,
+    };
+
+    let filter_words: Vec<String> = vec[1]
+        .split(",")
+        .map(|s| s.trim().to_lowercase().to_string())
+        .collect();
+
+    match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
+        Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")).to_string(),
+        Err(_) => "Failed to update the filter".to_string(),
     }
 }
 
@@ -188,6 +203,33 @@ pub fn get_global_template(db_connection: &PgConnection, chat_id: i64) -> String
             None => "You don't have the global template set".to_string(),
             Some(value) => format!("Your global template is \n {}", value),
         },
+    }
+}
+
+fn find_subscription(
+    db_connection: &PgConnection,
+    chat_id: i64,
+    feed_url: String,
+) -> Result<TelegramSubscription, String> {
+    let not_exists_error = Err("Subscription does not exist".to_string());
+    let feed = match feeds::find_by_link(db_connection, feed_url) {
+        Some(feed) => feed,
+        None => return not_exists_error,
+    };
+
+    let chat = match telegram::find_chat(db_connection, chat_id) {
+        Some(chat) => chat,
+        None => return not_exists_error,
+    };
+
+    let telegram_subscription = NewTelegramSubscription {
+        chat_id: chat.id,
+        feed_id: feed.id,
+    };
+
+    match telegram::find_subscription(db_connection, telegram_subscription) {
+        Some(subscription) => Ok(subscription),
+        None => return not_exists_error,
     }
 }
 

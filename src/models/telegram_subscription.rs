@@ -13,4 +13,5 @@ pub struct TelegramSubscription {
     pub updated_at: DateTime<Utc>,
 
     pub template: Option<String>,
+    pub filter_words: Option<Vec<String>>,
 }
