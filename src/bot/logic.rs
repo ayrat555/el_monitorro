@@ -131,6 +131,18 @@ pub fn get_filter(db_connection: &PgConnection, chat_id: i64, feed_url: String) 
     }
 }
 
+pub fn remove_filter(db_connection: &PgConnection, chat_id: i64, feed_url: String) -> String {
+    let subscription = match find_subscription(db_connection, chat_id, feed_url) {
+        Err(message) => return message,
+        Ok(subscription) => subscription,
+    };
+
+    match telegram::set_filter(db_connection, &subscription, None) {
+        Ok(_) => "The filter was removed".to_string(),
+        Err(_) => "Failed to update the filter".to_string(),
+    }
+}
+
 pub fn set_filter(db_connection: &PgConnection, chat_id: i64, params: String) -> String {
     let vec: Vec<&str> = params.split(' ').collect();
 
@@ -149,7 +161,7 @@ pub fn set_filter(db_connection: &PgConnection, chat_id: i64, params: String) ->
 
     let filter_words: Vec<String> = vec[1].split(",").map(|s| s.trim().to_string()).collect();
 
-    match telegram::set_filter(db_connection, &subscription, filter_words.clone()) {
+    match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
         Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")).to_string(),
         Err(_) => "Failed to update the filter".to_string(),
     }

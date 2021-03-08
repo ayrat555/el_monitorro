@@ -89,7 +89,7 @@ pub fn set_template(
 pub fn set_filter(
     conn: &PgConnection,
     chat: &TelegramSubscription,
-    filter_words: Vec<String>,
+    filter_words: Option<Vec<String>>,
 ) -> Result<TelegramSubscription, Error> {
     diesel::update(chat)
         .set(telegram_subscriptions::filter_words.eq(filter_words))
@@ -848,7 +848,7 @@ mod tests {
             let filter = vec!["filter1".to_string(), "filter2".to_string()];
 
             let updated_subscription =
-                super::set_filter(&connection, &subscription, filter.clone()).unwrap();
+                super::set_filter(&connection, &subscription, Some(filter.clone())).unwrap();
 
             assert_eq!(updated_subscription.filter_words, Some(filter));
 

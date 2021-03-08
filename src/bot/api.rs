@@ -19,6 +19,7 @@ static SET_TEMPLATE: &str = "/set_template";
 static GET_TEMPLATE: &str = "/get_template";
 static SET_FILTER: &str = "/set_filter";
 static GET_FILTER: &str = "/get_filter";
+static REMOVE_FILTER: &str = "/remove_filter";
 static SET_GLOBAL_TEMPLATE: &str = "/set_global_template";
 static GET_GLOBAL_TEMPLATE: &str = "/get_global_template";
 static UNSUBSCRIBE: &str = "/unsubscribe";
@@ -26,7 +27,7 @@ static HELP: &str = "/help";
 static START: &str = "/start";
 static OWNER_TELEGRAM_ID: OnceCell<Option<i64>> = OnceCell::new();
 
-static COMMANDS: [&str; 13] = [
+static COMMANDS: [&str; 14] = [
     SUBSCRIBE,
     LIST_SUBSCRIPTIONS,
     SET_TIMEZONE,
@@ -35,6 +36,7 @@ static COMMANDS: [&str; 13] = [
     GET_TEMPLATE,
     SET_FILTER,
     GET_FILTER,
+    REMOVE_FILTER,
     SET_GLOBAL_TEMPLATE,
     GET_GLOBAL_TEMPLATE,
     UNSUBSCRIBE,
@@ -118,8 +120,11 @@ fn commands_string() -> String {
          Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description\n\n\
          {} url - get a template for the subscription\n\n\
          {} template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.\n\n\
-         {} - get global template\n",
-        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE, SET_TEMPLATE, GET_TEMPLATE, SET_GLOBAL_TEMPLATE, GET_GLOBAL_TEMPLATE
+         {} - get global template\n\n\
+         {} url - get a filter for the subscription\n\n\
+         {} url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You'll start receiving posts only containing words in the filter\n\n\
+         {} url - remove filter\n\n",
+        START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE, SET_TEMPLATE, GET_TEMPLATE, SET_GLOBAL_TEMPLATE, GET_GLOBAL_TEMPLATE, GET_FILTER, SET_FILTER, REMOVE_FILTER
     )
 }
 
@@ -324,6 +329,17 @@ async fn get_filter(api: Api, message: MessageOrChannelPost, data: String) -> Re
     Ok(())
 }
 
+async fn remove_filter(api: Api, message: MessageOrChannelPost, data: String) -> Result<(), Error> {
+    let chat_id = get_chat_id(&message);
+    let semaphored_connection = db::get_semaphored_connection().await;
+    let db_connection = semaphored_connection.connection;
+
+    let response = logic::remove_filter(&db_connection, chat_id, data);
+
+    api.send(message.text_reply(response)).await?;
+    Ok(())
+}
+
 fn process_message(api: Api, orig_message: Message) {
     match orig_message.kind {
         MessageKind::Text { ref data, .. } => {
@@ -406,6 +422,9 @@ async fn process_message_or_channel_post(
     } else if command.starts_with(GET_FILTER) {
         let argument = parse_argument(command, GET_FILTER);
         tokio::spawn(get_filter(api, message, argument));
+    } else if command.starts_with(REMOVE_FILTER) {
+        let argument = parse_argument(command, REMOVE_FILTER);
+        tokio::spawn(remove_filter(api, message, argument));
     } else if command.starts_with(SET_FILTER) {
         let argument = parse_argument(command, SET_FILTER);
         tokio::spawn(set_filter(api, message, argument));
