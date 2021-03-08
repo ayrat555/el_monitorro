@@ -159,7 +159,10 @@ pub fn set_filter(db_connection: &PgConnection, chat_id: i64, params: String) ->
         Ok(subscription) => subscription,
     };
 
-    let filter_words: Vec<String> = vec[1].split(",").map(|s| s.trim().to_string()).collect();
+    let filter_words: Vec<String> = vec[1]
+        .split(",")
+        .map(|s| s.trim().to_lowercase().to_string())
+        .collect();
 
     match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
         Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")).to_string(),

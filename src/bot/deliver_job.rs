@@ -124,7 +124,7 @@ async fn deliver_subscription_updates(
     let chat = telegram::find_chat(&connection, chat_id).unwrap();
     let delay = delay_period(&chat);
 
-    if feed_items.len() < undelivered_count as usize {
+    if subscription.filter_words.is_none() && feed_items.len() < undelivered_count as usize {
         let message = format!(
             "You have {} unread items, below {} last items for {}",
             undelivered_count,
@@ -140,18 +140,7 @@ async fn deliver_subscription_updates(
             Err(error) => {
                 let error_message = format!("{}", error);
 
-                log::error!("Failed to deliver updates: {} {}", chat_id, error_message);
-
-                if bot_blocked(&error_message) {
-                    match telegram::remove_chat(&connection, chat_id) {
-                        Ok(_) => log::info!("Successfully removed chat {}", chat_id),
-                        Err(error) => log::error!("Failed to remove a chat {}", error),
-                    }
-                };
-
-                return Err(DeliverJobError {
-                    msg: format!("Failed to send updates : {}", error),
-                });
+                return Err(handle_error(error_message, &connection, chat_id));
             }
         }
     }
@@ -177,33 +166,64 @@ async fn deliver_subscription_updates(
         messages.reverse();
 
         for (message, publication_date) in messages {
-            match api::send_message(chat_id, message).await {
-                Ok(_) => {
-                    time::delay_for(delay).await;
-                    update_last_deivered_at(&connection, &subscription, publication_date)?;
-                    ()
-                }
-                Err(error) => {
-                    let error_message = format!("{}", error);
+            match subscription.filter_words.clone() {
+                None => match api::send_message(chat_id, message).await {
+                    Ok(_) => {
+                        time::delay_for(delay).await;
+                        update_last_deivered_at(&connection, &subscription, publication_date)?;
+                        ()
+                    }
+                    Err(error) => {
+                        let error_message = format!("{}", error);
 
-                    log::error!("Failed to deliver updates: {}", error_message);
+                        return Err(handle_error(error_message, &connection, chat_id));
+                    }
+                },
+                Some(words) => {
+                    let mtch = words
+                        .iter()
+                        .any(|word| message.to_lowercase().contains(word));
 
-                    if bot_blocked(&error_message) {
-                        match telegram::remove_chat(&connection, chat_id) {
-                            Ok(_) => log::info!("Successfully removed chat {}", chat_id),
-                            Err(error) => log::error!("Failed to remove a chat {}", error),
+                    if mtch {
+                        match api::send_message(chat_id, message).await {
+                            Ok(_) => {
+                                time::delay_for(delay).await;
+                                update_last_deivered_at(
+                                    &connection,
+                                    &subscription,
+                                    publication_date,
+                                )?;
+                            }
+                            Err(error) => {
+                                let error_message = format!("{}", error);
+
+                                return Err(handle_error(error_message, &connection, chat_id));
+                            }
                         }
-                    };
-
-                    return Err(DeliverJobError {
-                        msg: format!("Failed to send updates : {}", error),
-                    });
+                    } else {
+                        update_last_deivered_at(&connection, &subscription, publication_date)?;
+                    }
                 }
-            };
+            }
         }
     }
 
     Ok(())
+}
+
+fn handle_error(error: String, connection: &PgConnection, chat_id: i64) -> DeliverJobError {
+    log::error!("Failed to deliver updates: {}", error);
+
+    if bot_blocked(&error) {
+        match telegram::remove_chat(connection, chat_id) {
+            Ok(_) => log::info!("Successfully removed chat {}", chat_id),
+            Err(error) => log::error!("Failed to remove a chat {}", error),
+        }
+    };
+
+    DeliverJobError {
+        msg: format!("Failed to send updates : {}", error),
+    }
 }
 
 fn update_last_deivered_at(
@@ -232,7 +252,7 @@ fn format_messages(
 
     let templ = match template {
         Some(t) => t,
-        None => "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n"
+        None => "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n"
             .to_string(),
     };
 
