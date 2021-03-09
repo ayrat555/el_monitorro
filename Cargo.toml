@@ -20,7 +20,7 @@ serde_json = "1.0"
 feed-rs = "0.2.0"
 isahc = { version = "0.9", features = ["text-decoding"]}
 atom_syndication = "0.9"
-telegram-bot = { git = "https://github.com/ayrat555/telegram-bot", branch = "ayrat555/api-fixes-4" }
+telegram-bot = { git = "https://github.com/ayrat555/telegram-bot", branch = "ayrat555/api-fixes-5" }
 futures = "0.3"
 tokio = { version = "0.2", features = ["full"] }
 url = "2.1"
