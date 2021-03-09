@@ -181,9 +181,27 @@ async fn deliver_subscription_updates(
                     }
                 },
                 Some(words) => {
-                    let mtch = words
-                        .iter()
-                        .any(|word| message.to_lowercase().contains(word));
+                    let (negated_words, regular_words): (Vec<String>, Vec<String>) =
+                        words.into_iter().partition(|word| word.starts_with("!"));
+
+                    let mut mtch = true;
+
+                    if regular_words.len() > 0 {
+                        let regular_mtch = regular_words
+                            .iter()
+                            .any(|word| message.to_lowercase().contains(word));
+
+                        mtch = regular_mtch;
+                    }
+
+                    if negated_words.len() > 0 {
+                        let negated_mtch = regular_words.iter().all(|neg_word| {
+                            let word = neg_word.replace("!", "");
+                            !message.to_lowercase().contains(&word)
+                        });
+
+                        mtch = mtch && negated_mtch;
+                    }
 
                     if mtch {
                         match api::send_message(chat_id, message).await {
