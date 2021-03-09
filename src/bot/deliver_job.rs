@@ -17,7 +17,7 @@ use serde_json::value::Map;
 use std::time::Duration;
 use tokio::time;
 
-static TELEGRAM_ERRORS: [&'static str; 12] = [
+static TELEGRAM_ERRORS: [&'static str; 13] = [
     "Forbidden: bot was blocked by the user",
     "Bad Request: chat not found",
     "Forbidden: bot was kicked from the supergroup chat",
@@ -30,6 +30,7 @@ static TELEGRAM_ERRORS: [&'static str; 12] = [
     "Bad Request: have no rights to send a message",
     "Bad Request: group chat was upgraded to a supergroup chat, migrate to chat id",
     "Bad Request: CHAT_WRITE_FORBIDDEN",
+    "Bad Request: need administrator rights in the channel chat",
 ];
 
 static DISCRIPTION_LIMIT: usize = 2500;
