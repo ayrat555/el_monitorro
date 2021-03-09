@@ -2005,7 +2005,7 @@ dependencies = [
 [[package]]
 name = "telegram-bot"
 version = "0.8.0"
-source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/api-fixes-6#abbf58e13c43f64b7b8aef808c0aa15e26533a0d"
+source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/api-fixes-7#f2b9f4e81d85ccdec7cc746b96800d114683ab9b"
 dependencies = [
  "bytes",
  "futures",
@@ -2021,7 +2021,7 @@ dependencies = [
 [[package]]
 name = "telegram-bot-raw"
 version = "0.8.0"
-source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/api-fixes-6#abbf58e13c43f64b7b8aef808c0aa15e26533a0d"
+source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/api-fixes-7#f2b9f4e81d85ccdec7cc746b96800d114683ab9b"
 dependencies = [
  "bytes",
  "serde",
