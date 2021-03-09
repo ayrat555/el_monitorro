@@ -2005,7 +2005,7 @@ dependencies = [
 [[package]]
 name = "telegram-bot"
 version = "0.8.0"
-source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/fix-uknown-sender-name#16a1c4d470ed3cb43a975181e3dbe4cd3ce74e6d"
+source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/api-fixes-10#64c9a2e66285cf060c801ede5f3f8bd54db3c32a"
 dependencies = [
  "bytes",
  "futures",
@@ -2021,7 +2021,7 @@ dependencies = [
 [[package]]
 name = "telegram-bot-raw"
 version = "0.8.0"
-source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/fix-uknown-sender-name#16a1c4d470ed3cb43a975181e3dbe4cd3ce74e6d"
+source = "git+https://github.com/ayrat555/telegram-bot?branch=ayrat555/api-fixes-10#64c9a2e66285cf060c801ede5f3f8bd54db3c32a"
 dependencies = [
  "bytes",
  "serde",
