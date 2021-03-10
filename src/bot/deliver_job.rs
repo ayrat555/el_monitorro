@@ -181,9 +181,28 @@ async fn deliver_subscription_updates(
                     }
                 },
                 Some(words) => {
-                    let mtch = words
-                        .iter()
-                        .any(|word| message.to_lowercase().contains(word));
+                    let (negated_words, regular_words): (Vec<String>, Vec<String>) =
+                        words.into_iter().partition(|word| word.starts_with("!"));
+
+                    let mut mtch = true;
+
+                    if regular_words.len() > 0 {
+                        let regular_mtch = regular_words
+                            .iter()
+                            .any(|word| message.to_lowercase().contains(word));
+
+                        mtch = regular_mtch;
+                    }
+
+                    if negated_words.len() > 0 {
+                        let negated_mtch = negated_words.iter().all(|neg_word| {
+                            let word = neg_word.replace("!", "");
+
+                            !message.to_lowercase().contains(&word)
+                        });
+
+                        mtch = mtch && negated_mtch;
+                    }
 
                     if mtch {
                         match api::send_message(chat_id, message).await {
@@ -383,7 +402,8 @@ mod tests {
 
         assert_eq!(
             result[0].0,
-            "FeedTitle\n\nTitle\n\n2020-05-13 19:59:02 +00:05\n\ndsd\n\n".to_string()
+            "FeedTitle\n\nTitle\n\nDescription\n\n2020-05-13 19:59:02 +00:05\n\ndsd\n\n"
+                .to_string()
         );
 
         assert_eq!(result[0].1, publication_date);

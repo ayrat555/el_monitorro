@@ -164,6 +164,10 @@ pub fn set_filter(db_connection: &PgConnection, chat_id: i64, params: String) ->
         .map(|s| s.trim().to_lowercase().to_string())
         .collect();
 
+    if filter_words.len() > 7 {
+        return "The number of filter words is limited by 7".to_string();
+    }
+
     match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
         Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")).to_string(),
         Err(_) => "Failed to update the filter".to_string(),
