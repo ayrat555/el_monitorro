@@ -195,8 +195,9 @@ async fn deliver_subscription_updates(
                     }
 
                     if negated_words.len() > 0 {
-                        let negated_mtch = regular_words.iter().all(|neg_word| {
+                        let negated_mtch = negated_words.iter().all(|neg_word| {
                             let word = neg_word.replace("!", "");
+
                             !message.to_lowercase().contains(&word)
                         });
 
