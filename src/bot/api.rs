@@ -122,7 +122,7 @@ fn commands_string() -> String {
          {} template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.\n\n\
          {} - get global template\n\n\
          {} url - get a filter for the subscription\n\n\
-         {} url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You'll start receiving posts only containing words in the filter\n\n\
+         {} url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You'll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`\n\n\
          {} url - remove filter\n\n",
         START, SUBSCRIBE, UNSUBSCRIBE, LIST_SUBSCRIPTIONS, HELP, SET_TIMEZONE, GET_TIMEZONE, SET_TEMPLATE, GET_TEMPLATE, SET_GLOBAL_TEMPLATE, GET_GLOBAL_TEMPLATE, GET_FILTER, SET_FILTER, REMOVE_FILTER
     )
