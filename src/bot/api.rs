@@ -393,7 +393,7 @@ async fn process_message_or_channel_post(
 
     let is_known_command = COMMANDS
         .iter()
-        .any(|command_name| command.contains(command_name));
+        .any(|command_name| command.starts_with(command_name));
 
     if is_known_command {
         log::info!("{:?} wrote: {}", chat_id, command);
