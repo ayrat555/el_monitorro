@@ -41,6 +41,12 @@ Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_ite
 /set_global_template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.
 
 /get_global_template - get global template
+
+/get_filter url - get a filter for the subscription
+
+/set_filter url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You'll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`
+
+/remove_filter url - remove filter
 ```
 
 ### Common info
