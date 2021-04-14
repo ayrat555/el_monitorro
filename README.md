@@ -132,7 +132,7 @@ All configuration is done through env variables
 The image is published on docker hub under [ayratbadykov/el_monitorro](https://hub.docker.com/r/ayratbadykov/el_monitorro). It accepts additional env variables:
 
 - `RUN_MIGRATION` - if this variable is not empty, `diesel database setup` is run. It creates DB and runs migrations.
-- `BOT_BINARY` - depending on this variable, docker container will run one of four binaries. Possible values are `commands`, `sync`, `deliver`, `cleaner`.
+- `BOT_BINARY` - depending on this variable, docker container will run one of four binaries. Possible values are `commands`, `sync`, `deliver`, `cleaner`, `all`.
 
 You'll have to set these variables in the `.env` file. For example:
 
@@ -152,7 +152,7 @@ docker run --env-file ./.env --network host -t ayratbadykov/el_monitorro:latest
 Notes:
 
 - `--network host` is used so the docker container can access a host network if you're running Postgres on the same machine
-- To run all binaries (commands, sync, deliver and cleaner), you'll have to start 4 containers replacing `BOT_BINARY` variable.
+- To run all binaries (commands, sync, deliver and cleaner), you'll have to start 4 containers replacing `BOT_BINARY` variable, or run with `BOT_BINARY` set to `all`.
 
 #### Creating a docker image from the latest master branch
 
