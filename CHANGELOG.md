@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 (2021-04-19)
+
+### Enhancements
+
+- Allow docker to run all commands at once ([#99](https://github.com/ayrat555/el_monitorro/pull/99))
+
 ## 0.1.1 (2021-03-10)
 
 ### Enhancements
