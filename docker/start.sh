@@ -23,6 +23,9 @@ case "$BOT_BINARY" in
     cleaner*)
         ./cleaner
         ;;
+    all*)
+        ./el_monitorro & ./sync & ./deliver & ./cleaner
+        ;;
     *)
         echo "Unknown binary"
         exit 1
