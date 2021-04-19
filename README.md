@@ -152,7 +152,7 @@ docker run --env-file ./.env --network host -t ayratbadykov/el_monitorro:latest
 Notes:
 
 - `--network host` is used so the docker container can access a host network if you're running Postgres on the same machine
-- To run all binaries (commands, sync, deliver and cleaner), you'll have to start 4 containers replacing `BOT_BINARY` variable, or run with `BOT_BINARY` set to `all`.
+- To run all binaries (commands, sync, deliver and cleaner), you'll have to start 4 containers replacing `BOT_BINARY` variable, or run with `BOT_BINARY` set to `all`. If you choose to use the `all` option, it would be wise to set a cron job to restart the container periodically in case one of the executables crashes.
 
 #### Creating a docker image from the latest master branch
 
