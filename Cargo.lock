@@ -463,8 +463,8 @@ dependencies = [
 
 [[package]]
 name = "frankenstein"
-version = "0.2.1"
-source = "git+https://github.com/ayrat555/frankenstein?branch=ayrat555/create-api-trait#aac88c01d06aa945393db7255ef2485a7c764d47"
+version = "0.3.0"
+source = "git+https://github.com/ayrat555/frankenstein?branch=master#7392c1dac9a42fbb66e05dc905b79ff849be289b"
 dependencies = [
  "serde",
  "serde_json",
