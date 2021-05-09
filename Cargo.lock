@@ -464,7 +464,8 @@ dependencies = [
 [[package]]
 name = "frankenstein"
 version = "0.3.0"
-source = "git+https://github.com/ayrat555/frankenstein?branch=master#7392c1dac9a42fbb66e05dc905b79ff849be289b"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6019d7901e131ed8d99642815f3b3c02b008b86082afdd58411be66e4189e12"
 dependencies = [
  "serde",
  "serde_json",
