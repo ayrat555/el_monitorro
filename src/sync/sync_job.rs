@@ -80,7 +80,7 @@ pub async fn sync_feed(feed_id: i64) {
                 match api::send_message(chat.id, message.clone()).await {
                     Ok(_) => (),
                     Err(error) => {
-                        log::error!("Failed to send a message: {}", error);
+                        log::error!("Failed to send a message: {:?}", error);
                     }
                 }
             }

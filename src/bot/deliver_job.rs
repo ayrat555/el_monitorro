@@ -138,8 +138,9 @@ async fn deliver_subscription_updates(
                 time::delay_for(delay).await;
                 ()
             }
+
             Err(error) => {
-                let error_message = format!("{}", error);
+                let error_message = format!("{:?}", error);
 
                 return Err(handle_error(error_message, &connection, chat_id));
             }
@@ -175,7 +176,7 @@ async fn deliver_subscription_updates(
                         ()
                     }
                     Err(error) => {
-                        let error_message = format!("{}", error);
+                        let error_message = format!("{:?}", error);
 
                         return Err(handle_error(error_message, &connection, chat_id));
                     }
@@ -215,7 +216,7 @@ async fn deliver_subscription_updates(
                                 )?;
                             }
                             Err(error) => {
-                                let error_message = format!("{}", error);
+                                let error_message = format!("{:?}", error);
 
                                 return Err(handle_error(error_message, &connection, chat_id));
                             }

@@ -1,17 +1,22 @@
-use frankenstein::ChatIdEnum;
 use frankenstein::ErrorResponse;
-use frankenstein::SendMessageParams;
+use frankenstein::GetUpdatesParams;
 use frankenstein::TelegramApi;
+use frankenstein::Update;
+use futures::Stream;
 use isahc::{prelude::*, Request};
+use std::collections::VecDeque;
 use std::path::PathBuf;
+use std::pin::Pin;
+use std::task::Context;
+use std::task::Poll;
 
-static TOKEN: &str = "token";
 static BASE_API_URL: &str = "https://api.telegram.org/bot";
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Api {
     pub api_url: String,
-    pub update_stream: Some<UpdateStream>,
+    pub update_params: GetUpdatesParams,
+    pub buffer: VecDeque<Update>,
 }
 
 #[derive(Debug)]
@@ -30,14 +35,51 @@ impl Api {
     pub fn new(api_key: String) -> Api {
         let api_url = format!("{}{}", BASE_API_URL, api_key);
 
-        Api { api_url }
-    }
+        let mut update_params = GetUpdatesParams::new();
+        update_params.set_allowed_updates(Some(vec!["message".to_string()]));
 
-    pub fn new_url(api_url: String) -> Api {
-        Api { api_url }
+        Api {
+            api_url,
+            update_params,
+            buffer: VecDeque::new(),
+        }
     }
+}
 
-    pub fn stream_updates() -> impl Stream<Item = Update> {}
+impl Stream for Api {
+    type Item = Update;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        let ref_mut = self.get_mut();
+
+        if let Some(value) = ref_mut.buffer.pop_front() {
+            return Poll::Ready(Some(value));
+        }
+
+        let mut update_params = GetUpdatesParams::new();
+        update_params.set_allowed_updates(Some(vec!["message".to_string()]));
+
+        match ref_mut.get_updates(&ref_mut.update_params) {
+            Ok(updates) => {
+                for update in updates.result {
+                    ref_mut.buffer.push_back(update);
+                }
+
+                if let Some(last_update) = ref_mut.buffer.back() {
+                    ref_mut
+                        .update_params
+                        .set_offset(Some(last_update.update_id() + 1));
+                }
+
+                return Pin::new(ref_mut).poll_next(cx);
+            }
+
+            Err(err) => {
+                log::error!("Failed to fetch updates {:?}", err);
+            }
+        }
+        Poll::Pending
+    }
 }
 
 impl From<isahc::http::Error> for Error {
@@ -141,8 +183,4 @@ impl TelegramApi for Api {
 
         Err(Error::HttpError(error))
     }
-}
-
-struct UpdateStream {
-    offset: Some<isize>,
 }

@@ -4,7 +4,7 @@ use self::rss::RssReader;
 use chrono::{DateTime, Utc};
 use dotenv::dotenv;
 use isahc::config::RedirectPolicy;
-use isahc::prelude::*;
+use isahc::{prelude::*, Request};
 use once_cell::sync::OnceCell;
 use std::env;
 use std::io;
@@ -45,11 +45,11 @@ pub trait ReadFeed {
 }
 
 pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
-    let client = match HttpClient::builder()
+    let client = match Request::get(url)
         .timeout(Duration::from_secs(*request_timeout_seconds()))
-        .default_header("User-Agent", "el_monitorro/0.1.0")
+        .header("User-Agent", "el_monitorro/0.1.0")
         .redirect_policy(RedirectPolicy::Limit(10))
-        .build()
+        .body(())
     {
         Ok(cl) => cl,
         Err(er) => {
@@ -59,7 +59,7 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
         }
     };
 
-    match client.get(url) {
+    match client.send() {
         Ok(mut response) => {
             let mut writer: Vec<u8> = vec![];
 
