@@ -10,9 +10,9 @@ use frankenstein::Message;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
-use futures::StreamExt;
 use once_cell::sync::OnceCell;
 use std::env;
+use tokio::time;
 
 static SUBSCRIBE: &str = "/subscribe";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions";
@@ -340,7 +340,10 @@ fn owner_telegram_id() -> &'static Option<i64> {
 }
 
 async fn process_message_or_channel_post(api: Api, update: Update) -> Result<(), Error> {
-    let message = update.message().unwrap();
+    let message = match update.message() {
+        None => update.channel_post().unwrap(),
+        Some(message) => message,
+    };
 
     let chat_id = message.chat().id() as i64;
 
@@ -436,7 +439,13 @@ pub async fn start_bot() {
 
     log::info!("Starting a bot");
 
-    while let Some(update) = api.next().await {
-        tokio::spawn(process_message_or_channel_post(api.clone(), update));
+    let mut interval = time::interval(std::time::Duration::from_secs(1));
+
+    loop {
+        while let Some(update) = api.next_update() {
+            tokio::spawn(process_message_or_channel_post(api.clone(), update));
+        }
+
+        interval.tick().await;
     }
 }

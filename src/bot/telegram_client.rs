@@ -2,13 +2,9 @@ use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
-use futures::Stream;
 use isahc::{prelude::*, Request};
 use std::collections::VecDeque;
 use std::path::PathBuf;
-use std::pin::Pin;
-use std::task::Context;
-use std::task::Poll;
 
 static BASE_API_URL: &str = "https://api.telegram.org/bot";
 
@@ -36,7 +32,10 @@ impl Api {
         let api_url = format!("{}{}", BASE_API_URL, api_key);
 
         let mut update_params = GetUpdatesParams::new();
-        update_params.set_allowed_updates(Some(vec!["message".to_string()]));
+        update_params.set_allowed_updates(Some(vec![
+            "message".to_string(),
+            "channel_post".to_string(),
+        ]));
 
         Api {
             api_url,
@@ -44,41 +43,31 @@ impl Api {
             buffer: VecDeque::new(),
         }
     }
-}
 
-impl Stream for Api {
-    type Item = Update;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-        let ref_mut = self.get_mut();
-
-        if let Some(value) = ref_mut.buffer.pop_front() {
-            return Poll::Ready(Some(value));
+    pub fn next_update(&mut self) -> Option<Update> {
+        if let Some(update) = self.buffer.pop_front() {
+            return Some(update);
         }
 
-        let mut update_params = GetUpdatesParams::new();
-        update_params.set_allowed_updates(Some(vec!["message".to_string()]));
-
-        match ref_mut.get_updates(&ref_mut.update_params) {
+        match self.get_updates(&self.update_params) {
             Ok(updates) => {
                 for update in updates.result {
-                    ref_mut.buffer.push_back(update);
+                    self.buffer.push_back(update);
                 }
 
-                if let Some(last_update) = ref_mut.buffer.back() {
-                    ref_mut
-                        .update_params
+                if let Some(last_update) = self.buffer.back() {
+                    self.update_params
                         .set_offset(Some(last_update.update_id() + 1));
                 }
 
-                return Pin::new(ref_mut).poll_next(cx);
+                self.buffer.pop_front()
             }
 
             Err(err) => {
                 log::error!("Failed to fetch updates {:?}", err);
+                None
             }
         }
-        Poll::Pending
     }
 }
 
