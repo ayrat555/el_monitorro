@@ -16,13 +16,10 @@ pub struct FeedSyncJob {
     feed_id: i64,
 }
 
-#[derive(Debug, Fail, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum FeedSyncError {
-    #[fail(display = "failed to sync a feed: {}", msg)]
     FeedError { msg: String },
-    #[fail(display = "failed to insert data: {}", msg)]
     DbError { msg: String },
-    #[fail(display = "failed to insert a feed for too long")]
     StaleError,
 }
 
