@@ -1,5 +1,5 @@
 use dotenv::dotenv;
-use el_monitorro;
+
 use el_monitorro::db;
 use el_monitorro::sync::sync_job::SyncJob;
 use std::env;
@@ -17,7 +17,7 @@ fn main() {
         .unwrap();
 
     let period: u64 = env::var("SYNC_INTERVAL_SECONDS")
-        .unwrap_or("60".to_string())
+        .unwrap_or_else(|_| "60".to_string())
         .parse()
         .unwrap();
 
@@ -28,9 +28,8 @@ fn main() {
             interval.tick().await;
 
             if db::semaphore().available_permits() == *db::pool_connection_number() {
-                match SyncJob::new().execute().await {
-                    Err(error) => log::error!("Failed to sync feeds: {}", error.msg),
-                    Ok(_) => (),
+                if let Err(error) = SyncJob::new().execute().await {
+                    log::error!("Failed to sync feeds: {}", error.msg)
                 }
             } else {
                 log::error!("The previous sync job did not finish");

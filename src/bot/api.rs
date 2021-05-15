@@ -191,7 +191,7 @@ async fn unsubscribe(api: Api, message: Message, data: String) -> Result<(), Err
     let semaphored_connection = db::get_semaphored_connection().await;
     let db_connection = semaphored_connection.connection;
 
-    let response = match logic::delete_subscription(&db_connection, chat_id.into(), data.clone()) {
+    let response = match logic::delete_subscription(&db_connection, chat_id, data.clone()) {
         Ok(_) => format!("Successfully unsubscribed from {}", data),
         Err(DeleteSubscriptionError::DbError) => format!("Failed to unsubscribe from {}", data),
         _ => "Subscription does not exist".to_string(),
@@ -355,7 +355,7 @@ async fn process_message_or_channel_post(api: Api, update: Update) -> Result<(),
 
     let text = message.text();
 
-    if let None = text {
+    if text.is_none() {
         return Ok(());
     }
 
@@ -418,7 +418,7 @@ async fn process_message_or_channel_post(api: Api, update: Update) -> Result<(),
 }
 
 fn parse_argument(full_command: &str, command: &str) -> String {
-    let handle = env::var("TELEGRAM_BOT_HANDLE").unwrap_or("".to_string());
+    let handle = env::var("TELEGRAM_BOT_HANDLE").unwrap_or_else(|_| "".to_string());
     let command_with_handle = format!("{}@{}", command, handle);
 
     if full_command.starts_with(&command_with_handle) {

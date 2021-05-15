@@ -105,27 +105,24 @@ fn set_error(
                 "Error: failed to set a sync error to feed with id {} {:?}",
                 feed.id, err
             );
-            let error = FeedSyncError::DbError {
+
+            FeedSyncError::DbError {
                 msg: format!("Error: failed to set a sync error to feed {:?}", err),
-            };
-            error
+            }
         }
-        _ => {
-            let error = FeedSyncError::FeedError {
-                msg: format!("Error: failed to fetch feed items {:?}", sync_error),
-            };
-            error
-        }
+        _ => FeedSyncError::FeedError {
+            msg: format!("Error: failed to fetch feed items {:?}", sync_error),
+        },
     }
 }
 
 fn read_feed(feed: &Feed) -> Result<FetchedFeed, FeedReaderError> {
-    if feed.feed_type == "rss".to_string() {
+    if feed.feed_type == *"rss" {
         RssReader {
             url: feed.link.clone(),
         }
         .read()
-    } else if feed.feed_type == "atom".to_string() {
+    } else if feed.feed_type == *"atom" {
         AtomReader {
             url: feed.link.clone(),
         }

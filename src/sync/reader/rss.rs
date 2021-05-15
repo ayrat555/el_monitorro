@@ -26,7 +26,7 @@ impl From<Channel> for FetchedFeed {
     fn from(channel: Channel) -> Self {
         let mut items = channel
             .items()
-            .into_iter()
+            .iter()
             .filter(|item| item.link().is_some())
             .map(|item| {
                 let pub_date: DateTime<Utc> = parse_time(item.pub_date());
@@ -50,7 +50,7 @@ impl From<Channel> for FetchedFeed {
             link: channel.link().to_string(),
             description: channel.description().to_string(),
             feed_type: "rss".to_string(),
-            items: items,
+            items,
         }
     }
 }

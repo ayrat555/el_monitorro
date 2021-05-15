@@ -18,7 +18,7 @@ impl ReadFeed for AtomReader {
             Ok(atom_feed) => {
                 let mut feed = FetchedFeed::from(atom_feed);
 
-                if feed.link == "".to_string() {
+                if feed.link.is_empty() {
                     feed.link = self.url.clone();
                 }
 
@@ -36,7 +36,7 @@ impl From<AtomFeed> for FetchedFeed {
     fn from(feed: AtomFeed) -> Self {
         let mut items = feed
             .entries()
-            .into_iter()
+            .iter()
             .filter(|item| item.links().first().is_some())
             .map(|item| {
                 let base_date = match item.published() {
@@ -55,7 +55,7 @@ impl From<AtomFeed> for FetchedFeed {
                         .to_string(),
                     author: Some(
                         item.authors()
-                            .into_iter()
+                            .iter()
                             .map(|person| person.name.to_string())
                             .collect::<Vec<String>>()
                             .join(", "),
@@ -75,7 +75,7 @@ impl From<AtomFeed> for FetchedFeed {
             description: feed
                 .subtitle()
                 .map_or_else(|| "".to_string(), |s| s.to_string()),
-            items: items,
+            items,
             feed_type: "atom".to_string(),
         }
     }
@@ -96,7 +96,7 @@ fn parse_description(item: &Entry) -> Option<String> {
 }
 
 fn find_link<'a>(links: &'a [Link], link_type: &str) -> Option<&'a Link> {
-    let alternate_link = links.into_iter().find(|link| link.rel == link_type);
+    let alternate_link = links.iter().find(|link| link.rel == link_type);
 
     if alternate_link.is_some() {
         alternate_link

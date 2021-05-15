@@ -71,7 +71,7 @@ impl From<Feed> for FetchedFeed {
                 .map_or_else(|| "".to_string(), |s| s.content),
             feed_type: "json".to_string(),
             link: "".to_string(),
-            items: items,
+            items,
         }
     }
 }
