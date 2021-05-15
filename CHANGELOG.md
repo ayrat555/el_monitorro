@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Chores
+
+- Migrate to the frankenstein telegram library ([#100](https://github.com/ayrat555/el_monitorro/pull/100))
+
 ## 0.1.2 (2021-04-19)
 
 ### Enhancements
