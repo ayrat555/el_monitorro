@@ -5,6 +5,7 @@
 ### Chores
 
 - Migrate to the frankenstein telegram library ([#100](https://github.com/ayrat555/el_monitorro/pull/100))
+- Update deps  ([#101](https://github.com/ayrat555/el_monitorro/pull/101))
 
 ## 0.1.2 (2021-04-19)
 
