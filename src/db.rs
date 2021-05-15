@@ -22,7 +22,7 @@ pub struct SemaphoredDbConnection<'a> {
 }
 
 pub async fn get_semaphored_connection<'a>() -> SemaphoredDbConnection<'a> {
-    let _semaphore_permit = semaphore().acquire().await;
+    let _semaphore_permit = semaphore().acquire().await.unwrap();
     let connection = establish_connection();
 
     SemaphoredDbConnection {

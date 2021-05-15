@@ -10,9 +10,8 @@ fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let mut tokio_runtime = runtime::Builder::new()
+    let tokio_runtime = runtime::Builder::new_multi_thread()
         .thread_name("sync-pool")
-        .threaded_scheduler()
         .enable_all()
         .build()
         .unwrap();

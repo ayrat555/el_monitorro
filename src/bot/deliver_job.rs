@@ -135,7 +135,7 @@ async fn deliver_subscription_updates(
 
         match api::send_message(chat_id, message).await {
             Ok(_) => {
-                time::delay_for(delay).await;
+                time::sleep(delay).await;
                 ()
             }
 
@@ -171,7 +171,7 @@ async fn deliver_subscription_updates(
             match subscription.filter_words.clone() {
                 None => match api::send_message(chat_id, message).await {
                     Ok(_) => {
-                        time::delay_for(delay).await;
+                        time::sleep(delay).await;
                         update_last_deivered_at(&connection, &subscription, publication_date)?;
                         ()
                     }
@@ -208,7 +208,7 @@ async fn deliver_subscription_updates(
                     if mtch {
                         match api::send_message(chat_id, message).await {
                             Ok(_) => {
-                                time::delay_for(delay).await;
+                                time::sleep(delay).await;
                                 update_last_deivered_at(
                                     &connection,
                                     &subscription,
