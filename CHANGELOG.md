@@ -5,7 +5,8 @@
 ### Chores
 
 - Migrate to the frankenstein telegram library ([#100](https://github.com/ayrat555/el_monitorro/pull/100))
-- Update deps  ([#101](https://github.com/ayrat555/el_monitorro/pull/101))
+- Update deps ([#101](https://github.com/ayrat555/el_monitorro/pull/101))
+- Fix clippy warnings ([#102](https://github.com/ayrat555/el_monitorro/pull/102))
 
 ## 0.1.2 (2021-04-19)
 
