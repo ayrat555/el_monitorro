@@ -47,7 +47,8 @@ pub fn pool_connection_number() -> &'static usize {
     POOL_NUMBER.get_or_init(|| {
         dotenv().ok();
 
-        let database_pool_size_str = env::var("DATABASE_POOL_SIZE").unwrap_or("10".to_string());
+        let database_pool_size_str =
+            env::var("DATABASE_POOL_SIZE").unwrap_or_else(|_| "10".to_string());
         let database_pool_size: usize = database_pool_size_str.parse().unwrap();
 
         database_pool_size

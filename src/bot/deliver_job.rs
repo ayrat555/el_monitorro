@@ -17,7 +17,7 @@ use serde_json::value::Map;
 use std::time::Duration;
 use tokio::time;
 
-static TELEGRAM_ERRORS: [&'static str; 13] = [
+static TELEGRAM_ERRORS: [&str; 13] = [
     "Forbidden: bot was blocked by the user",
     "Bad Request: chat not found",
     "Forbidden: bot was kicked from the supergroup chat",
@@ -36,6 +36,12 @@ static TELEGRAM_ERRORS: [&'static str; 13] = [
 static DISCRIPTION_LIMIT: usize = 2500;
 
 pub struct DeliverJob {}
+
+impl Default for DeliverJob {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[derive(Debug)]
 pub struct DeliverJobError {
@@ -136,7 +142,6 @@ async fn deliver_subscription_updates(
         match api::send_message(chat_id, message).await {
             Ok(_) => {
                 time::sleep(delay).await;
-                ()
             }
 
             Err(error) => {
@@ -173,7 +178,6 @@ async fn deliver_subscription_updates(
                     Ok(_) => {
                         time::sleep(delay).await;
                         update_last_deivered_at(&connection, &subscription, publication_date)?;
-                        ()
                     }
                     Err(error) => {
                         let error_message = format!("{:?}", error);
@@ -183,11 +187,11 @@ async fn deliver_subscription_updates(
                 },
                 Some(words) => {
                     let (negated_words, regular_words): (Vec<String>, Vec<String>) =
-                        words.into_iter().partition(|word| word.starts_with("!"));
+                        words.into_iter().partition(|word| word.starts_with('!'));
 
                     let mut mtch = true;
 
-                    if regular_words.len() > 0 {
+                    if !regular_words.is_empty() {
                         let regular_mtch = regular_words
                             .iter()
                             .any(|word| message.to_lowercase().contains(word));
@@ -195,7 +199,7 @@ async fn deliver_subscription_updates(
                         mtch = regular_mtch;
                     }
 
-                    if negated_words.len() > 0 {
+                    if !negated_words.is_empty() {
                         let negated_mtch = negated_words.iter().all(|neg_word| {
                             let word = neg_word.replace("!", "");
 
@@ -256,9 +260,9 @@ fn update_last_deivered_at(
         Ok(_) => Ok(()),
         Err(error) => {
             log::error!("Failed to set last_delivered_at: {}", error);
-            return Err(DeliverJobError {
+            Err(DeliverJobError {
                 msg: format!("Failed to set last_delivered_at : {}", error),
-            });
+            })
         }
     }
 }
@@ -280,11 +284,7 @@ fn format_messages(
     let reg = Handlebars::new();
 
     let feed_title = match feed.title {
-        Some(title) => {
-            let feed_title = truncate(&title, 50);
-
-            feed_title
-        }
+        Some(title) => truncate(&title, 50),
         None => "".to_string(),
     };
 
@@ -311,7 +311,7 @@ fn format_messages(
                 "bot_item_description".to_string(),
                 to_json(remove_html(item.description.clone().map_or_else(
                     || "".to_string(),
-                    |s| truncate(&s, DISCRIPTION_LIMIT).to_string(),
+                    |s| truncate(&s, DISCRIPTION_LIMIT),
                 ))),
             );
 
@@ -383,8 +383,8 @@ mod tests {
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            publication_date: publication_date.clone(),
-            created_at: publication_date.clone(),
+            publication_date: publication_date,
+            created_at: publication_date,
             updated_at: db::current_time(),
         }];
         let feed = Feed {
@@ -424,9 +424,9 @@ mod tests {
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            publication_date: publication_date.clone(),
-            created_at: current_time.clone(),
-            updated_at: current_time.clone(),
+            publication_date: publication_date,
+            created_at: current_time,
+            updated_at: current_time,
         }];
 
         let feed = Feed {

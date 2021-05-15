@@ -490,7 +490,7 @@ mod tests {
                 chat_id: chat.id,
             };
 
-            super::create_subscription(&connection, new_subscription.clone()).unwrap();
+            super::create_subscription(&connection, new_subscription).unwrap();
 
             let result = super::fetch_chats_with_subscriptions(&connection, 1, 1).unwrap();
 
@@ -727,7 +727,7 @@ mod tests {
                 chat_id: chat.id,
             };
 
-            super::create_subscription(&connection, new_subscription.clone()).unwrap();
+            super::create_subscription(&connection, new_subscription).unwrap();
 
             let result = super::remove_subscription(&connection, new_subscription).unwrap();
 
@@ -810,7 +810,7 @@ mod tests {
             };
 
             let subscription =
-                super::create_subscription(&connection, new_subscription.clone()).unwrap();
+                super::create_subscription(&connection, new_subscription).unwrap();
 
             assert_eq!(subscription.template, None);
 
@@ -841,7 +841,7 @@ mod tests {
             };
 
             let subscription =
-                super::create_subscription(&connection, new_subscription.clone()).unwrap();
+                super::create_subscription(&connection, new_subscription).unwrap();
 
             assert_eq!(subscription.filter_words, None);
 
@@ -873,14 +873,14 @@ mod tests {
                 chat_id: chat1.id,
             };
 
-            super::create_subscription(&connection, new_subscription1.clone()).unwrap();
+            super::create_subscription(&connection, new_subscription1).unwrap();
 
             let new_subscription2 = NewTelegramSubscription {
                 feed_id: feed.id,
                 chat_id: chat2.id,
             };
 
-            super::create_subscription(&connection, new_subscription2.clone()).unwrap();
+            super::create_subscription(&connection, new_subscription2).unwrap();
 
             let result = super::find_chats_by_feed_id(&connection, feed.id).unwrap();
 
@@ -903,7 +903,7 @@ mod tests {
 
     fn build_new_chat_with_id(id: i64) -> NewTelegramChat {
         NewTelegramChat {
-            id: id,
+            id,
             kind: "private".to_string(),
             username: Some("Username".to_string()),
             first_name: Some("First".to_string()),

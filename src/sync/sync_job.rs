@@ -7,6 +7,12 @@ use diesel::result::Error;
 
 pub struct SyncJob {}
 
+impl Default for SyncJob {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct SyncError {
     pub msg: String,
 }

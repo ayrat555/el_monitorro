@@ -26,7 +26,7 @@ pub fn create(
     let new_feed_items = fetched_items
         .into_iter()
         .map(|fetched_feed_item| NewFeedItem {
-            feed_id: feed_id,
+            feed_id,
             title: from_read(&fetched_feed_item.title.as_bytes()[..], 500)
                 .trim()
                 .to_string(),
@@ -73,7 +73,7 @@ pub fn delete_old_feed_items(
 
     match creation_date_result {
         Ok(creation_dates) => {
-            if creation_dates.len() > 0 {
+            if !creation_dates.is_empty() {
                 let creation_date = creation_dates[0];
 
                 let delete_query = feed_items::table
@@ -111,7 +111,7 @@ mod tests {
                     link: "Link1".to_string(),
                     author: Some("Author1".to_string()),
                     guid: Some("Guid1".to_string()),
-                    publication_date: publication_date,
+                    publication_date,
                 },
                 FetchedFeedItem {
                     title: "FeedItem2".to_string(),
@@ -119,7 +119,7 @@ mod tests {
                     link: "Link2".to_string(),
                     author: Some("Author2".to_string()),
                     guid: Some("Guid2".to_string()),
-                    publication_date: publication_date,
+                    publication_date,
                 },
             ];
 
@@ -161,7 +161,7 @@ mod tests {
                 link: "Link1".to_string(),
                 author: Some("Author1".to_string()),
                 guid: Some("Guid1".to_string()),
-                publication_date: publication_date,
+                publication_date,
             }];
 
             let old_result = super::create(&connection, feed.id, feed_items.clone()).unwrap();
@@ -181,11 +181,11 @@ mod tests {
                 link: "Link1".to_string(),
                 author: Some("Author2".to_string()),
                 guid: Some("Guid2".to_string()),
-                publication_date: publication_date,
+                publication_date,
             }];
 
             let new_result =
-                super::create(&connection, feed.id, updated_feed_items.clone()).unwrap();
+                super::create(&connection, feed.id, updated_feed_items).unwrap();
 
             assert!(new_result.is_empty());
 
@@ -218,7 +218,7 @@ mod tests {
                 },
             ];
 
-            super::create(&connection, feed.id, feed_items.clone()).unwrap();
+            super::create(&connection, feed.id, feed_items).unwrap();
 
             let result = super::delete_old_feed_items(&connection, feed.id, 1).unwrap();
             assert_eq!(result, 2);
@@ -255,7 +255,7 @@ mod tests {
                 },
             ];
 
-            super::create(&connection, feed.id, feed_items.clone()).unwrap();
+            super::create(&connection, feed.id, feed_items).unwrap();
 
             let result = super::delete_old_feed_items(&connection, feed.id, 10).unwrap();
             assert_eq!(result, 0);

@@ -13,16 +13,16 @@ struct NewFeed {
 }
 
 pub fn create(conn: &PgConnection, link: String, feed_type: String) -> Result<Feed, Error> {
-    if feed_type != "atom".to_string()
-        && feed_type != "rss".to_string()
-        && feed_type != "json".to_string()
+    if feed_type != *"atom"
+        && feed_type != *"rss"
+        && feed_type != *"json"
     {
         unimplemented!()
     }
 
     let new_feed = NewFeed {
         link: link.trim().to_string(),
-        feed_type: feed_type,
+        feed_type,
     };
 
     diesel::insert_into(feeds::table)

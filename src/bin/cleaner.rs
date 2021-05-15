@@ -1,5 +1,5 @@
 use dotenv::dotenv;
-use el_monitorro;
+
 use el_monitorro::cleaner::clean_job::CleanJob;
 use el_monitorro::db;
 use std::env;
@@ -17,7 +17,7 @@ fn main() {
         .unwrap();
 
     let period: u64 = env::var("CLEAN_INTERVAL_SECONDS")
-        .unwrap_or("3600".to_string())
+        .unwrap_or_else(|_| "3600".to_string())
         .parse()
         .unwrap();
 
@@ -28,9 +28,8 @@ fn main() {
             interval.tick().await;
 
             if db::semaphore().available_permits() == *db::pool_connection_number() {
-                match CleanJob::new().execute().await {
-                    Err(error) => log::error!("Failed to remove old feed items: {}", error.msg),
-                    Ok(_) => (),
+                if let Err(error) = CleanJob::new().execute().await {
+                    log::error!("Failed to remove old feed items: {}", error.msg)
                 }
             } else {
                 log::error!("The previous clean job did not finish");

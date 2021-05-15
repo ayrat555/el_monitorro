@@ -77,7 +77,7 @@ impl From<isahc::http::Error> for Error {
 
         let error = HttpError {
             code: 500,
-            message: message,
+            message,
         };
 
         Error::HttpError(error)
@@ -90,7 +90,7 @@ impl From<std::io::Error> for Error {
 
         let error = HttpError {
             code: 500,
-            message: message,
+            message,
         };
 
         Error::HttpError(error)
@@ -103,7 +103,7 @@ impl From<isahc::Error> for Error {
 
         let error = HttpError {
             code: 500,
-            message: message,
+            message,
         };
 
         Error::HttpError(error)
@@ -147,7 +147,7 @@ impl TelegramApi for Api {
 
                         let error = HttpError {
                             code: 500,
-                            message: message,
+                            message,
                         };
 
                         Err(Error::HttpError(error))

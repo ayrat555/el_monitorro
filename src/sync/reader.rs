@@ -84,7 +84,7 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
         url: url.to_string(),
     };
 
-    if let Ok(_) = rss_reader.read() {
+    if rss_reader.read().is_ok() {
         return Ok("rss".to_string());
     }
 
@@ -92,7 +92,7 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
         url: url.to_string(),
     };
 
-    if let Ok(_) = atom_reader.read() {
+    if atom_reader.read().is_ok() {
         return Ok("atom".to_string());
     }
 
@@ -100,7 +100,7 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
         url: url.to_string(),
     };
 
-    if let Ok(_) = json_reader.read() {
+    if json_reader.read().is_ok() {
         return Ok("json".to_string());
     }
 
@@ -113,7 +113,7 @@ fn request_timeout_seconds() -> &'static u64 {
     REQUEST_TIMEOUT.get_or_init(|| {
         dotenv().ok();
 
-        let timeout_str = env::var("REQUEST_TIMEOUT").unwrap_or("5".to_string());
+        let timeout_str = env::var("REQUEST_TIMEOUT").unwrap_or_else(|_| "5".to_string());
         let timeout: u64 = timeout_str.parse().unwrap();
 
         timeout

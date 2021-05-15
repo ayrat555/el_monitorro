@@ -46,7 +46,7 @@ pub fn find_feeds_by_chat_id(db_connection: &PgConnection, chat_id: i64) -> Stri
                 .map(|feed| feed.link)
                 .collect::<Vec<String>>()
                 .join("\n");
-            if response == "" {
+            if response.is_empty() {
                 "You don't have any subscriptions".to_string()
             } else {
                 response
@@ -96,7 +96,7 @@ pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) 
         return "Wrong number of parameters".to_string();
     }
 
-    if vec[1] == "" {
+    if vec[1].is_empty() {
         return "Template can not be empty".to_string();
     }
 
@@ -111,8 +111,7 @@ pub fn set_template(db_connection: &PgConnection, chat_id: i64, params: String) 
                 Ok(_) => format!(
                     "The template was updated. Your messages will look like:\n\n{}",
                     example
-                )
-                .to_string(),
+                ),
                 Err(_) => "Failed to update the template".to_string(),
             }
         }
@@ -150,7 +149,7 @@ pub fn set_filter(db_connection: &PgConnection, chat_id: i64, params: String) ->
         return "Wrong number of parameters".to_string();
     }
 
-    if vec[1] == "" {
+    if vec[1].is_empty() {
         return "Filter can not be empty".to_string();
     }
 
@@ -159,23 +158,20 @@ pub fn set_filter(db_connection: &PgConnection, chat_id: i64, params: String) ->
         Ok(subscription) => subscription,
     };
 
-    let filter_words: Vec<String> = vec[1]
-        .split(",")
-        .map(|s| s.trim().to_lowercase().to_string())
-        .collect();
+    let filter_words: Vec<String> = vec[1].split(',').map(|s| s.trim().to_lowercase()).collect();
 
     if filter_words.len() > 7 {
         return "The number of filter words is limited by 7".to_string();
     }
 
     match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
-        Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")).to_string(),
+        Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")),
         Err(_) => "Failed to update the filter".to_string(),
     }
 }
 
 pub fn set_global_template(db_connection: &PgConnection, chat_id: i64, template: String) -> String {
-    if template == "".to_string() {
+    if template == *"" {
         return "Template can not be empty".to_string();
     }
 
@@ -190,8 +186,7 @@ pub fn set_global_template(db_connection: &PgConnection, chat_id: i64, template:
                 Ok(_) => format!(
                     "The global template was updated. Your messages will look like:\n\n{}",
                     example
-                )
-                .to_string(),
+                ),
                 Err(_) => "Failed to update the template".to_string(),
             }
         }
@@ -233,7 +228,7 @@ fn find_subscription(
 
     match telegram::find_subscription(db_connection, telegram_subscription) {
         Some(subscription) => Ok(subscription),
-        None => return not_exists_error,
+        None => not_exists_error,
     }
 }
 
@@ -253,7 +248,7 @@ fn parse_template_and_send_example(raw_template: String) -> Result<(String, Stri
     let template = parse_template(&raw_template);
 
     match reg.render_template(&template, &data) {
-        Err(_) => return Err("Failed to update the template".to_string()),
+        Err(_) => Err("Failed to update the template".to_string()),
         Ok(result) => Ok((template, result)),
     }
 }
@@ -369,9 +364,9 @@ fn parse_template(template: &str) -> String {
             let new_part = format!("{{{{{}}}}}", part);
             result.push_str(&new_part);
         } else if part == "bot_space" {
-            result.push_str(" ");
+            result.push(' ');
         } else if part == "bot_new_line" {
-            result.push_str("\n");
+            result.push('\n');
         } else {
             result.push_str(part);
         }
@@ -421,7 +416,8 @@ fn check_number_of_subscriptions(
 
 pub fn sub_limit() -> &'static i64 {
     SUB_LIMIT.get_or_init(|| {
-        let subscription_limit = env::var("SUBSCRIPTION_LIMIT").unwrap_or("20".to_string());
+        let subscription_limit =
+            env::var("SUBSCRIPTION_LIMIT").unwrap_or_else(|_| "20".to_string());
         subscription_limit.parse().unwrap()
     })
 }
@@ -557,7 +553,7 @@ mod tests {
         };
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-            for rss_url in vec![
+            for rss_url in &[
                 "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
                 "https://www.eurekalert.org/rss/technology_engineering.xml",
                 "https://www.sciencedaily.com/rss/matter_energy/engineering.xml",

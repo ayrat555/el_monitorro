@@ -5,6 +5,12 @@ use diesel::PgConnection;
 
 pub struct CleanJob {}
 
+impl Default for CleanJob {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct CleanJobError {
     pub msg: String,
 }
@@ -60,13 +66,12 @@ pub async fn remove_old_feed_items(feed_id: i64) {
     let semaphored_connection = db::get_semaphored_connection().await;
     let db_connection = semaphored_connection.connection;
 
-    match feed_items::delete_old_feed_items(&db_connection, feed_id, 1000) {
-        Err(error) => log::error!(
+    if let Err(error) = feed_items::delete_old_feed_items(&db_connection, feed_id, 1000) {
+        log::error!(
             "Failed to delete old feed items for {}: {:?}",
             feed_id,
             error
-        ),
-        Ok(_) => (),
+        );
     }
 }
 
