@@ -5,7 +5,7 @@ use crate::bot::telegram_client::Error;
 use crate::db;
 use crate::db::telegram::NewTelegramChat;
 use frankenstein::Chat;
-use frankenstein::ChatIdEnum;
+use frankenstein::ChatId;
 use frankenstein::Message;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
@@ -125,8 +125,7 @@ pub async fn send_message(chat_id: i64, message: String) -> Result<(), Error> {
 
     let api = Api::new(token);
 
-    let send_message_params =
-        SendMessageParams::new(ChatIdEnum::IsizeVariant(chat_id as isize), message);
+    let send_message_params = SendMessageParams::new(ChatId::Integer(chat_id), message);
 
     match api.send_message(&send_message_params) {
         Ok(_) => Ok(()),
@@ -145,7 +144,7 @@ async fn unknown_command(api: Api, message: Message) -> Result<(), Error> {
 
 fn reply_to_message(api: Api, message: Message, text: String) -> Result<(), Error> {
     let mut send_message_params =
-        SendMessageParams::new(ChatIdEnum::IsizeVariant(message.chat().id()), text);
+        SendMessageParams::new(ChatId::Integer(message.chat().id()), text);
 
     send_message_params.set_reply_to_message_id(Some(message.message_id()));
 
