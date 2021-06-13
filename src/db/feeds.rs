@@ -13,10 +13,7 @@ struct NewFeed {
 }
 
 pub fn create(conn: &PgConnection, link: String, feed_type: String) -> Result<Feed, Error> {
-    if feed_type != *"atom"
-        && feed_type != *"rss"
-        && feed_type != *"json"
-    {
+    if feed_type != *"atom" && feed_type != *"rss" && feed_type != *"json" {
         unimplemented!()
     }
 

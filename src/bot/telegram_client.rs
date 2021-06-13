@@ -75,10 +75,7 @@ impl From<isahc::http::Error> for Error {
     fn from(error: isahc::http::Error) -> Self {
         let message = format!("{:?}", error);
 
-        let error = HttpError {
-            code: 500,
-            message,
-        };
+        let error = HttpError { code: 500, message };
 
         Error::HttpError(error)
     }
@@ -88,10 +85,7 @@ impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
         let message = format!("{:?}", error);
 
-        let error = HttpError {
-            code: 500,
-            message,
-        };
+        let error = HttpError { code: 500, message };
 
         Error::HttpError(error)
     }
@@ -101,10 +95,7 @@ impl From<isahc::Error> for Error {
     fn from(error: isahc::Error) -> Self {
         let message = format!("{:?}", error);
 
-        let error = HttpError {
-            code: 500,
-            message,
-        };
+        let error = HttpError { code: 500, message };
 
         Error::HttpError(error)
     }
@@ -145,10 +136,7 @@ impl TelegramApi for Api {
                     Err(error) => {
                         let message = format!("{:?}", error);
 
-                        let error = HttpError {
-                            code: 500,
-                            message,
-                        };
+                        let error = HttpError { code: 500, message };
 
                         Err(Error::HttpError(error))
                     }

@@ -184,8 +184,7 @@ mod tests {
                 publication_date,
             }];
 
-            let new_result =
-                super::create(&connection, feed.id, updated_feed_items).unwrap();
+            let new_result = super::create(&connection, feed.id, updated_feed_items).unwrap();
 
             assert!(new_result.is_empty());
 
