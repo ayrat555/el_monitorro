@@ -25,6 +25,20 @@ jobs:
           - os: windows-latest
             toolchain: nightly
             clippyargs: -D warnings
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v2
@@ -42,6 +56,15 @@ jobs:
         with:
           command: clippy
           args: --verbose --all-targets --all-features -- ${{ matrix.clippyargs }}
+
+      - name: Install diesel-cli
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: diesel_cli --no-default-features --features "postgres"
+
+      - name: Setup db
+        run: diesel setup
 
       - name: Run tests
         uses: actions-rs/cargo@v1
