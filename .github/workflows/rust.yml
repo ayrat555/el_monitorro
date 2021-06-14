@@ -9,22 +9,9 @@ on:
 
 jobs:
   test:
-    name: Test ${{ matrix.os }} ${{ matrix.toolchain }}
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.toolchain == 'nightly' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            toolchain: nightly
-            clippyargs:  -D warnings
-          - os: macOS-latest
-            toolchain: nightly
-            clippyargs:  -D warnings
-          - os: windows-latest
-            toolchain: nightly
-            clippyargs: -D warnings
+    name: Test
+    runs-on: ubuntu-latest
+
     services:
       # Label used to access the service container
       postgres:
@@ -54,13 +41,13 @@ jobs:
           components: clippy
           override: true
           profile: minimal
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: nightly
 
       - name: Run clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --verbose --all-targets --all-features -- ${{ matrix.clippyargs }}
+          args: --verbose --all-targets --all-features -- -D warnings
 
       - name: Install diesel-cli
         uses: actions-rs/cargo@v1
@@ -112,7 +99,7 @@ jobs:
           override: true
           profile: minimal
           target: ${{ matrix.triple }}
-          toolchain: stable
+          toolchain: nightly
 
       - name: Build release
         uses: actions-rs/cargo@v1
