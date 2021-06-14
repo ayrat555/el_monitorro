@@ -123,8 +123,8 @@ async fn deliver_subscription_updates(
 ) -> Result<(), DeliverJobError> {
     let semaphored_connection = db::get_semaphored_connection().await;
     let connection = semaphored_connection.connection;
-    let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
-    let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
+    let feed_items = telegram::find_undelivered_feed_items(&connection, subscription)?;
+    let undelivered_count = telegram::count_undelivered_feed_items(&connection, subscription);
     let chat_id = subscription.chat_id;
     let feed = feeds::find(&connection, subscription.feed_id).unwrap();
 
@@ -177,7 +177,7 @@ async fn deliver_subscription_updates(
                 None => match api::send_message(chat_id, message).await {
                     Ok(_) => {
                         time::sleep(delay).await;
-                        update_last_deivered_at(&connection, &subscription, publication_date)?;
+                        update_last_deivered_at(&connection, subscription, publication_date)?;
                     }
                     Err(error) => {
                         let error_message = format!("{:?}", error);
@@ -215,7 +215,7 @@ async fn deliver_subscription_updates(
                                 time::sleep(delay).await;
                                 update_last_deivered_at(
                                     &connection,
-                                    &subscription,
+                                    subscription,
                                     publication_date,
                                 )?;
                             }
@@ -226,7 +226,7 @@ async fn deliver_subscription_updates(
                             }
                         }
                     } else {
-                        update_last_deivered_at(&connection, &subscription, publication_date)?;
+                        update_last_deivered_at(&connection, subscription, publication_date)?;
                     }
                 }
             }
@@ -333,7 +333,7 @@ fn format_messages(
 }
 
 fn remove_html(string: String) -> String {
-    from_read(&string.as_bytes()[..], 2000).trim().to_string()
+    from_read(string.as_bytes(), 2000).trim().to_string()
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
@@ -377,13 +377,13 @@ mod tests {
                 .unwrap()
                 .into();
         let feed_items = vec![FeedItem {
+            publication_date,
             feed_id: 1,
             title: "Title".to_string(),
             description: Some("Description".to_string()),
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            publication_date: publication_date,
             created_at: publication_date,
             updated_at: db::current_time(),
         }];
@@ -418,13 +418,13 @@ mod tests {
                 .into();
         let current_time = db::current_time();
         let feed_items = vec![FeedItem {
+            publication_date,
             feed_id: 1,
             title: "Title".to_string(),
             description: Some("Description".to_string()),
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            publication_date: publication_date,
             created_at: current_time,
             updated_at: current_time,
         }];

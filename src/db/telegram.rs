@@ -809,8 +809,7 @@ mod tests {
                 chat_id: chat.id,
             };
 
-            let subscription =
-                super::create_subscription(&connection, new_subscription).unwrap();
+            let subscription = super::create_subscription(&connection, new_subscription).unwrap();
 
             assert_eq!(subscription.template, None);
 
@@ -840,8 +839,7 @@ mod tests {
                 chat_id: chat.id,
             };
 
-            let subscription =
-                super::create_subscription(&connection, new_subscription).unwrap();
+            let subscription = super::create_subscription(&connection, new_subscription).unwrap();
 
             assert_eq!(subscription.filter_words, None);
 

@@ -57,9 +57,4 @@ joinable!(feed_items -> feeds (feed_id));
 joinable!(telegram_subscriptions -> feeds (feed_id));
 joinable!(telegram_subscriptions -> telegram_chats (chat_id));
 
-allow_tables_to_appear_in_same_query!(
-    feed_items,
-    feeds,
-    telegram_chats,
-    telegram_subscriptions,
-);
+allow_tables_to_appear_in_same_query!(feed_items, feeds, telegram_chats, telegram_subscriptions,);
