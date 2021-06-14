@@ -27,7 +27,7 @@ pub fn create(
         .into_iter()
         .map(|fetched_feed_item| NewFeedItem {
             feed_id,
-            title: from_read(&fetched_feed_item.title.as_bytes()[..], 500)
+            title: from_read(fetched_feed_item.title.as_bytes(), 500)
                 .trim()
                 .to_string(),
             description: fetched_feed_item.description,

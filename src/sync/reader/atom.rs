@@ -48,7 +48,7 @@ impl From<AtomFeed> for FetchedFeed {
 
                 FetchedFeedItem {
                     title: item.title().to_string(),
-                    description: parse_description(&item),
+                    description: parse_description(item),
                     link: find_link(item.links(), "alternate")
                         .unwrap()
                         .href()
