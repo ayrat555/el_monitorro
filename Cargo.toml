@@ -24,5 +24,5 @@ frankenstein = { version = "0.4", default-features = false }
 tokio = { version = "1.6", features = ["full"] }
 url = "2.2"
 regex = { version = "1", features = ["pattern"] }
-handlebars = "3.5"
+handlebars = "4.0"
 htmlescape = "0.3"
