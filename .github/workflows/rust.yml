@@ -65,30 +65,9 @@ jobs:
           args: --verbose --all-features
 
   release:
-    name: Release ${{ matrix.triple }}
-    runs-on: ${{ matrix.os }}
+    name: Release x86_64-unknown-linux-gnu
+    runs-on: ubuntu-latest
     needs: test
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            triple: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
-            triple: arm-unknown-linux-gnueabihf
-          - os: ubuntu-latest
-            triple: armv7-unknown-linux-gnueabihf
-          - os: ubuntu-latest
-            triple: aarch64-unknown-linux-gnu
-          - os: macOS-latest
-            triple: x86_64-apple-darwin
-          - os: macOS-latest
-            triple: aarch64-apple-darwin
-          - os: windows-latest
-            triple: x86_64-pc-windows-msvc
-          # https://github.com/briansmith/ring/issues/1167
-          # - os: windows-latest
-          #   triple: aarch64-pc-windows-msvc
 
     steps:
       - uses: actions/checkout@v2
@@ -98,15 +77,11 @@ jobs:
         with:
           override: true
           profile: minimal
-          target: ${{ matrix.triple }}
+          target: x86_64-unknown-linux-gnu
           toolchain: nightly
 
       - name: Build release
         uses: actions-rs/cargo@v1
-        env:
-          # TODO: Remove this once it's the default
-          SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
         with:
           command: build
-          args: --release --verbose --all-features --target ${{ matrix.triple }}
-          use-cross: ${{ runner.os == 'Linux' && matrix.triple != 'x86_64-unknown-linux-gnu' }}
+          args: --release --verbose --all-features --target x86_64-unknown-linux-gnu
