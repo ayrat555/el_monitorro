@@ -4,6 +4,10 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
 use diesel::result::Error;
+use fang::Error as FangError;
+use fang::Postgres;
+use fang::Runnable;
+use serde::{Deserialize, Serialize};
 
 pub struct SyncJob {}
 
@@ -31,8 +35,7 @@ impl SyncJob {
     }
 
     pub async fn execute(&self) -> Result<usize, SyncError> {
-        let semaphored_connection = db::get_semaphored_connection().await;
-        let db_connection = semaphored_connection.connection;
+        let postgres = Postgres::new(None);
 
         let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;
@@ -44,12 +47,12 @@ impl SyncJob {
         let last_synced_at = db::current_time();
         loop {
             unsynced_feed_ids =
-                feeds::find_unsynced_feeds(&db_connection, last_synced_at, page, 100)?;
+                feeds::find_unsynced_feeds(&postgres.connection, last_synced_at, page, 100)?;
 
             page += 1;
 
             for id in &unsynced_feed_ids {
-                tokio::spawn(sync_feed(*id));
+                postgres.push_task(&SyncFeedJob { feed_id: *id }).unwrap();
             }
 
             if unsynced_feed_ids.is_empty() {
@@ -68,35 +71,55 @@ impl SyncJob {
     }
 }
 
-pub async fn sync_feed(feed_id: i64) {
-    let semaphored_connection = db::get_semaphored_connection().await;
-    let db_connection = semaphored_connection.connection;
-    let feed_sync_result = FeedSyncJob::new(feed_id).execute(&db_connection);
+#[derive(Serialize, Deserialize)]
+pub struct SyncFeedJob {
+    pub feed_id: i64,
+}
 
-    match feed_sync_result {
-        Err(FeedSyncError::StaleError) => {
-            log::error!("Feed can not be processed for a long time {}", feed_id);
+impl SyncFeedJob {
+    pub fn sync_feed(&self) {
+        let db_connection = db::establish_connection();
+        let feed_sync_result = FeedSyncJob::new(self.feed_id).execute(&db_connection);
+        let feed_id = self.feed_id;
 
-            let feed = feeds::find(&db_connection, feed_id).unwrap();
-            let chats = telegram::find_chats_by_feed_id(&db_connection, feed_id).unwrap();
+        match feed_sync_result {
+            Err(FeedSyncError::StaleError) => {
+                log::error!("Feed can not be processed for a long time {}", feed_id);
 
-            let message = format!("{} can not be processed. It was removed.", feed.link);
+                let feed = feeds::find(&db_connection, feed_id).unwrap();
+                let chats = telegram::find_chats_by_feed_id(&db_connection, feed_id).unwrap();
 
-            for chat in chats.into_iter() {
-                match api::send_message(chat.id, message.clone()).await {
-                    Ok(_) => (),
-                    Err(error) => {
-                        log::error!("Failed to send a message: {:?}", error);
+                let message = format!("{} can not be processed. It was removed.", feed.link);
+
+                for chat in chats.into_iter() {
+                    match api::send_message_sync(chat.id, message.clone()) {
+                        Ok(_) => (),
+                        Err(error) => {
+                            log::error!("Failed to send a message: {:?}", error);
+                        }
                     }
                 }
-            }
 
-            match feeds::remove_feed(&db_connection, feed_id) {
-                Ok(_) => log::info!("Feed was removed: {}", feed_id),
-                Err(err) => log::error!("Failed to remove feed: {} {}", feed_id, err),
+                match feeds::remove_feed(&db_connection, feed_id) {
+                    Ok(_) => log::info!("Feed was removed: {}", feed_id),
+                    Err(err) => log::error!("Failed to remove feed: {} {}", feed_id, err),
+                }
             }
+            Err(error) => log::error!("Failed to process feed {}: {:?}", feed_id, error),
+            Ok(_) => (),
         }
-        Err(error) => log::error!("Failed to process feed {}: {:?}", feed_id, error),
-        Ok(_) => (),
+    }
+}
+
+#[typetag::serde]
+impl Runnable for SyncFeedJob {
+    fn run(&self) -> Result<(), FangError> {
+        self.sync_feed();
+
+        Ok(())
+    }
+
+    fn task_type(&self) -> String {
+        "sync".to_string()
     }
 }

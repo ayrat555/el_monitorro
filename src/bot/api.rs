@@ -121,6 +121,10 @@ async fn start(api: Api, message: Message) -> Result<(), Error> {
 }
 
 pub async fn send_message(chat_id: i64, message: String) -> Result<(), Error> {
+    send_message_sync(chat_id, message)
+}
+
+pub fn send_message_sync(chat_id: i64, message: String) -> Result<(), Error> {
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
 
     let api = Api::new(token);

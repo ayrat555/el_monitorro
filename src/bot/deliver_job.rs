@@ -10,12 +10,15 @@ use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::result::Error;
+use fang::Error as FangError;
+use fang::Postgres;
+use fang::Runnable;
 use handlebars::{to_json, Handlebars};
 use html2text::from_read;
 use htmlescape::decode_html;
+use serde::{Deserialize, Serialize};
 use serde_json::value::Map;
 use std::time::Duration;
-use tokio::time;
 
 static TELEGRAM_ERRORS: [&str; 13] = [
     "Forbidden: bot was blocked by the user",
@@ -62,17 +65,16 @@ impl DeliverJob {
     }
 
     pub async fn execute(&self) -> Result<(), DeliverJobError> {
-        let semaphored_connection = db::get_semaphored_connection().await;
-        let db_connection = semaphored_connection.connection;
+        let postgres = Postgres::new(None);
         let mut current_chats: Vec<i64>;
         let mut page = 1;
         let mut total_chat_number = 0;
-        let mut total_subscription_number = 0;
 
         log::info!("Started delivering feed items");
 
         loop {
-            current_chats = telegram::fetch_chats_with_subscriptions(&db_connection, page, 1000)?;
+            current_chats =
+                telegram::fetch_chats_with_subscriptions(&postgres.connection, page, 1000)?;
 
             page += 1;
 
@@ -83,48 +85,61 @@ impl DeliverJob {
             total_chat_number += current_chats.len();
 
             for chat_id in current_chats {
-                let subscriptions = telegram::find_subscriptions_for_chat(&db_connection, chat_id)?;
-
-                total_subscription_number += subscriptions.len();
-
-                tokio::spawn(deliver_updates_for_chat(subscriptions));
+                postgres
+                    .push_task(&DeliverChatUpdatesJob { chat_id: chat_id })
+                    .unwrap();
             }
         }
 
-        log::info!(
-            "Started checking delivery for {} chats and {} subscriptions",
-            total_chat_number,
-            total_subscription_number
-        );
+        log::info!("Started checking delivery for {} chats", total_chat_number,);
 
         Ok(())
     }
 }
 
-async fn deliver_updates_for_chat(
-    telegram_subscriptions: Vec<TelegramSubscription>,
-) -> Result<(), DeliverJobError> {
-    for subscription in telegram_subscriptions {
-        match deliver_subscription_updates(&subscription).await {
-            Ok(()) => (),
-            Err(error) => log::error!(
-                "Failed to deliver updates for subscription: {:?} {:?}",
-                subscription,
-                error
-            ),
-        }
-    }
-
-    Ok(())
+#[derive(Serialize, Deserialize)]
+struct DeliverChatUpdatesJob {
+    pub chat_id: i64,
 }
 
-async fn deliver_subscription_updates(
+impl DeliverChatUpdatesJob {
+    pub fn deliver(&self) {
+        let db_connection = db::establish_connection();
+        let subscriptions =
+            telegram::find_subscriptions_for_chat(&db_connection, self.chat_id).unwrap();
+
+        for subscription in subscriptions {
+            match deliver_subscription_updates(&subscription, &db_connection) {
+                Ok(()) => (),
+                Err(error) => log::error!(
+                    "Failed to deliver updates for subscription: {:?} {:?}",
+                    subscription,
+                    error
+                ),
+            }
+        }
+    }
+}
+
+#[typetag::serde]
+impl Runnable for DeliverChatUpdatesJob {
+    fn run(&self) -> Result<(), FangError> {
+        self.deliver();
+
+        Ok(())
+    }
+
+    fn task_type(&self) -> String {
+        "deliver".to_string()
+    }
+}
+
+fn deliver_subscription_updates(
     subscription: &TelegramSubscription,
+    connection: &PgConnection,
 ) -> Result<(), DeliverJobError> {
-    let semaphored_connection = db::get_semaphored_connection().await;
-    let connection = semaphored_connection.connection;
-    let feed_items = telegram::find_undelivered_feed_items(&connection, subscription)?;
-    let undelivered_count = telegram::count_undelivered_feed_items(&connection, subscription);
+    let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
+    let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
     let chat_id = subscription.chat_id;
     let feed = feeds::find(&connection, subscription.feed_id).unwrap();
 
@@ -139,9 +154,9 @@ async fn deliver_subscription_updates(
             feed.link
         );
 
-        match api::send_message(chat_id, message).await {
+        match api::send_message_sync(chat_id, message) {
             Ok(_) => {
-                time::sleep(delay).await;
+                std::thread::sleep(delay);
             }
 
             Err(error) => {
@@ -174,10 +189,10 @@ async fn deliver_subscription_updates(
 
         for (message, publication_date) in messages {
             match subscription.filter_words.clone() {
-                None => match api::send_message(chat_id, message).await {
+                None => match api::send_message_sync(chat_id, message) {
                     Ok(_) => {
-                        time::sleep(delay).await;
-                        update_last_deivered_at(&connection, subscription, publication_date)?;
+                        std::thread::sleep(delay);
+                        update_last_deivered_at(&connection, &subscription, publication_date)?;
                     }
                     Err(error) => {
                         let error_message = format!("{:?}", error);
@@ -210,12 +225,12 @@ async fn deliver_subscription_updates(
                     }
 
                     if mtch {
-                        match api::send_message(chat_id, message).await {
+                        match api::send_message_sync(chat_id, message) {
                             Ok(_) => {
-                                time::sleep(delay).await;
+                                std::thread::sleep(delay);
                                 update_last_deivered_at(
                                     &connection,
-                                    subscription,
+                                    &subscription,
                                     publication_date,
                                 )?;
                             }
@@ -226,7 +241,7 @@ async fn deliver_subscription_updates(
                             }
                         }
                     } else {
-                        update_last_deivered_at(&connection, subscription, publication_date)?;
+                        update_last_deivered_at(&connection, &subscription, publication_date)?;
                     }
                 }
             }
@@ -333,7 +348,7 @@ fn format_messages(
 }
 
 fn remove_html(string: String) -> String {
-    from_read(string.as_bytes(), 2000).trim().to_string()
+    from_read(&string.as_bytes()[..], 2000).trim().to_string()
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
@@ -383,13 +398,13 @@ mod tests {
                 .unwrap()
                 .into();
         let feed_items = vec![FeedItem {
-            publication_date,
             feed_id: 1,
             title: "Title".to_string(),
             description: Some("Description".to_string()),
             link: "dsd".to_string(),
             author: None,
             guid: None,
+            publication_date: publication_date,
             created_at: publication_date,
             updated_at: db::current_time(),
         }];
@@ -424,13 +439,13 @@ mod tests {
                 .into();
         let current_time = db::current_time();
         let feed_items = vec![FeedItem {
-            publication_date,
             feed_id: 1,
             title: "Title".to_string(),
             description: Some("Description".to_string()),
             link: "dsd".to_string(),
             author: None,
             guid: None,
+            publication_date: publication_date,
             created_at: current_time,
             updated_at: current_time,
         }];

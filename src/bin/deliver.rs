@@ -2,6 +2,7 @@ use dotenv::dotenv;
 
 use el_monitorro::bot::deliver_job::DeliverJob;
 use el_monitorro::db;
+use fang::WorkerPool;
 use std::env;
 use tokio::runtime;
 use tokio::time;
@@ -9,6 +10,8 @@ use tokio::time;
 fn main() {
     dotenv().ok();
     env_logger::init();
+
+    WorkerPool::new(10, Some("deliver".to_string())).start();
 
     let tokio_runtime = runtime::Builder::new_multi_thread()
         .thread_name("deliver-pool")
