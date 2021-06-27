@@ -1,4 +1,4 @@
-<p align="center"><img src="el_monitorro_logo.png" alt="el_monitorro" height="300px"></p>
+<p align="center"><img src="el_monitorro_logo.png" alt="el_monitorro" width="300px"></p>
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/ayrat555)
 
