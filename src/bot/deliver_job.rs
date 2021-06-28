@@ -347,7 +347,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
             let trimmed_str = string.trim();
 
             if trimmed_str == "" {
-                "According to your template the message is empty. Telegram doesn't support empty message. That's why we're sending this placeholder message.".to_string()
+                "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
             } else {
                 trimmed_str.to_string()
             }
