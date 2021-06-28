@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Bugfixes
+
+- Do not send empty message ([#117](https://github.com/ayrat555/el_monitorro/pull/117))
+
 ## 0.1.3 (2021-06-22)
 
 ### Chores
