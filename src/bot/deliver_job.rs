@@ -352,21 +352,23 @@ fn remove_html(string: String) -> String {
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
-    match s.char_indices().nth(max_chars) {
+    let result = match s.char_indices().nth(max_chars) {
         None => String::from(s),
         Some((idx, _)) => {
             let mut string = String::from(&s[..idx]);
 
             string.push_str("...");
 
-            let trimmed_str = string.trim();
-
-            if trimmed_str.is_empty() {
-                "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
-            } else {
-                trimmed_str.to_string()
-            }
+            string
         }
+    };
+
+    let trimmed_result = result.trim();
+
+    if trimmed_result.is_empty() {
+        "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
+    } else {
+        trimmed_result.to_string()
     }
 }
 
