@@ -35,7 +35,7 @@ impl SyncJob {
     }
 
     pub async fn execute(&self) -> Result<usize, SyncError> {
-        let postgres = Postgres::new(None);
+        let postgres = Postgres::new();
 
         let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;

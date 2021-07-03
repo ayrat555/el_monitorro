@@ -462,7 +462,7 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 [[package]]
 name = "fang"
 version = "0.2.0"
-source = "git+https://github.com/ayrat555/fang?branch=ayrat555/remove-finished-tasks#e8075824cad101b5df16c75bba9ead5ab21307a7"
+source = "git+https://github.com/ayrat555/fang?branch=ayrat555/remove-finished-tasks#17b13a9c76327b3f139d94734c30b9a246d709ea"
 dependencies = [
  "chrono",
  "diesel",

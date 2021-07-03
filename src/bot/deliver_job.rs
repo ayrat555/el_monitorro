@@ -65,7 +65,7 @@ impl DeliverJob {
     }
 
     pub async fn execute(&self) -> Result<(), DeliverJobError> {
-        let postgres = Postgres::new(None);
+        let postgres = Postgres::new();
         let mut current_chats: Vec<i64>;
         let mut page = 1;
         let mut total_chat_number = 0;

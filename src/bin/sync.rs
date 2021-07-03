@@ -2,6 +2,7 @@ use dotenv::dotenv;
 
 use el_monitorro::db;
 use el_monitorro::sync::sync_job::SyncJob;
+use fang::WorkerParams;
 use fang::WorkerPool;
 use std::env;
 use tokio::runtime;
@@ -11,7 +12,10 @@ fn main() {
     dotenv().ok();
     env_logger::init();
 
-    WorkerPool::new(10, Some("sync".to_string())).start();
+    let mut worker_params = WorkerParams::new();
+    worker_params.set_task_type("sync".to_string());
+
+    WorkerPool::new_with_params(10, worker_params).start();
 
     let tokio_runtime = runtime::Builder::new_multi_thread()
         .thread_name("sync-pool")
