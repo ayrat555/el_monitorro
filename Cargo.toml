@@ -21,7 +21,7 @@ feed-rs = "0.6.1"
 isahc = "1.4"
 atom_syndication = "0.10"
 frankenstein = { version = "0.5", default-features = false }
-tokio = { version = "1.7", features = ["full"] }
+tokio = { version = "1.8", features = ["full"] }
 url = "2.2"
 regex = { version = "1", features = ["pattern"] }
 handlebars = "4.0"
