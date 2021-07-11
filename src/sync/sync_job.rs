@@ -4,10 +4,11 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
 use diesel::result::Error;
+use fang::typetag;
 use fang::Error as FangError;
 use fang::Postgres;
 use fang::Runnable;
-use serde::{Deserialize, Serialize};
+use fang::{Deserialize, Serialize};
 
 pub struct SyncJob {}
 

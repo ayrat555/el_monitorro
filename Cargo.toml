@@ -26,5 +26,4 @@ url = "2.2"
 regex = { version = "1", features = ["pattern"] }
 handlebars = "4.0"
 htmlescape = "0.3"
-fang = { git = "https://github.com/ayrat555/fang", branch = "ayrat555/remove-finished-tasks" }
-typetag = "0.1"
+fang = { git = "https://github.com/ayrat555/fang", branch = "ayrat555/reexport-traits" }
