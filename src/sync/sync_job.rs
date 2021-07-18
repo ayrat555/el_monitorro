@@ -3,13 +3,13 @@ use crate::db;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
-use diesel::result::Error;
 use fang::typetag;
 use fang::Error as FangError;
 use fang::Postgres;
 use fang::Runnable;
 use fang::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct SyncJob {}
 
 impl Default for SyncJob {
@@ -22,20 +22,15 @@ pub struct SyncError {
     pub msg: String,
 }
 
-impl From<Error> for SyncError {
-    fn from(error: Error) -> Self {
-        let msg = format!("{:?}", error);
-
-        SyncError { msg }
-    }
-}
-
 impl SyncJob {
     pub fn new() -> Self {
         SyncJob {}
     }
+}
 
-    pub async fn execute(&self) -> Result<usize, SyncError> {
+#[typetag::serde]
+impl Runnable for SyncJob {
+    fn run(&self) -> Result<(), FangError> {
         let postgres = Postgres::new();
 
         let mut unsynced_feed_ids: Vec<i64>;
@@ -48,7 +43,14 @@ impl SyncJob {
         let last_synced_at = db::current_time();
         loop {
             unsynced_feed_ids =
-                feeds::find_unsynced_feeds(&postgres.connection, last_synced_at, page, 100)?;
+                match feeds::find_unsynced_feeds(&postgres.connection, last_synced_at, page, 100) {
+                    Ok(ids) => ids,
+                    Err(err) => {
+                        let description = format!("{:?}", err);
+
+                        return Err(FangError { description });
+                    }
+                };
 
             page += 1;
 
@@ -68,7 +70,11 @@ impl SyncJob {
             total_number
         );
 
-        Ok(total_number)
+        Ok(())
+    }
+
+    fn task_type(&self) -> String {
+        "sync".to_string()
     }
 }
 

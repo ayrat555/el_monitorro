@@ -460,8 +460,8 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
 name = "fang"
-version = "0.3.0"
-source = "git+https://github.com/ayrat555/fang?branch=ayrat555/reexport-traits#ecf0f4e35edaa0fe21e3214853e8c5132bd531b7"
+version = "0.3.1"
+source = "git+https://github.com/ayrat555/fang?branch=periodic-tasks#fe729e5f4442628f8089e05c6b36d3075ef95409"
 dependencies = [
  "chrono",
  "diesel",

@@ -39,6 +39,7 @@ static TELEGRAM_ERRORS: [&str; 13] = [
 
 static DISCRIPTION_LIMIT: usize = 2500;
 
+#[derive(Serialize, Deserialize)]
 pub struct DeliverJob {}
 
 impl Default for DeliverJob {
@@ -64,8 +65,11 @@ impl DeliverJob {
     pub fn new() -> Self {
         DeliverJob {}
     }
+}
 
-    pub async fn execute(&self) -> Result<(), DeliverJobError> {
+#[typetag::serde]
+impl Runnable for DeliverJob {
+    fn run(&self) -> Result<(), FangError> {
         let postgres = Postgres::new();
         let mut current_chats: Vec<i64>;
         let mut page = 1;
@@ -75,7 +79,14 @@ impl DeliverJob {
 
         loop {
             current_chats =
-                telegram::fetch_chats_with_subscriptions(&postgres.connection, page, 1000)?;
+                match telegram::fetch_chats_with_subscriptions(&postgres.connection, page, 1000) {
+                    Ok(chats) => chats,
+                    Err(error) => {
+                        let description = format!("{:?}", error);
+
+                        return Err(FangError { description });
+                    }
+                };
 
             page += 1;
 
@@ -95,6 +106,10 @@ impl DeliverJob {
         log::info!("Started checking delivery for {} chats", total_chat_number,);
 
         Ok(())
+    }
+
+    fn task_type(&self) -> String {
+        "deliver".to_string()
     }
 }
 
