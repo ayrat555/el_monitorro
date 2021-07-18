@@ -1,23 +1,15 @@
 use dotenv::dotenv;
-use el_monitorro::sync::*;
-use fang::typetag;
+use el_monitorro::sync::sync_job::{SyncFeedJob, SyncJob};
+use fang::Runnable;
 use fang::WorkerParams;
 use fang::WorkerPool;
-use fang::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-struct Bar {}
-
-#[typetag::serde]
-impl fang::Runnable for Bar {
-    fn run(&self) -> Result<(), fang::Error> {
-        Ok(())
-    }
-}
 
 fn main() {
     dotenv().ok();
     env_logger::init();
+
+    assert_eq!(SyncJob::new().task_type(), "sync".to_string());
+    assert_eq!(SyncFeedJob { feed_id: 1 }.task_type(), "sync".to_string());
 
     let mut worker_params = WorkerParams::new();
     worker_params.set_task_type("sync".to_string());

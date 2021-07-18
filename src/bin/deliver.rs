@@ -1,23 +1,18 @@
 use dotenv::dotenv;
-use el_monitorro::bot::deliver_job::*;
-use fang::typetag;
+use el_monitorro::bot::deliver_job::{DeliverChatUpdatesJob, DeliverJob};
+use fang::Runnable;
 use fang::WorkerParams;
 use fang::WorkerPool;
-use fang::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-struct Foo {}
-
-#[typetag::serde]
-impl fang::Runnable for Foo {
-    fn run(&self) -> Result<(), fang::Error> {
-        Ok(())
-    }
-}
 
 fn main() {
     dotenv().ok();
     env_logger::init();
+
+    assert_eq!(DeliverJob::new().task_type(), "deliver".to_string());
+    assert_eq!(
+        DeliverChatUpdatesJob { chat_id: 1 }.task_type(),
+        "deliver".to_string()
+    );
 
     let mut worker_params = WorkerParams::new();
     worker_params.set_task_type("deliver".to_string());

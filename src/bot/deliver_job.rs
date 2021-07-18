@@ -114,7 +114,7 @@ impl Runnable for DeliverJob {
 }
 
 #[derive(Serialize, Deserialize)]
-struct DeliverChatUpdatesJob {
+pub struct DeliverChatUpdatesJob {
     pub chat_id: i64,
 }
 
