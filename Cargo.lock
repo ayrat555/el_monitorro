@@ -461,7 +461,7 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 [[package]]
 name = "fang"
 version = "0.3.1"
-source = "git+https://github.com/ayrat555/fang?branch=periodic-tasks#86abbf2791e6617d2e90caf60b19841608b4e023"
+source = "git+https://github.com/ayrat555/fang?branch=periodic-tasks#046ca2a7b67b89c6922da7d101d0b48008402a04"
 dependencies = [
  "chrono",
  "diesel",
