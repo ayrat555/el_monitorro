@@ -305,33 +305,6 @@ async fn remove_filter(api: Api, message: Message, data: String) -> Result<(), E
     reply_to_message(api, message, response)
 }
 
-// fn process_message(api: Api, orig_message: Message) {
-//     match orig_message.kind {
-//         MessageKind::Text { ref data, .. } => {
-//             let command = data.clone();
-//             let message = MessageOrChannelPost::Message(orig_message.clone());
-
-//             tokio::spawn(process_message_or_channel_post(api, message, command));
-//         }
-//         _ => (),
-//     };
-// }
-
-// fn process_channel_post(api: Api, post: ChannelPost) {
-//     match post.kind {
-//         MessageKind::Text { ref data, .. } => {
-//             let command = data.clone();
-
-//             tokio::spawn(process_message_or_channel_post(
-//                 api,
-//                 MessageOrChannelPost::ChannelPost(post.clone()),
-//                 command,
-//             ));
-//         }
-//         _ => (),
-//     };
-// }
-
 fn owner_telegram_id() -> &'static Option<i64> {
     OWNER_TELEGRAM_ID.get_or_init(|| match env::var("OWNER_TELEGRAM_ID") {
         Ok(val) => {
