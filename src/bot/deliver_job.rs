@@ -98,7 +98,7 @@ impl Runnable for DeliverJob {
 
             for chat_id in current_chats {
                 postgres
-                    .push_task(&DeliverChatUpdatesJob { chat_id: chat_id })
+                    .push_task(&DeliverChatUpdatesJob { chat_id })
                     .unwrap();
             }
         }
@@ -154,12 +154,12 @@ fn deliver_subscription_updates(
     subscription: &TelegramSubscription,
     connection: &PgConnection,
 ) -> Result<(), DeliverJobError> {
-    let feed_items = telegram::find_undelivered_feed_items(&connection, &subscription)?;
-    let undelivered_count = telegram::count_undelivered_feed_items(&connection, &subscription);
+    let feed_items = telegram::find_undelivered_feed_items(connection, subscription)?;
+    let undelivered_count = telegram::count_undelivered_feed_items(connection, subscription);
     let chat_id = subscription.chat_id;
-    let feed = feeds::find(&connection, subscription.feed_id).unwrap();
+    let feed = feeds::find(connection, subscription.feed_id).unwrap();
 
-    let chat = telegram::find_chat(&connection, chat_id).unwrap();
+    let chat = telegram::find_chat(connection, chat_id).unwrap();
     let delay = delay_period(&chat);
 
     if subscription.filter_words.is_none() && feed_items.len() < undelivered_count as usize {
@@ -178,7 +178,7 @@ fn deliver_subscription_updates(
             Err(error) => {
                 let error_message = format!("{:?}", error);
 
-                return Err(handle_error(error_message, &connection, chat_id));
+                return Err(handle_error(error_message, connection, chat_id));
             }
         }
     }
@@ -200,7 +200,7 @@ fn deliver_subscription_updates(
             None => chat.template,
         };
 
-        let mut messages = format_messages(template, offset, feed_items.clone(), feed);
+        let mut messages = format_messages(template, offset, feed_items, feed);
         messages.reverse();
 
         for (message, publication_date) in messages {
@@ -208,12 +208,12 @@ fn deliver_subscription_updates(
                 None => match api::send_message_sync(chat_id, message) {
                     Ok(_) => {
                         std::thread::sleep(delay);
-                        update_last_deivered_at(&connection, &subscription, publication_date)?;
+                        update_last_deivered_at(connection, subscription, publication_date)?;
                     }
                     Err(error) => {
                         let error_message = format!("{:?}", error);
 
-                        return Err(handle_error(error_message, &connection, chat_id));
+                        return Err(handle_error(error_message, connection, chat_id));
                     }
                 },
                 Some(words) => {
@@ -245,19 +245,19 @@ fn deliver_subscription_updates(
                             Ok(_) => {
                                 std::thread::sleep(delay);
                                 update_last_deivered_at(
-                                    &connection,
-                                    &subscription,
+                                    connection,
+                                    subscription,
                                     publication_date,
                                 )?;
                             }
                             Err(error) => {
                                 let error_message = format!("{:?}", error);
 
-                                return Err(handle_error(error_message, &connection, chat_id));
+                                return Err(handle_error(error_message, connection, chat_id));
                             }
                         }
                     } else {
-                        update_last_deivered_at(&connection, &subscription, publication_date)?;
+                        update_last_deivered_at(connection, subscription, publication_date)?;
                     }
                 }
             }
@@ -364,7 +364,7 @@ fn format_messages(
 }
 
 fn remove_html(string: String) -> String {
-    from_read(&string.as_bytes()[..], 2000).trim().to_string()
+    from_read(string.as_bytes(), 2000).trim().to_string()
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
@@ -416,13 +416,13 @@ mod tests {
                 .unwrap()
                 .into();
         let feed_items = vec![FeedItem {
+            publication_date,
             feed_id: 1,
             title: "Title".to_string(),
             description: Some("Description".to_string()),
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            publication_date: publication_date,
             created_at: publication_date,
             updated_at: db::current_time(),
         }];
@@ -457,13 +457,13 @@ mod tests {
                 .into();
         let current_time = db::current_time();
         let feed_items = vec![FeedItem {
+            publication_date,
             feed_id: 1,
             title: "Title".to_string(),
             description: Some("Description".to_string()),
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            publication_date: publication_date,
             created_at: current_time,
             updated_at: current_time,
         }];
