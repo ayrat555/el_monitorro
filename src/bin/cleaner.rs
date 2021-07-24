@@ -14,7 +14,7 @@ fn main() {
 
     let mut worker_params = WorkerParams::new();
     worker_params.set_task_type("clean".to_string());
-    WorkerPool::new_with_params(10, worker_params).start();
+    WorkerPool::new_with_params(2, worker_params).start();
 
     std::thread::park();
 }
