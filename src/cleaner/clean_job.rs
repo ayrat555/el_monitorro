@@ -1,8 +1,13 @@
 use crate::db;
 use crate::db::{feed_items, feeds};
-use diesel::result::Error;
 use diesel::PgConnection;
+use fang::typetag;
+use fang::Error as FangError;
+use fang::Postgres;
+use fang::Runnable;
+use fang::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct CleanJob {}
 
 impl Default for CleanJob {
@@ -15,30 +20,27 @@ pub struct CleanJobError {
     pub msg: String,
 }
 
-impl From<Error> for CleanJobError {
-    fn from(error: Error) -> Self {
-        let msg = format!("{:?}", error);
-
-        CleanJobError { msg }
-    }
-}
-
 impl CleanJob {
     pub fn new() -> Self {
         CleanJob {}
     }
 
-    pub async fn execute(&self) -> Result<(), CleanJobError> {
-        let semaphored_connection = db::get_semaphored_connection().await;
-        let db_connection = semaphored_connection.connection;
+    pub fn execute(&self) -> Result<(), FangError> {
+        let postgres = Postgres::new();
         let mut current_feed_ids: Vec<i64>;
         let mut page = 1;
         let mut total_number = 0;
 
-        delete_feeds_without_subscriptions(&db_connection);
+        delete_feeds_without_subscriptions(&postgres.connection);
 
         loop {
-            current_feed_ids = feeds::load_feed_ids(&db_connection, page, 1000)?;
+            current_feed_ids = match feeds::load_feed_ids(&postgres.connection, page, 500) {
+                Err(err) => {
+                    let description = format!("{:?}", err);
+                    return Err(FangError { description });
+                }
+                Ok(ids) => ids,
+            };
 
             page += 1;
 
@@ -49,7 +51,9 @@ impl CleanJob {
             total_number += current_feed_ids.len();
 
             for feed_id in current_feed_ids {
-                tokio::spawn(remove_old_feed_items(feed_id));
+                postgres
+                    .push_task(&RemoveOldItemsJob::new(feed_id))
+                    .unwrap();
             }
         }
 
@@ -62,16 +66,50 @@ impl CleanJob {
     }
 }
 
-pub async fn remove_old_feed_items(feed_id: i64) {
-    let semaphored_connection = db::get_semaphored_connection().await;
-    let db_connection = semaphored_connection.connection;
+#[typetag::serde]
+impl Runnable for CleanJob {
+    fn run(&self) -> Result<(), FangError> {
+        self.execute()
+    }
 
-    if let Err(error) = feed_items::delete_old_feed_items(&db_connection, feed_id, 1000) {
-        log::error!(
-            "Failed to delete old feed items for {}: {:?}",
-            feed_id,
-            error
-        );
+    fn task_type(&self) -> String {
+        "clean".to_string()
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct RemoveOldItemsJob {
+    pub feed_id: i64,
+}
+
+impl RemoveOldItemsJob {
+    pub fn new(feed_id: i64) -> Self {
+        Self { feed_id }
+    }
+
+    pub fn run(&self) {
+        let db_connection = db::establish_connection();
+
+        if let Err(error) = feed_items::delete_old_feed_items(&db_connection, self.feed_id, 1000) {
+            log::error!(
+                "Failed to delete old feed items for {}: {:?}",
+                self.feed_id,
+                error
+            );
+        };
+    }
+}
+
+#[typetag::serde]
+impl Runnable for RemoveOldItemsJob {
+    fn run(&self) -> Result<(), FangError> {
+        self.run();
+
+        Ok(())
+    }
+
+    fn task_type(&self) -> String {
+        "clean".to_string()
     }
 }
 
