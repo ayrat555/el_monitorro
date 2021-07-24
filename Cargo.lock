@@ -397,7 +397,7 @@ dependencies = [
  "chrono",
  "diesel",
  "dotenv",
- "env_logger 0.8.4",
+ "env_logger",
  "fang",
  "feed-rs",
  "frankenstein",
@@ -422,19 +422,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "80df024fbc5ac80f87dfef0d9f5209a252f2a497f7f42944cff24d8253cac065"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "env_logger"
-version = "0.8.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a19187fea3ac7e84da7dacf48de0c45d63c6a76f9490dae389aead16c243fce3"
-dependencies = [
- "atty",
- "humantime",
- "log",
- "regex",
- "termcolor",
 ]
 
 [[package]]
@@ -481,7 +468,7 @@ dependencies = [
  "diesel",
  "diesel-derive-enum",
  "dotenv",
- "env_logger 0.9.0",
+ "env_logger",
  "log",
  "serde",
  "serde_json",
