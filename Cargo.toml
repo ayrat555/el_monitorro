@@ -26,3 +26,4 @@ url = "2.2"
 regex = { version = "1", features = ["pattern"] }
 handlebars = "4.1"
 htmlescape = "0.3"
+fang = "0.3"

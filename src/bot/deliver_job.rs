@@ -10,12 +10,16 @@ use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::result::Error;
+use fang::typetag;
+use fang::Error as FangError;
+use fang::Postgres;
+use fang::Runnable;
+use fang::{Deserialize, Serialize};
 use handlebars::{to_json, Handlebars};
 use html2text::from_read;
 use htmlescape::decode_html;
 use serde_json::value::Map;
 use std::time::Duration;
-use tokio::time;
 
 static TELEGRAM_ERRORS: [&str; 13] = [
     "Forbidden: bot was blocked by the user",
@@ -35,6 +39,7 @@ static TELEGRAM_ERRORS: [&str; 13] = [
 
 static DISCRIPTION_LIMIT: usize = 2500;
 
+#[derive(Serialize, Deserialize)]
 pub struct DeliverJob {}
 
 impl Default for DeliverJob {
@@ -60,19 +65,28 @@ impl DeliverJob {
     pub fn new() -> Self {
         DeliverJob {}
     }
+}
 
-    pub async fn execute(&self) -> Result<(), DeliverJobError> {
-        let semaphored_connection = db::get_semaphored_connection().await;
-        let db_connection = semaphored_connection.connection;
+#[typetag::serde]
+impl Runnable for DeliverJob {
+    fn run(&self) -> Result<(), FangError> {
+        let postgres = Postgres::new();
         let mut current_chats: Vec<i64>;
         let mut page = 1;
         let mut total_chat_number = 0;
-        let mut total_subscription_number = 0;
 
         log::info!("Started delivering feed items");
 
         loop {
-            current_chats = telegram::fetch_chats_with_subscriptions(&db_connection, page, 1000)?;
+            current_chats =
+                match telegram::fetch_chats_with_subscriptions(&postgres.connection, page, 1000) {
+                    Ok(chats) => chats,
+                    Err(error) => {
+                        let description = format!("{:?}", error);
+
+                        return Err(FangError { description });
+                    }
+                };
 
             page += 1;
 
@@ -83,52 +97,69 @@ impl DeliverJob {
             total_chat_number += current_chats.len();
 
             for chat_id in current_chats {
-                let subscriptions = telegram::find_subscriptions_for_chat(&db_connection, chat_id)?;
-
-                total_subscription_number += subscriptions.len();
-
-                tokio::spawn(deliver_updates_for_chat(subscriptions));
+                postgres
+                    .push_task(&DeliverChatUpdatesJob { chat_id })
+                    .unwrap();
             }
         }
 
-        log::info!(
-            "Started checking delivery for {} chats and {} subscriptions",
-            total_chat_number,
-            total_subscription_number
-        );
+        log::info!("Started checking delivery for {} chats", total_chat_number,);
 
         Ok(())
     }
+
+    fn task_type(&self) -> String {
+        "deliver".to_string()
+    }
 }
 
-async fn deliver_updates_for_chat(
-    telegram_subscriptions: Vec<TelegramSubscription>,
-) -> Result<(), DeliverJobError> {
-    for subscription in telegram_subscriptions {
-        match deliver_subscription_updates(&subscription).await {
-            Ok(()) => (),
-            Err(error) => log::error!(
-                "Failed to deliver updates for subscription: {:?} {:?}",
-                subscription,
-                error
-            ),
+#[derive(Serialize, Deserialize)]
+pub struct DeliverChatUpdatesJob {
+    pub chat_id: i64,
+}
+
+impl DeliverChatUpdatesJob {
+    pub fn deliver(&self) {
+        let db_connection = db::establish_connection();
+        let subscriptions =
+            telegram::find_subscriptions_for_chat(&db_connection, self.chat_id).unwrap();
+
+        for subscription in subscriptions {
+            match deliver_subscription_updates(&subscription, &db_connection) {
+                Ok(()) => (),
+                Err(error) => log::error!(
+                    "Failed to deliver updates for subscription: {:?} {:?}",
+                    subscription,
+                    error
+                ),
+            }
         }
     }
-
-    Ok(())
 }
 
-async fn deliver_subscription_updates(
-    subscription: &TelegramSubscription,
-) -> Result<(), DeliverJobError> {
-    let semaphored_connection = db::get_semaphored_connection().await;
-    let connection = semaphored_connection.connection;
-    let feed_items = telegram::find_undelivered_feed_items(&connection, subscription)?;
-    let undelivered_count = telegram::count_undelivered_feed_items(&connection, subscription);
-    let chat_id = subscription.chat_id;
-    let feed = feeds::find(&connection, subscription.feed_id).unwrap();
+#[typetag::serde]
+impl Runnable for DeliverChatUpdatesJob {
+    fn run(&self) -> Result<(), FangError> {
+        self.deliver();
 
-    let chat = telegram::find_chat(&connection, chat_id).unwrap();
+        Ok(())
+    }
+
+    fn task_type(&self) -> String {
+        "deliver".to_string()
+    }
+}
+
+fn deliver_subscription_updates(
+    subscription: &TelegramSubscription,
+    connection: &PgConnection,
+) -> Result<(), DeliverJobError> {
+    let feed_items = telegram::find_undelivered_feed_items(connection, subscription)?;
+    let undelivered_count = telegram::count_undelivered_feed_items(connection, subscription);
+    let chat_id = subscription.chat_id;
+    let feed = feeds::find(connection, subscription.feed_id).unwrap();
+
+    let chat = telegram::find_chat(connection, chat_id).unwrap();
     let delay = delay_period(&chat);
 
     if subscription.filter_words.is_none() && feed_items.len() < undelivered_count as usize {
@@ -139,15 +170,15 @@ async fn deliver_subscription_updates(
             feed.link
         );
 
-        match api::send_message(chat_id, message).await {
+        match api::send_message_sync(chat_id, message) {
             Ok(_) => {
-                time::sleep(delay).await;
+                std::thread::sleep(delay);
             }
 
             Err(error) => {
                 let error_message = format!("{:?}", error);
 
-                return Err(handle_error(error_message, &connection, chat_id));
+                return Err(handle_error(error_message, connection, chat_id));
             }
         }
     }
@@ -169,20 +200,20 @@ async fn deliver_subscription_updates(
             None => chat.template,
         };
 
-        let mut messages = format_messages(template, offset, feed_items.clone(), feed);
+        let mut messages = format_messages(template, offset, feed_items, feed);
         messages.reverse();
 
         for (message, publication_date) in messages {
             match subscription.filter_words.clone() {
-                None => match api::send_message(chat_id, message).await {
+                None => match api::send_message_sync(chat_id, message) {
                     Ok(_) => {
-                        time::sleep(delay).await;
-                        update_last_deivered_at(&connection, subscription, publication_date)?;
+                        std::thread::sleep(delay);
+                        update_last_deivered_at(connection, subscription, publication_date)?;
                     }
                     Err(error) => {
                         let error_message = format!("{:?}", error);
 
-                        return Err(handle_error(error_message, &connection, chat_id));
+                        return Err(handle_error(error_message, connection, chat_id));
                     }
                 },
                 Some(words) => {
@@ -210,11 +241,11 @@ async fn deliver_subscription_updates(
                     }
 
                     if mtch {
-                        match api::send_message(chat_id, message).await {
+                        match api::send_message_sync(chat_id, message) {
                             Ok(_) => {
-                                time::sleep(delay).await;
+                                std::thread::sleep(delay);
                                 update_last_deivered_at(
-                                    &connection,
+                                    connection,
                                     subscription,
                                     publication_date,
                                 )?;
@@ -222,11 +253,11 @@ async fn deliver_subscription_updates(
                             Err(error) => {
                                 let error_message = format!("{:?}", error);
 
-                                return Err(handle_error(error_message, &connection, chat_id));
+                                return Err(handle_error(error_message, connection, chat_id));
                             }
                         }
                     } else {
-                        update_last_deivered_at(&connection, subscription, publication_date)?;
+                        update_last_deivered_at(connection, subscription, publication_date)?;
                     }
                 }
             }
@@ -337,21 +368,23 @@ fn remove_html(string: String) -> String {
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
-    match s.char_indices().nth(max_chars) {
+    let result = match s.char_indices().nth(max_chars) {
         None => String::from(s),
         Some((idx, _)) => {
             let mut string = String::from(&s[..idx]);
 
             string.push_str("...");
 
-            let trimmed_str = string.trim();
-
-            if trimmed_str.is_empty() {
-                "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
-            } else {
-                trimmed_str.to_string()
-            }
+            string
         }
+    };
+
+    let trimmed_result = result.trim();
+
+    if trimmed_result.is_empty() {
+        "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
+    } else {
+        trimmed_result.to_string()
     }
 }
 
@@ -409,8 +442,7 @@ mod tests {
 
         assert_eq!(
             result[0].0,
-            "FeedTitle\n\nTitle\n\nDescription\n\n2020-05-13 19:59:02 +00:05\n\ndsd\n\n"
-                .to_string()
+            "FeedTitle\n\nTitle\n\nDescription\n\n2020-05-13 19:59:02 +00:05\n\ndsd".to_string()
         );
 
         assert_eq!(result[0].1, publication_date);
