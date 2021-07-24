@@ -397,7 +397,7 @@ dependencies = [
  "chrono",
  "diesel",
  "dotenv",
- "env_logger",
+ "env_logger 0.8.4",
  "fang",
  "feed-rs",
  "frankenstein",
@@ -438,6 +438,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_logger"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b2cf0344971ee6c64c31be0d530793fba457d322dfec2810c453d0ef228f9c3"
+dependencies = [
+ "atty",
+ "humantime",
+ "log",
+ "regex",
+ "termcolor",
+]
+
+[[package]]
 name = "erased-serde"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -460,14 +473,15 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
 name = "fang"
-version = "0.3.1"
-source = "git+https://github.com/ayrat555/fang?branch=periodic-tasks#046ca2a7b67b89c6922da7d101d0b48008402a04"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e429c556c5f6f658fe63dc479270962bd6e1e5f5c33fb5c0697b964ab4f3295"
 dependencies = [
  "chrono",
  "diesel",
  "diesel-derive-enum",
  "dotenv",
- "env_logger",
+ "env_logger 0.9.0",
  "log",
  "serde",
  "serde_json",

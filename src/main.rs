@@ -23,7 +23,7 @@ async fn main() {
         .push_periodic_task(&DeliverJob::default(), 60)
         .unwrap();
 
-    Scheduler::start(10, 5, postgres);
+    Scheduler::start(10, 5);
 
     bot::api::start_bot().await;
 }
