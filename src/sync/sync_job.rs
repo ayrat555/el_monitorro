@@ -5,7 +5,8 @@ use crate::db::telegram;
 use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
 use fang::typetag;
 use fang::Error as FangError;
-use fang::Postgres;
+use fang::PgConnection;
+use fang::Queue;
 use fang::Runnable;
 use fang::{Deserialize, Serialize};
 
@@ -30,8 +31,8 @@ impl SyncJob {
 
 #[typetag::serde]
 impl Runnable for SyncJob {
-    fn run(&self) -> Result<(), FangError> {
-        let postgres = Postgres::new();
+    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+        let postgres = Queue::new();
 
         let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;
@@ -43,7 +44,7 @@ impl Runnable for SyncJob {
         let last_synced_at = db::current_time();
         loop {
             unsynced_feed_ids =
-                match feeds::find_unsynced_feeds(&postgres.connection, last_synced_at, page, 100) {
+                match feeds::find_unsynced_feeds(&connection, last_synced_at, page, 100) {
                     Ok(ids) => ids,
                     Err(err) => {
                         let description = format!("{:?}", err);
@@ -84,17 +85,16 @@ pub struct SyncFeedJob {
 }
 
 impl SyncFeedJob {
-    pub fn sync_feed(&self) {
-        let db_connection = db::establish_connection();
-        let feed_sync_result = FeedSyncJob::new(self.feed_id).execute(&db_connection);
+    pub fn sync_feed(&self, db_connection: &PgConnection) {
+        let feed_sync_result = FeedSyncJob::new(self.feed_id).execute(db_connection);
         let feed_id = self.feed_id;
 
         match feed_sync_result {
             Err(FeedSyncError::StaleError) => {
                 log::error!("Feed can not be processed for a long time {}", feed_id);
 
-                let feed = feeds::find(&db_connection, feed_id).unwrap();
-                let chats = telegram::find_chats_by_feed_id(&db_connection, feed_id).unwrap();
+                let feed = feeds::find(db_connection, feed_id).unwrap();
+                let chats = telegram::find_chats_by_feed_id(db_connection, feed_id).unwrap();
 
                 let message = format!("{} can not be processed. It was removed.", feed.link);
 
@@ -107,7 +107,7 @@ impl SyncFeedJob {
                     }
                 }
 
-                match feeds::remove_feed(&db_connection, feed_id) {
+                match feeds::remove_feed(db_connection, feed_id) {
                     Ok(_) => log::info!("Feed was removed: {}", feed_id),
                     Err(err) => log::error!("Failed to remove feed: {} {}", feed_id, err),
                 }
@@ -120,8 +120,8 @@ impl SyncFeedJob {
 
 #[typetag::serde]
 impl Runnable for SyncFeedJob {
-    fn run(&self) -> Result<(), FangError> {
-        self.sync_feed();
+    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+        self.sync_feed(connection);
 
         Ok(())
     }

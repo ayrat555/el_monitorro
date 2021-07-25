@@ -1,5 +1,4 @@
 use crate::bot::api;
-use crate::db;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::models::feed::Feed;
@@ -8,11 +7,11 @@ use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
 use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
-use diesel::pg::PgConnection;
 use diesel::result::Error;
 use fang::typetag;
 use fang::Error as FangError;
-use fang::Postgres;
+use fang::PgConnection;
+use fang::Queue;
 use fang::Runnable;
 use fang::{Deserialize, Serialize};
 use handlebars::{to_json, Handlebars};
@@ -69,8 +68,8 @@ impl DeliverJob {
 
 #[typetag::serde]
 impl Runnable for DeliverJob {
-    fn run(&self) -> Result<(), FangError> {
-        let postgres = Postgres::new();
+    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+        let postgres = Queue::new();
         let mut current_chats: Vec<i64>;
         let mut page = 1;
         let mut total_chat_number = 0;
@@ -78,15 +77,14 @@ impl Runnable for DeliverJob {
         log::info!("Started delivering feed items");
 
         loop {
-            current_chats =
-                match telegram::fetch_chats_with_subscriptions(&postgres.connection, page, 1000) {
-                    Ok(chats) => chats,
-                    Err(error) => {
-                        let description = format!("{:?}", error);
+            current_chats = match telegram::fetch_chats_with_subscriptions(connection, page, 1000) {
+                Ok(chats) => chats,
+                Err(error) => {
+                    let description = format!("{:?}", error);
 
-                        return Err(FangError { description });
-                    }
-                };
+                    return Err(FangError { description });
+                }
+            };
 
             page += 1;
 
@@ -119,13 +117,12 @@ pub struct DeliverChatUpdatesJob {
 }
 
 impl DeliverChatUpdatesJob {
-    pub fn deliver(&self) {
-        let db_connection = db::establish_connection();
+    pub fn deliver(&self, db_connection: &PgConnection) {
         let subscriptions =
-            telegram::find_subscriptions_for_chat(&db_connection, self.chat_id).unwrap();
+            telegram::find_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
 
         for subscription in subscriptions {
-            match deliver_subscription_updates(&subscription, &db_connection) {
+            match deliver_subscription_updates(&subscription, db_connection) {
                 Ok(()) => (),
                 Err(error) => log::error!(
                     "Failed to deliver updates for subscription: {:?} {:?}",
@@ -139,8 +136,8 @@ impl DeliverChatUpdatesJob {
 
 #[typetag::serde]
 impl Runnable for DeliverChatUpdatesJob {
-    fn run(&self) -> Result<(), FangError> {
-        self.deliver();
+    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+        self.deliver(connection);
 
         Ok(())
     }
