@@ -1,5 +1,6 @@
 use dotenv::dotenv;
 use el_monitorro::bot::deliver_job::{DeliverChatUpdatesJob, DeliverJob};
+use fang::Queue;
 use fang::Runnable;
 use fang::WorkerParams;
 use fang::WorkerPool;
@@ -13,6 +14,8 @@ fn main() {
         DeliverChatUpdatesJob { chat_id: 1 }.task_type(),
         "deliver".to_string()
     );
+
+    Queue::new().remove_tasks_of_type("deliver").unwrap();
 
     let mut worker_params = WorkerParams::new();
     worker_params.set_task_type("deliver".to_string());
