@@ -32,8 +32,6 @@ impl SyncJob {
 #[typetag::serde]
 impl Runnable for SyncJob {
     fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        let postgres = Queue::new();
-
         let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;
 
@@ -44,7 +42,7 @@ impl Runnable for SyncJob {
         let last_synced_at = db::current_time();
         loop {
             unsynced_feed_ids =
-                match feeds::find_unsynced_feeds(&connection, last_synced_at, page, 100) {
+                match feeds::find_unsynced_feeds(connection, last_synced_at, page, 100) {
                     Ok(ids) => ids,
                     Err(err) => {
                         let description = format!("{:?}", err);
@@ -56,7 +54,7 @@ impl Runnable for SyncJob {
             page += 1;
 
             for id in &unsynced_feed_ids {
-                postgres.push_task(&SyncFeedJob { feed_id: *id }).unwrap();
+                Queue::push_task_query(connection, &SyncFeedJob { feed_id: *id }).unwrap();
             }
 
             if unsynced_feed_ids.is_empty() {

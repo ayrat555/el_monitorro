@@ -24,16 +24,15 @@ impl CleanJob {
         CleanJob {}
     }
 
-    pub fn execute(&self) -> Result<(), FangError> {
-        let postgres = Queue::new();
+    pub fn execute(&self, connection: &PgConnection) -> Result<(), FangError> {
         let mut current_feed_ids: Vec<i64>;
         let mut page = 1;
         let mut total_number = 0;
 
-        delete_feeds_without_subscriptions(&postgres.connection);
+        delete_feeds_without_subscriptions(connection);
 
         loop {
-            current_feed_ids = match feeds::load_feed_ids(&postgres.connection, page, 500) {
+            current_feed_ids = match feeds::load_feed_ids(connection, page, 500) {
                 Err(err) => {
                     let description = format!("{:?}", err);
                     return Err(FangError { description });
@@ -50,9 +49,7 @@ impl CleanJob {
             total_number += current_feed_ids.len();
 
             for feed_id in current_feed_ids {
-                postgres
-                    .push_task(&RemoveOldItemsJob::new(feed_id))
-                    .unwrap();
+                Queue::push_task_query(connection, &RemoveOldItemsJob::new(feed_id)).unwrap();
             }
         }
 
@@ -67,8 +64,8 @@ impl CleanJob {
 
 #[typetag::serde]
 impl Runnable for CleanJob {
-    fn run(&self, _connection: &PgConnection) -> Result<(), FangError> {
-        self.execute()
+    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+        self.execute(connection)
     }
 
     fn task_type(&self) -> String {

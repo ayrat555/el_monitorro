@@ -69,7 +69,6 @@ impl DeliverJob {
 #[typetag::serde]
 impl Runnable for DeliverJob {
     fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        let postgres = Queue::new();
         let mut current_chats: Vec<i64>;
         let mut page = 1;
         let mut total_chat_number = 0;
@@ -95,9 +94,7 @@ impl Runnable for DeliverJob {
             total_chat_number += current_chats.len();
 
             for chat_id in current_chats {
-                postgres
-                    .push_task(&DeliverChatUpdatesJob { chat_id })
-                    .unwrap();
+                Queue::push_task_query(connection, &DeliverChatUpdatesJob { chat_id }).unwrap();
             }
         }
 
