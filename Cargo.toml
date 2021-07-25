@@ -26,4 +26,4 @@ url = "2.2"
 regex = { version = "1", features = ["pattern"] }
 handlebars = "4.1"
 htmlescape = "0.3"
-fang = { git = "https://github.com/ayrat555/fang", branch = "ayrat555/pass-postgres-connection" }
+fang = { git = "https://github.com/ayrat555/fang", branch = "master" }
