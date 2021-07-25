@@ -1,9 +1,8 @@
-use crate::db;
 use crate::db::{feed_items, feeds};
-use diesel::PgConnection;
 use fang::typetag;
 use fang::Error as FangError;
-use fang::Postgres;
+use fang::PgConnection;
+use fang::Queue;
 use fang::Runnable;
 use fang::{Deserialize, Serialize};
 
@@ -25,16 +24,15 @@ impl CleanJob {
         CleanJob {}
     }
 
-    pub fn execute(&self) -> Result<(), FangError> {
-        let postgres = Postgres::new();
+    pub fn execute(&self, connection: &PgConnection) -> Result<(), FangError> {
         let mut current_feed_ids: Vec<i64>;
         let mut page = 1;
         let mut total_number = 0;
 
-        delete_feeds_without_subscriptions(&postgres.connection);
+        delete_feeds_without_subscriptions(connection);
 
         loop {
-            current_feed_ids = match feeds::load_feed_ids(&postgres.connection, page, 500) {
+            current_feed_ids = match feeds::load_feed_ids(connection, page, 500) {
                 Err(err) => {
                     let description = format!("{:?}", err);
                     return Err(FangError { description });
@@ -51,9 +49,7 @@ impl CleanJob {
             total_number += current_feed_ids.len();
 
             for feed_id in current_feed_ids {
-                postgres
-                    .push_task(&RemoveOldItemsJob::new(feed_id))
-                    .unwrap();
+                Queue::push_task_query(connection, &RemoveOldItemsJob::new(feed_id)).unwrap();
             }
         }
 
@@ -68,8 +64,8 @@ impl CleanJob {
 
 #[typetag::serde]
 impl Runnable for CleanJob {
-    fn run(&self) -> Result<(), FangError> {
-        self.execute()
+    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+        self.execute(connection)
     }
 
     fn task_type(&self) -> String {
@@ -87,10 +83,8 @@ impl RemoveOldItemsJob {
         Self { feed_id }
     }
 
-    pub fn run(&self) {
-        let db_connection = db::establish_connection();
-
-        if let Err(error) = feed_items::delete_old_feed_items(&db_connection, self.feed_id, 1000) {
+    pub fn run(&self, db_connection: &PgConnection) {
+        if let Err(error) = feed_items::delete_old_feed_items(db_connection, self.feed_id, 1000) {
             log::error!(
                 "Failed to delete old feed items for {}: {:?}",
                 self.feed_id,
@@ -102,8 +96,8 @@ impl RemoveOldItemsJob {
 
 #[typetag::serde]
 impl Runnable for RemoveOldItemsJob {
-    fn run(&self) -> Result<(), FangError> {
-        self.run();
+    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+        self.run(connection);
 
         Ok(())
     }

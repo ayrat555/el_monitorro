@@ -5,14 +5,14 @@ use el_monitorro::bot::deliver_job::DeliverJob;
 use el_monitorro::cleaner::clean_job::CleanJob;
 use el_monitorro::sync::sync_job::SyncJob;
 use fang::scheduler::Scheduler;
-use fang::Postgres;
+use fang::Queue;
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let postgres = Postgres::new();
+    let postgres = Queue::new();
 
     postgres.remove_all_periodic_tasks().unwrap();
 
