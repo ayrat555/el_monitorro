@@ -13,10 +13,10 @@ use fang::Error as FangError;
 use fang::PgConnection;
 use fang::Queue;
 use fang::Runnable;
-use fang::{Deserialize, Serialize};
 use handlebars::{to_json, Handlebars};
 use html2text::from_read;
 use htmlescape::decode_html;
+use serde::{Deserialize, Serialize};
 use serde_json::value::Map;
 use std::time::Duration;
 

@@ -7,7 +7,6 @@ use fang::WorkerPool;
 
 fn main() {
     dotenv().ok();
-    env_logger::init();
 
     assert_eq!(DeliverJob::new().task_type(), "deliver".to_string());
     assert_eq!(

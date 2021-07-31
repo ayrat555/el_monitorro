@@ -7,7 +7,6 @@ use fang::WorkerPool;
 
 fn main() {
     dotenv().ok();
-    env_logger::init();
 
     assert_eq!(SyncJob::new().task_type(), "sync".to_string());
     assert_eq!(SyncFeedJob { feed_id: 1 }.task_type(), "sync".to_string());

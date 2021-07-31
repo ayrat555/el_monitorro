@@ -8,7 +8,6 @@ use fang::WorkerPool;
 
 fn main() {
     dotenv().ok();
-    env_logger::init();
 
     assert_eq!(CleanJob::new().task_type(), "clean".to_string());
     assert_eq!(RemoveOldItemsJob::new(1).task_type(), "clean".to_string());

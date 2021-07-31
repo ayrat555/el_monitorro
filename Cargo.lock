@@ -460,8 +460,9 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
 name = "fang"
-version = "0.3.2"
-source = "git+https://github.com/ayrat555/fang?branch=master#824e32f17bcd20af86f3ca781d5c259e3159c823"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9346d0ac1e6a49be7e0f790b3a239e04cc54db847521d3b746c8493209713b4"
 dependencies = [
  "chrono",
  "diesel",

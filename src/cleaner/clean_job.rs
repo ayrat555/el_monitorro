@@ -4,7 +4,7 @@ use fang::Error as FangError;
 use fang::PgConnection;
 use fang::Queue;
 use fang::Runnable;
-use fang::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct CleanJob {}
