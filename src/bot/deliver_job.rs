@@ -121,11 +121,15 @@ impl DeliverChatUpdatesJob {
         for subscription in subscriptions {
             match deliver_subscription_updates(&subscription, db_connection) {
                 Ok(()) => (),
-                Err(error) => log::error!(
-                    "Failed to deliver updates for subscription: {:?} {:?}",
-                    subscription,
-                    error
-                ),
+
+                Err(error) => {
+                    log::error!(
+                        "Failed to deliver updates for subscription: {:?} {:?}",
+                        subscription,
+                        error
+                    );
+                    break;
+                }
             }
         }
     }
