@@ -134,7 +134,11 @@ pub fn send_message_sync(chat_id: i64, message: String) -> Result<(), Error> {
     match api.send_message(&send_message_params) {
         Ok(_) => Ok(()),
         Err(err) => {
-            log::error!("Failed to send message: {:?}", err);
+            log::error!(
+                "Failed to send message {:?}: {:?}",
+                err,
+                send_message_params
+            );
             Err(err)
         }
     }
@@ -155,7 +159,11 @@ fn reply_to_message(api: Api, message: Message, text: String) -> Result<(), Erro
     match api.send_message(&send_message_params) {
         Ok(_) => Ok(()),
         Err(err) => {
-            log::error!("Failed to send message: {:?}", err);
+            log::error!(
+                "Failed to send message message {:?}: {:?}",
+                err,
+                send_message_params
+            );
             Err(err)
         }
     }
