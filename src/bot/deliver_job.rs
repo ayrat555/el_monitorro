@@ -390,7 +390,7 @@ fn truncate_and_check(s: &str, max_chars: usize) -> String {
     if truncated_result.is_empty() {
         "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
     } else {
-        truncated_result.to_string()
+        truncated_result
     }
 }
 
