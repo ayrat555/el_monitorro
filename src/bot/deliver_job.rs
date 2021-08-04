@@ -37,6 +37,8 @@ static TELEGRAM_ERRORS: [&str; 13] = [
 ];
 
 static DISCRIPTION_LIMIT: usize = 2500;
+static UNICODE_EMPTY_CHARS: [char; 5] =
+    ['\u{200B}', '\u{200C}', '\u{200D}', '\u{2060}', '\u{FEFF}'];
 
 #[derive(Serialize, Deserialize)]
 pub struct DeliverJob {}
@@ -354,7 +356,7 @@ fn format_messages(
                         log::error!("Failed to render template {:?}", error);
                         ("Failed to render a message".to_string(), item.created_at)
                     }
-                    Ok(string) => (truncate(&string, 4000), item.created_at),
+                    Ok(string) => (truncate_and_check(&string, 4000), item.created_at),
                 },
             }
         })
@@ -379,11 +381,26 @@ fn truncate(s: &str, max_chars: usize) -> String {
 
     let trimmed_result = result.trim();
 
-    if trimmed_result.is_empty() {
+    remove_empty_unicode_characters(trimmed_result)
+}
+
+fn truncate_and_check(s: &str, max_chars: usize) -> String {
+    let truncated_result = truncate(s, max_chars);
+
+    if truncated_result.is_empty() {
         "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
     } else {
-        trimmed_result.to_string()
+        truncated_result.to_string()
     }
+}
+
+fn remove_empty_unicode_characters(string: &str) -> String {
+    let mut result = string.to_string();
+    for character in UNICODE_EMPTY_CHARS {
+        result = result.replace(character, "");
+    }
+
+    result
 }
 
 fn bot_blocked(error_message: &str) -> bool {
@@ -482,6 +499,47 @@ mod tests {
         assert_eq!(
             result[0].0,
             "FeedTitle link 2020-05-14 05:54:02 +10:00 dsd Description Title Title".to_string()
+        );
+
+        assert_eq!(result[0].1, current_time);
+    }
+
+    #[test]
+    fn removes_empty_unicode_characters() {
+        let publication_date: DateTime<Utc> =
+            DateTime::parse_from_rfc2822("Wed, 13 May 2020 15:54:02 EDT")
+                .unwrap()
+                .into();
+        let current_time = db::current_time();
+        let feed_items = vec![FeedItem {
+            publication_date,
+            feed_id: 1,
+            title: "".to_string(),
+            description: Some("\u{200b}".to_string()),
+            link: "".to_string(),
+            author: None,
+            guid: None,
+            created_at: current_time,
+            updated_at: current_time,
+        }];
+
+        let feed = Feed {
+            id: 1,
+            title: Some("".to_string()),
+            link: "".to_string(),
+            error: None,
+            description: None,
+            synced_at: None,
+            created_at: db::current_time(),
+            updated_at: db::current_time(),
+            feed_type: "".to_string(),
+        };
+
+        let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), FixedOffset::east(600 * 60), feed_items, feed);
+
+        assert_eq!(
+            result[0].0,
+            "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
         );
 
         assert_eq!(result[0].1, current_time);
