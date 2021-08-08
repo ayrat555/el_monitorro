@@ -3,11 +3,9 @@ use self::json::JsonReader;
 use self::rss::RssReader;
 use chrono::{DateTime, Utc};
 use dotenv::dotenv;
-use isahc::config::RedirectPolicy;
-use isahc::{prelude::*, Request};
 use once_cell::sync::OnceCell;
 use std::env;
-use std::io;
+use std::io::BufRead;
 use std::time::Duration;
 
 pub mod atom;
@@ -44,38 +42,14 @@ pub trait ReadFeed {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError>;
 }
 
-pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
-    let client = match Request::get(url)
-        .timeout(Duration::from_secs(*request_timeout_seconds()))
-        .header("User-Agent", "el_monitorro/0.1.0")
-        .redirect_policy(RedirectPolicy::Limit(10))
-        .body(())
-    {
-        Ok(cl) => cl,
-        Err(er) => {
-            let msg = format!("{:?}", er);
-
-            return Err(FeedReaderError { msg });
-        }
-    };
-
-    match client.send() {
-        Ok(mut response) => {
-            let mut writer: Vec<u8> = vec![];
-
-            if let Err(err) = io::copy(response.body_mut(), &mut writer) {
-                let msg = format!("{:?}", err);
-
-                return Err(FeedReaderError { msg });
-            }
-
-            Ok(writer)
-        }
+pub fn read_url(url: &str) -> Result<impl std::io::Read + Send + BufRead, FeedReaderError> {
+    match http_client().post(url).call() {
         Err(error) => {
             let msg = format!("{:?}", error);
 
-            Err(FeedReaderError { msg })
+            return Err(FeedReaderError { msg });
         }
+        Ok(response) => Ok(std::io::BufReader::new(response.into_reader())),
     }
 }
 
@@ -118,4 +92,12 @@ fn request_timeout_seconds() -> &'static u64 {
 
         timeout
     })
+}
+
+fn http_client() -> ureq::Agent {
+    ureq::AgentBuilder::new()
+        .timeout_read(Duration::from_secs(*request_timeout_seconds()))
+        .redirects(10)
+        .user_agent("el_monitorro/0.1.0")
+        .build()
 }

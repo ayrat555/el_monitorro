@@ -4,7 +4,6 @@ use crate::sync::reader::{FeedReaderError, FetchedFeed, FetchedFeedItem, ReadFee
 use chrono::{DateTime, Utc};
 use feed_rs::model::Feed;
 use feed_rs::parser;
-use serde_json::Value;
 
 pub struct JsonReader {
     pub url: String,
@@ -14,15 +13,7 @@ impl ReadFeed for JsonReader {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
         let body = reader::read_url(&self.url)?;
 
-        match serde_json::from_slice::<Value>(&body[..]) {
-            Ok(_) => (),
-            Err(err) => {
-                let msg = format!("{:?}", err);
-                return Err(FeedReaderError { msg });
-            }
-        }
-
-        match parser::parse(&body[..]) {
+        match parser::parse(body) {
             Ok(feed) => {
                 let mut fetched_feed = FetchedFeed::from(feed);
                 fetched_feed.link = self.url.clone();

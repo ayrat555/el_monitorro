@@ -12,7 +12,7 @@ impl ReadFeed for RssReader {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
         let body = reader::read_url(&self.url)?;
 
-        match Channel::read_from(&body[..]) {
+        match Channel::read_from(body) {
             Ok(channel) => Ok(FetchedFeed::from(channel)),
             Err(err) => {
                 let msg = format!("{}", err);

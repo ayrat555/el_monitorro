@@ -14,7 +14,7 @@ impl ReadFeed for AtomReader {
     fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
         let body = reader::read_url(&self.url)?;
 
-        match AtomFeed::read_from(&body[..]) {
+        match AtomFeed::read_from(body) {
             Ok(atom_feed) => {
                 let mut feed = FetchedFeed::from(atom_feed);
 

@@ -1,11 +1,12 @@
 use crate::bot::logic;
 use crate::bot::logic::{DeleteSubscriptionError, SubscriptionError};
-use crate::bot::telegram_client::Api;
-use crate::bot::telegram_client::Error;
+use crate::bot::update_fetcher::UpdateFetcher;
 use crate::db;
 use crate::db::telegram::NewTelegramChat;
+use frankenstein::Api;
 use frankenstein::Chat;
 use frankenstein::ChatId;
+use frankenstein::Error;
 use frankenstein::Message;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
@@ -127,7 +128,7 @@ pub async fn send_message(chat_id: i64, message: String) -> Result<(), Error> {
 pub fn send_message_sync(chat_id: i64, message: String) -> Result<(), Error> {
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
 
-    let api = Api::new(token);
+    let api = Api::new(&token);
 
     let send_message_params = SendMessageParams::new(ChatId::Integer(chat_id), message);
 
@@ -418,15 +419,16 @@ fn parse_argument(full_command: &str, command: &str) -> String {
 pub async fn start_bot() {
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
 
-    let mut api = Api::new(token);
-    // let mut stream = api.stream();
+    let api = Api::new(&token);
 
-    log::info!("Starting a bot");
+    let mut update_fetcher = UpdateFetcher::new(api.clone());
+
+    log::info!("Starting the El Monitorro bot");
 
     let mut interval = time::interval(std::time::Duration::from_secs(1));
 
     loop {
-        while let Some(update) = api.next_update() {
+        while let Some(update) = update_fetcher.next_update() {
             tokio::spawn(process_message_or_channel_post(api.clone(), update));
         }
 
