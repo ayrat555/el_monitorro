@@ -4,7 +4,6 @@ use crate::bot::telegram_client::Api;
 use crate::bot::telegram_client::Error;
 use crate::db;
 use crate::db::telegram::NewTelegramChat;
-use frankenstein::Chat;
 use frankenstein::ChatId;
 use frankenstein::Message;
 use frankenstein::SendMessageParams;
@@ -46,19 +45,6 @@ static COMMANDS: [&str; 14] = [
     HELP,
     START,
 ];
-
-impl From<Chat> for NewTelegramChat {
-    fn from(chat: Chat) -> Self {
-        NewTelegramChat {
-            id: chat.id() as i64,
-            kind: chat.type_field(),
-            username: chat.username(),
-            first_name: chat.first_name(),
-            last_name: chat.last_name(),
-            title: chat.title(),
-        }
-    }
-}
 
 fn commands_string() -> String {
     format!(

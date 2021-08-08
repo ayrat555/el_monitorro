@@ -1,6 +1,9 @@
 #[macro_use]
 extern crate diesel;
 
+#[macro_use]
+extern crate log;
+
 pub mod bot;
 pub mod cleaner;
 pub mod db;
