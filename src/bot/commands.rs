@@ -14,6 +14,7 @@ use std::env;
 
 pub mod help;
 pub mod subscribe;
+pub mod unsubscribe;
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {

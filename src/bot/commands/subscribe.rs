@@ -2,32 +2,63 @@ use super::Command;
 use super::Message;
 use crate::db::feeds;
 use crate::db::telegram;
+use crate::db::telegram::NewTelegramSubscription;
+use crate::models::telegram_subscription::TelegramSubscription;
+use crate::sync::reader;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
+use diesel::Connection;
 use diesel::PgConnection;
 use std::env;
+use url::Url;
 
 static COMMAND: &str = "/subscribe";
 
-struct Subscribe {}
+pub struct Subscribe {}
 
 #[derive(Debug, PartialEq)]
-pub enum SubscriptionError {
+enum SubscriptionError {
     DbError(diesel::result::Error),
     InvalidUrl,
     UrlIsNotFeed,
-    RssUrlNotProvided,
     SubscriptionAlreadyExists,
     SubscriptionCountLimit,
-    TelegramError,
+}
+
+impl From<diesel::result::Error> for SubscriptionError {
+    fn from(error: diesel::result::Error) -> Self {
+        SubscriptionError::DbError(error)
+    }
 }
 
 impl Subscribe {
-    fn create_subscription(&self, db_connection: &PgConnection, url: String) -> String {
+    fn subscribe(&self, db_connection: &PgConnection, message: &Message, url: String) -> String {
+        match self.create_subscription(db_connection, message, url.clone()) {
+            Ok(_subscription) => format!("Successfully subscribed to {}", url),
+            Err(SubscriptionError::DbError(_)) => {
+                "Something went wrong with the bot's storage".to_string()
+            }
+            Err(SubscriptionError::InvalidUrl) => "Invalid url".to_string(),
+            Err(SubscriptionError::UrlIsNotFeed) => "Url is not a feed".to_string(),
+            Err(SubscriptionError::SubscriptionAlreadyExists) => {
+                "The subscription already exists".to_string()
+            }
+            Err(SubscriptionError::SubscriptionCountLimit) => {
+                "You exceeded the number of subscriptions".to_string()
+            }
+        }
+    }
+
+    fn create_subscription(
+        &self,
+        db_connection: &PgConnection,
+        message: &Message,
+        url: String,
+    ) -> Result<TelegramSubscription, SubscriptionError> {
         let feed_type = self.validate_rss_url(&url)?;
 
         db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|| {
-            let chat = telegram::create_chat(db_connection, new_chat).unwrap();
+            let chat = telegram::create_chat(db_connection, message.chat().into()).unwrap();
             let feed = feeds::create(db_connection, url, feed_type).unwrap();
 
             let new_telegram_subscription = NewTelegramSubscription {
@@ -55,6 +86,15 @@ impl Subscribe {
             Some(_) => Err(SubscriptionError::SubscriptionAlreadyExists),
         }
     }
+    fn validate_rss_url(&self, rss_url: &str) -> Result<String, SubscriptionError> {
+        match Url::parse(rss_url) {
+            Ok(_) => match reader::validate_rss_url(rss_url) {
+                Ok(feed_type) => Ok(feed_type),
+                _ => Err(SubscriptionError::UrlIsNotFeed),
+            },
+            _ => Err(SubscriptionError::InvalidUrl),
+        }
+    }
 
     fn check_number_of_subscriptions(
         &self,
@@ -70,10 +110,14 @@ impl Subscribe {
         }
     }
 
-    pub fn sub_limit() -> i64 {
+    fn sub_limit() -> i64 {
         let result = env::var("SUBSCRIPTION_LIMIT").unwrap_or_else(|_| "20".to_string());
 
         result.parse().unwrap()
+    }
+
+    pub fn command() -> &'static str {
+        COMMAND
     }
 }
 
@@ -87,13 +131,13 @@ impl Command for Subscribe {
             Ok(connection) => {
                 let text = message.text().unwrap();
                 let argument = self.parse_argument(&text);
-                self.create_subscription(connection, argument)
+                self.subscribe(&connection, message, argument)
             }
             Err(error_message) => error_message,
         }
     }
 
     fn command(&self) -> &str {
-        COMMAND
+        Self::command()
     }
 }

@@ -31,18 +31,24 @@ static HELP: &str =
 
 static COMMAND: &str = "/help";
 
-struct Help {}
+pub struct Help {}
+
+impl Help {
+    pub fn command() -> &'static str {
+        COMMAND
+    }
+}
 
 impl Command for Help {
     fn response(
         &self,
         _db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
+        _message: &Message,
     ) -> String {
         HELP.to_string()
     }
 
     fn command(&self) -> &str {
-        COMMAND
+        Self::command()
     }
 }
