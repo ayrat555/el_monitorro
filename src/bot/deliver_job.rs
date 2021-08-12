@@ -162,7 +162,7 @@ fn deliver_subscription_updates(
     let chat = telegram::find_chat(connection, chat_id).unwrap();
     let delay = delay_period(&chat);
 
-    if subscription.filter_words.is_none() && feed_items.len() < undelivered_count as usize {
+    if subscription.filter_words.is_none() && feed_items.len() == 10 && undelivered_count > 10 {
         let message = format!(
             "You have {} unread items, below {} last items for {}",
             undelivered_count,
