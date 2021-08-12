@@ -33,33 +33,29 @@ pub trait Command {
     fn response(&self, db_pool: Pool<ConnectionManager<PgConnection>>, message: &Message)
         -> String;
 
-    fn execute(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        api: Api,
-        message: Message,
-    ) -> Result<(), Error> {
+    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+        info!(
+            "{:?} wrote: {}",
+            message.chat().id(),
+            message.text().unwrap()
+        );
+
         let text = self.response(db_pool, &message);
 
         self.reply_to_message(api, message, text)
     }
 
-    fn reply_to_message(&self, api: Api, message: Message, text: String) -> Result<(), Error> {
+    fn reply_to_message(&self, api: Api, message: Message, text: String) {
         let mut send_message_params =
             SendMessageParams::new(ChatId::Integer(message.chat().id()), text);
 
         send_message_params.set_reply_to_message_id(Some(message.message_id()));
 
-        match api.send_message(&send_message_params) {
-            Ok(_) => Ok(()),
-            Err(err) => {
-                log::error!(
-                    "Failed to send a message {:?}: {:?}",
-                    err,
-                    send_message_params
-                );
-                Err(err)
-            }
+        if let Err(err) = api.send_message(&send_message_params) {
+            error!(
+                "Failed to send a message {:?}: {:?}",
+                err, send_message_params
+            );
         }
     }
 

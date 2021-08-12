@@ -1,5 +1,6 @@
 use super::Command;
 use super::Message;
+use crate::bot::telegram_client::Api;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
@@ -34,6 +35,10 @@ static COMMAND: &str = "/help";
 pub struct Help {}
 
 impl Help {
+    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+        Self {}.execute(db_pool, api, message);
+    }
+
     pub fn command() -> &'static str {
         COMMAND
     }

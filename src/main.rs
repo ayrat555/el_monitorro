@@ -30,5 +30,5 @@ async fn main() {
 
     Scheduler::start(10, 5);
 
-    bot::api::start_bot().await;
+    bot::handler::Handler::start().await;
 }

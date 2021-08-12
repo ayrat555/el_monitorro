@@ -1,37 +1,48 @@
 use super::commands::help::Help;
 use super::commands::subscribe::Subscribe;
 use crate::bot::telegram_client::Api;
-use crate::bot::telegram_client::Error;
+use diesel::r2d2;
+use diesel::PgConnection;
 use frankenstein::Update;
 use std::env;
+use tokio::time;
 
-struct Handler {
-    api: Api,
-}
-
-static COMMANDS: [&str; 2] = [Help::command(), Subscribe::command()];
+pub struct Handler {}
 
 impl Handler {
     pub async fn start() {
         let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
 
         let mut api = Api::new(token);
-        // let mut stream = api.stream();
 
         log::info!("Starting a bot");
 
         let mut interval = time::interval(std::time::Duration::from_secs(1));
 
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+        let manager = r2d2::ConnectionManager::<PgConnection>::new(database_url);
+
+        let connection_pool = r2d2::Pool::builder().max_size(20).build(manager).unwrap();
+
         loop {
             while let Some(update) = api.next_update() {
-                tokio::spawn(self.process_message_or_channel_post(api.clone(), update));
+                tokio::spawn(Self::process_message_or_channel_post(
+                    connection_pool.clone(),
+                    api.clone(),
+                    update,
+                ));
             }
 
             interval.tick().await;
         }
     }
 
-    fn process_message_or_channel_post(&self, api: Api, update: Update) {
+    async fn process_message_or_channel_post(
+        db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
+        api: Api,
+        update: Update,
+    ) {
         let message = match update.message() {
             None => update.channel_post().unwrap(),
             Some(message) => message,
@@ -39,7 +50,7 @@ impl Handler {
 
         let chat_id = message.chat().id() as i64;
 
-        if let Some(id) = self.owner_telegram_id() {
+        if let Some(id) = Self::owner_telegram_id() {
             if id != chat_id {
                 return;
             }
@@ -53,16 +64,14 @@ impl Handler {
 
         let command = &text.unwrap();
 
-        let is_known_command = COMMANDS
-            .iter()
-            .any(|command_name| command.starts_with(command_name));
-
-        if is_known_command {
-            log::info!("{:?} wrote: {}", chat_id, command);
+        if command.starts_with(Subscribe::command()) {
+            Subscribe::execute(db_pool, api, message);
+        } else if command.starts_with(Help::command()) {
+            Help::execute(db_pool, api, message);
         }
     }
 
-    fn owner_telegram_id(&self) -> Option<i64> {
+    fn owner_telegram_id() -> Option<i64> {
         match env::var("OWNER_TELEGRAM_ID") {
             Ok(val) => {
                 let parsed_value: i64 = val.parse().unwrap();

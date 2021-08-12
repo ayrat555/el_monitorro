@@ -1,5 +1,6 @@
 use super::Command;
 use super::Message;
+use crate::bot::telegram_client::Api;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
@@ -32,6 +33,10 @@ impl From<diesel::result::Error> for SubscriptionError {
 }
 
 impl Subscribe {
+    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+        Self {}.execute(db_pool, api, message);
+    }
+
     fn subscribe(&self, db_connection: &PgConnection, message: &Message, url: String) -> String {
         match self.create_subscription(db_connection, message, url.clone()) {
             Ok(_subscription) => format!("Successfully subscribed to {}", url),
@@ -139,5 +144,186 @@ impl Command for Subscribe {
 
     fn command(&self) -> &str {
         Self::command()
+    }
+}
+
+#[cfg(test)]
+mod subscribe_tests {
+    use super::Subscribe;
+    use crate::db;
+    use crate::db::feeds;
+    use crate::db::telegram;
+    use crate::db::telegram::NewTelegramChat;
+
+    use diesel::connection::Connection;
+    use frankenstein::Chat;
+    use frankenstein::Message;
+
+    #[test]
+    fn creates_new_subscription() {
+        let db_connection = db::establish_connection();
+        let message = create_message();
+
+        db_connection.test_transaction::<(), (), _>(|| {
+            Subscribe {}.subscribe(
+                &db_connection,
+                &message,
+                "https://feeds.npr.org/1004/feed.json".to_string(),
+            );
+
+            // assert!(feeds::find(&db_connection, subscription.feed_id).is_some());
+            // assert!(telegram::find_chat(&db_connection, subscription.chat_id).is_some());
+
+            Ok(())
+        });
+    }
+
+    // #[test]
+    // fn create_subscription_fails_to_create_chat_when_rss_url_is_invalid() {
+    //     let db_connection = db::establish_connection();
+    //     let message = create_message();
+
+    //     db_connection.test_transaction::<(), (), _>(|| {
+    //         let result =
+    //             super::create_subscription(&db_connection, new_chat, Some("11".to_string()));
+    //         assert_eq!(result.err(), Some(super::SubscriptionError::InvalidUrl));
+
+    //         Ok(())
+    //     });
+    // }
+
+    // #[test]
+    // fn create_subscription_fails_to_create_chat_when_rss_url_is_not_rss() {
+    //     let db_connection = db::establish_connection();
+    //     let new_chat = NewTelegramChat {
+    //         id: 42,
+    //         kind: "private".to_string(),
+    //         username: Some("Username".to_string()),
+    //         first_name: Some("First".to_string()),
+    //         last_name: Some("Last".to_string()),
+    //         title: None,
+    //     };
+
+    //     db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+    //         let result = super::create_subscription(
+    //             &db_connection,
+    //             new_chat,
+    //             Some("http://google.com".to_string()),
+    //         );
+    //         assert_eq!(result.err(), Some(super::SubscriptionError::UrlIsNotFeed));
+
+    //         Ok(())
+    //     });
+    // }
+
+    // #[test]
+    // fn create_subscription_fails_to_create_a_subscription_if_it_already_exists() {
+    //     let db_connection = db::establish_connection();
+    //     let new_chat = NewTelegramChat {
+    //         id: 42,
+    //         kind: "private".to_string(),
+    //         username: Some("Username".to_string()),
+    //         first_name: Some("First".to_string()),
+    //         last_name: Some("Last".to_string()),
+    //         title: None,
+    //     };
+
+    //     db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+    //         let subscription = super::create_subscription(
+    //             &db_connection,
+    //             new_chat.clone(),
+    //             Some("https://feeds.npr.org/1004/feed.json".to_string()),
+    //         )
+    //         .unwrap();
+
+    //         assert!(feeds::find(&db_connection, subscription.feed_id).is_some());
+    //         assert!(telegram::find_chat(&db_connection, subscription.chat_id).is_some());
+
+    //         let result = super::create_subscription(
+    //             &db_connection,
+    //             new_chat,
+    //             Some("https://feeds.npr.org/1004/feed.json".to_string()),
+    //         );
+    //         assert_eq!(
+    //             result.err(),
+    //             Some(super::SubscriptionError::SubscriptionAlreadyExists)
+    //         );
+
+    //         Ok(())
+    //     });
+    // }
+
+    // #[test]
+    // #[ignore]
+    // fn create_subscription_fails_to_create_a_subscription_if_it_already_has_5_suscriptions() {
+    //     let db_connection = db::establish_connection();
+    //     let new_chat = NewTelegramChat {
+    //         id: 42,
+    //         kind: "private".to_string(),
+    //         username: Some("Username".to_string()),
+    //         first_name: Some("First".to_string()),
+    //         last_name: Some("Last".to_string()),
+    //         title: None,
+    //     };
+
+    //     db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+    //         for rss_url in &[
+    //             "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+    //             "https://www.eurekalert.org/rss/technology_engineering.xml",
+    //             "https://www.sciencedaily.com/rss/matter_energy/engineering.xml",
+    //             "https://www.france24.com/fr/france/rss",
+    //             "http://feeds.reuters.com/reuters/technologyNews",
+    //         ] {
+    //             assert!(super::create_subscription(
+    //                 &db_connection,
+    //                 new_chat.clone(),
+    //                 Some(rss_url.to_string()),
+    //             )
+    //             .is_ok());
+    //         }
+
+    //         let result = super::create_subscription(
+    //             &db_connection,
+    //             new_chat,
+    //             Some("http://www.engadget.com/rss.xml".to_string()),
+    //         );
+
+    //         assert_eq!(
+    //             result.err(),
+    //             Some(super::SubscriptionError::SubscriptionCountLimit)
+    //         );
+
+    //         Ok(())
+    //     });
+    // }
+
+    // #[test]
+    // fn create_subscription_fails_if_url_is_not_provided() {
+    //     let db_connection = db::establish_connection();
+    //     let new_chat = NewTelegramChat {
+    //         id: 42,
+    //         kind: "private".to_string(),
+    //         username: Some("Username".to_string()),
+    //         first_name: Some("First".to_string()),
+    //         last_name: Some("Last".to_string()),
+    //         title: None,
+    //     };
+
+    //     db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+    //         let result = super::create_subscription(&db_connection, new_chat.clone(), None);
+
+    //         assert_eq!(
+    //             result.err(),
+    //             Some(super::SubscriptionError::RssUrlNotProvided)
+    //         );
+
+    //         Ok(())
+    //     })
+    // }
+
+    fn create_message() -> Message {
+        let chat = Chat::new(1, "hey".into());
+
+        Message::new(1, 1, chat)
     }
 }
