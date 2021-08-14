@@ -108,7 +108,7 @@ impl Subscribe {
     ) -> Result<(), SubscriptionError> {
         let result = telegram::count_subscriptions_for_chat(connection, chat_id);
 
-        if result <= Self::sub_limit() {
+        if result < Self::sub_limit() {
             Ok(())
         } else {
             Err(SubscriptionError::SubscriptionCountLimit)
@@ -156,27 +156,31 @@ mod subscribe_tests {
     use diesel::connection::Connection;
     use frankenstein::Chat;
     use frankenstein::Message;
-    use mockito::{mock, Matcher, Mock};
+    use mockito::mock;
 
     #[test]
     fn creates_new_subscription() {
         let db_connection = db::establish_connection();
         let message = create_message();
-        let feed_url = mock_feed("/feed");
+
+        let path = "/feed";
+        let response = feed_example();
+        let _m = mock("GET", path)
+            .with_status(200)
+            .with_body(response)
+            .create();
+        let feed_url = format!("{}{}", mockito::server_url(), path);
 
         db_connection.test_transaction::<(), (), _>(|| {
-            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url);
+            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url.clone());
 
-            assert_eq!(
-                result,
-                "Successfully subscribed to https://feeds.npr.org/1004/feed.json".to_string()
-            );
+            assert_eq!(result, format!("Successfully subscribed to {}", feed_url));
 
             let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
 
             assert_eq!(1, subscriptions.len());
             assert_eq!(message.chat().id(), subscriptions[0].chat_id);
-            assert!(feeds::find_by_link(&db_connection, mockito::server_url()).is_some());
+            assert!(feeds::find_by_link(&db_connection, feed_url).is_some());
 
             Ok(())
         });
@@ -204,9 +208,15 @@ mod subscribe_tests {
         let db_connection = db::establish_connection();
         let message = create_message();
 
+        let path = "/not_feed";
+        let _m = mock("GET", path)
+            .with_status(200)
+            .with_body("hello")
+            .create();
+        let feed_url = format!("{}{}", mockito::server_url(), path);
+
         db_connection.test_transaction::<(), (), _>(|| {
-            let result =
-                Subscribe {}.subscribe(&db_connection, &message, "https://google.com".to_string());
+            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url);
 
             assert_eq!(result, "Url is not a feed".to_string());
 
@@ -222,18 +232,18 @@ mod subscribe_tests {
         let db_connection = db::establish_connection();
         let message = create_message();
 
-        db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-            Subscribe {}.subscribe(
-                &db_connection,
-                &message,
-                "https://feeds.npr.org/1004/feed.json".to_string(),
-            );
+        let path = "/feed";
+        let response = feed_example();
+        let _m = mock("GET", path)
+            .with_status(200)
+            .with_body(response)
+            .create();
+        let feed_url = format!("{}{}", mockito::server_url(), path);
 
-            let result = Subscribe {}.subscribe(
-                &db_connection,
-                &message,
-                "https://feeds.npr.org/1004/feed.json".to_string(),
-            );
+        db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+            Subscribe {}.subscribe(&db_connection, &message, feed_url.clone());
+
+            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url);
 
             assert_eq!(result, "The subscription already exists".to_string());
 
@@ -244,49 +254,51 @@ mod subscribe_tests {
         });
     }
 
-    // #[test]
-    // #[ignore]
-    // fn create_subscription_fails_to_create_a_subscription_if_it_already_has_5_suscriptions() {
-    //     let db_connection = db::establish_connection();
-    //     let new_chat = NewTelegramChat {
-    //         id: 42,
-    //         kind: "private".to_string(),
-    //         username: Some("Username".to_string()),
-    //         first_name: Some("First".to_string()),
-    //         last_name: Some("Last".to_string()),
-    //         title: None,
-    //     };
+    #[test]
+    fn create_subscription_fails_to_create_a_subscription_if_it_already_has_20_suscriptions() {
+        let db_connection = db::establish_connection();
+        let message = create_message();
 
-    //     db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-    //         for rss_url in &[
-    //             "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
-    //             "https://www.eurekalert.org/rss/technology_engineering.xml",
-    //             "https://www.sciencedaily.com/rss/matter_energy/engineering.xml",
-    //             "https://www.france24.com/fr/france/rss",
-    //             "http://feeds.reuters.com/reuters/technologyNews",
-    //         ] {
-    //             assert!(super::create_subscription(
-    //                 &db_connection,
-    //                 new_chat.clone(),
-    //                 Some(rss_url.to_string()),
-    //             )
-    //             .is_ok());
-    //         }
+        let response = feed_example();
 
-    //         let result = super::create_subscription(
-    //             &db_connection,
-    //             new_chat,
-    //             Some("http://www.engadget.com/rss.xml".to_string()),
-    //         );
+        let path1 = "/feed1";
+        let _m1 = mock("GET", path1)
+            .with_status(200)
+            .with_body(&response)
+            .create();
 
-    //         assert_eq!(
-    //             result.err(),
-    //             Some(super::SubscriptionError::SubscriptionCountLimit)
-    //         );
+        let path2 = "/feed2";
+        let _m2 = mock("GET", path2)
+            .with_status(200)
+            .with_body(&response)
+            .create();
 
-    //         Ok(())
-    //     });
-    // }
+        let path3 = "/feed3";
+        let _m3 = mock("GET", path3)
+            .with_status(200)
+            .with_body(&response)
+            .create();
+
+        let feed_url1 = format!("{}{}", mockito::server_url(), path1);
+        let feed_url2 = format!("{}{}", mockito::server_url(), path2);
+        let feed_url3 = format!("{}{}", mockito::server_url(), path3);
+
+        std::env::set_var("SUBSCRIPTION_LIMIT", "2");
+
+        db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+            for rss_url in [feed_url1, feed_url2] {
+                let result = Subscribe {}.subscribe(&db_connection, &message, rss_url.clone());
+
+                assert_eq!(format!("Successfully subscribed to {}", rss_url), result);
+            }
+
+            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url3.clone());
+
+            assert_eq!("You exceeded the number of subscriptions", result);
+
+            Ok(())
+        });
+    }
 
     fn create_message() -> Message {
         let chat = Chat::new(1, "hey".into());
@@ -294,14 +306,7 @@ mod subscribe_tests {
         Message::new(1, 1, chat)
     }
 
-    fn mock_feed(path: &str) -> String {
-        let response = std::fs::read_to_string("./tests/support/rss_feed_example.xml").unwrap();
-
-        mock("GET", path)
-            .with_status(200)
-            .with_body(response)
-            .create();
-
-        format!("{}{}", mockito::server_url(), path)
+    fn feed_example() -> String {
+        std::fs::read_to_string("./tests/support/rss_feed_example.xml").unwrap()
     }
 }
