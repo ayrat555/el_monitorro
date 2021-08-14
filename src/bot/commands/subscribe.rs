@@ -153,105 +153,96 @@ mod subscribe_tests {
     use crate::db;
     use crate::db::feeds;
     use crate::db::telegram;
-    use crate::db::telegram::NewTelegramChat;
-
     use diesel::connection::Connection;
     use frankenstein::Chat;
     use frankenstein::Message;
+    use mockito::{mock, Matcher, Mock};
 
     #[test]
     fn creates_new_subscription() {
         let db_connection = db::establish_connection();
         let message = create_message();
+        let feed_url = mock_feed("/feed");
 
         db_connection.test_transaction::<(), (), _>(|| {
+            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url);
+
+            assert_eq!(
+                result,
+                "Successfully subscribed to https://feeds.npr.org/1004/feed.json".to_string()
+            );
+
+            let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
+
+            assert_eq!(1, subscriptions.len());
+            assert_eq!(message.chat().id(), subscriptions[0].chat_id);
+            assert!(feeds::find_by_link(&db_connection, mockito::server_url()).is_some());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn create_subscription_fails_to_create_chat_when_rss_url_is_invalid() {
+        let db_connection = db::establish_connection();
+        let message = create_message();
+
+        db_connection.test_transaction::<(), (), _>(|| {
+            let result = Subscribe {}.subscribe(&db_connection, &message, "11".to_string());
+
+            assert_eq!(result, "Invalid url".to_string());
+
+            let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
+            assert_eq!(0, subscriptions.len());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn create_subscription_fails_to_create_chat_when_rss_url_is_not_rss() {
+        let db_connection = db::establish_connection();
+        let message = create_message();
+
+        db_connection.test_transaction::<(), (), _>(|| {
+            let result =
+                Subscribe {}.subscribe(&db_connection, &message, "https://google.com".to_string());
+
+            assert_eq!(result, "Url is not a feed".to_string());
+
+            let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
+            assert_eq!(0, subscriptions.len());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn create_subscription_fails_to_create_a_subscription_if_it_already_exists() {
+        let db_connection = db::establish_connection();
+        let message = create_message();
+
+        db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
             Subscribe {}.subscribe(
                 &db_connection,
                 &message,
                 "https://feeds.npr.org/1004/feed.json".to_string(),
             );
 
-            // assert!(feeds::find(&db_connection, subscription.feed_id).is_some());
-            // assert!(telegram::find_chat(&db_connection, subscription.chat_id).is_some());
+            let result = Subscribe {}.subscribe(
+                &db_connection,
+                &message,
+                "https://feeds.npr.org/1004/feed.json".to_string(),
+            );
+
+            assert_eq!(result, "The subscription already exists".to_string());
+
+            let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
+            assert_eq!(1, subscriptions.len());
 
             Ok(())
         });
     }
-
-    // #[test]
-    // fn create_subscription_fails_to_create_chat_when_rss_url_is_invalid() {
-    //     let db_connection = db::establish_connection();
-    //     let message = create_message();
-
-    //     db_connection.test_transaction::<(), (), _>(|| {
-    //         let result =
-    //             super::create_subscription(&db_connection, new_chat, Some("11".to_string()));
-    //         assert_eq!(result.err(), Some(super::SubscriptionError::InvalidUrl));
-
-    //         Ok(())
-    //     });
-    // }
-
-    // #[test]
-    // fn create_subscription_fails_to_create_chat_when_rss_url_is_not_rss() {
-    //     let db_connection = db::establish_connection();
-    //     let new_chat = NewTelegramChat {
-    //         id: 42,
-    //         kind: "private".to_string(),
-    //         username: Some("Username".to_string()),
-    //         first_name: Some("First".to_string()),
-    //         last_name: Some("Last".to_string()),
-    //         title: None,
-    //     };
-
-    //     db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-    //         let result = super::create_subscription(
-    //             &db_connection,
-    //             new_chat,
-    //             Some("http://google.com".to_string()),
-    //         );
-    //         assert_eq!(result.err(), Some(super::SubscriptionError::UrlIsNotFeed));
-
-    //         Ok(())
-    //     });
-    // }
-
-    // #[test]
-    // fn create_subscription_fails_to_create_a_subscription_if_it_already_exists() {
-    //     let db_connection = db::establish_connection();
-    //     let new_chat = NewTelegramChat {
-    //         id: 42,
-    //         kind: "private".to_string(),
-    //         username: Some("Username".to_string()),
-    //         first_name: Some("First".to_string()),
-    //         last_name: Some("Last".to_string()),
-    //         title: None,
-    //     };
-
-    //     db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-    //         let subscription = super::create_subscription(
-    //             &db_connection,
-    //             new_chat.clone(),
-    //             Some("https://feeds.npr.org/1004/feed.json".to_string()),
-    //         )
-    //         .unwrap();
-
-    //         assert!(feeds::find(&db_connection, subscription.feed_id).is_some());
-    //         assert!(telegram::find_chat(&db_connection, subscription.chat_id).is_some());
-
-    //         let result = super::create_subscription(
-    //             &db_connection,
-    //             new_chat,
-    //             Some("https://feeds.npr.org/1004/feed.json".to_string()),
-    //         );
-    //         assert_eq!(
-    //             result.err(),
-    //             Some(super::SubscriptionError::SubscriptionAlreadyExists)
-    //         );
-
-    //         Ok(())
-    //     });
-    // }
 
     // #[test]
     // #[ignore]
@@ -297,33 +288,20 @@ mod subscribe_tests {
     //     });
     // }
 
-    // #[test]
-    // fn create_subscription_fails_if_url_is_not_provided() {
-    //     let db_connection = db::establish_connection();
-    //     let new_chat = NewTelegramChat {
-    //         id: 42,
-    //         kind: "private".to_string(),
-    //         username: Some("Username".to_string()),
-    //         first_name: Some("First".to_string()),
-    //         last_name: Some("Last".to_string()),
-    //         title: None,
-    //     };
-
-    //     db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
-    //         let result = super::create_subscription(&db_connection, new_chat.clone(), None);
-
-    //         assert_eq!(
-    //             result.err(),
-    //             Some(super::SubscriptionError::RssUrlNotProvided)
-    //         );
-
-    //         Ok(())
-    //     })
-    // }
-
     fn create_message() -> Message {
         let chat = Chat::new(1, "hey".into());
 
         Message::new(1, 1, chat)
+    }
+
+    fn mock_feed(path: &str) -> String {
+        let response = std::fs::read_to_string("./tests/support/rss_feed_example.xml").unwrap();
+
+        mock("GET", path)
+            .with_status(200)
+            .with_body(response)
+            .create();
+
+        format!("{}{}", mockito::server_url(), path)
     }
 }
