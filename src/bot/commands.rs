@@ -1,5 +1,4 @@
 use crate::bot::telegram_client::Api;
-use crate::bot::telegram_client::Error;
 use crate::db::telegram::NewTelegramChat;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
@@ -13,6 +12,7 @@ use frankenstein::TelegramApi;
 use std::env;
 
 pub mod help;
+pub mod list_subscriptions;
 pub mod subscribe;
 pub mod unsubscribe;
 

@@ -87,7 +87,7 @@ impl Command for Unsubscribe {
     }
 
     fn command(&self) -> &str {
-        COMMAND
+        Self::command()
     }
 }
 
