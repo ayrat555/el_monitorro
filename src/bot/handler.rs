@@ -1,5 +1,7 @@
 use super::commands::help::Help;
+use super::commands::list_subscriptions::ListSubscriptions;
 use super::commands::subscribe::Subscribe;
+use super::commands::unsubscribe::Unsubscribe;
 use crate::bot::telegram_client::Api;
 use diesel::r2d2;
 use diesel::PgConnection;
@@ -68,6 +70,10 @@ impl Handler {
             Subscribe::execute(db_pool, api, message);
         } else if command.starts_with(Help::command()) {
             Help::execute(db_pool, api, message);
+        } else if command.starts_with(Unsubscribe::command()) {
+            Unsubscribe::execute(db_pool, api, message);
+        } else if command.starts_with(ListSubscriptions::command()) {
+            ListSubscriptions::execute(db_pool, api, message);
         }
     }
 
