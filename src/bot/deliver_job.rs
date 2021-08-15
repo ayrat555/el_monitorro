@@ -1,4 +1,4 @@
-use crate::bot::api;
+use crate::bot::telegram_client::Api;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::models::feed::Feed;
@@ -170,7 +170,7 @@ fn deliver_subscription_updates(
             feed.link
         );
 
-        match api::send_message_sync(chat_id, message) {
+        match Api::send_message(chat_id, message) {
             Ok(_) => {
                 std::thread::sleep(delay);
             }
@@ -205,7 +205,7 @@ fn deliver_subscription_updates(
 
         for (message, publication_date) in messages {
             match subscription.filter_words.clone() {
-                None => match api::send_message_sync(chat_id, message) {
+                None => match Api::send_message(chat_id, message) {
                     Ok(_) => {
                         std::thread::sleep(delay);
                         update_last_deivered_at(connection, subscription, publication_date)?;
@@ -241,7 +241,7 @@ fn deliver_subscription_updates(
                     }
 
                     if mtch {
-                        match api::send_message_sync(chat_id, message) {
+                        match Api::send_message(chat_id, message) {
                             Ok(_) => {
                                 std::thread::sleep(delay);
                                 update_last_deivered_at(
