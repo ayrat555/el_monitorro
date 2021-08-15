@@ -1,9 +1,12 @@
+use frankenstein::ChatId;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
+use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
 use isahc::{prelude::*, Request};
 use std::collections::VecDeque;
+use std::env;
 use std::path::PathBuf;
 
 static BASE_API_URL: &str = "https://api.telegram.org/bot";
@@ -66,6 +69,25 @@ impl Api {
             Err(err) => {
                 log::error!("Failed to fetch updates {:?}", err);
                 None
+            }
+        }
+    }
+
+    pub fn send_message(chat_id: i64, message: String) -> Result<(), Error> {
+        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
+
+        let api = Self::new(token);
+
+        let send_message_params = SendMessageParams::new(ChatId::Integer(chat_id), message);
+
+        match api.send_message(&send_message_params) {
+            Ok(_) => Ok(()),
+            Err(err) => {
+                error!(
+                    "Failed to send message {:?}: {:?}",
+                    err, send_message_params
+                );
+                Err(err)
             }
         }
     }
