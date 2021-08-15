@@ -1,8 +1,10 @@
 use super::commands::get_filter::GetFilter;
+use super::commands::get_template::GetTemplate;
 use super::commands::get_timezone::GetTimezone;
 use super::commands::help::Help;
 use super::commands::list_subscriptions::ListSubscriptions;
 use super::commands::set_filter::SetFilter;
+use super::commands::set_template::SetTemplate;
 use super::commands::set_timezone::SetTimezone;
 use super::commands::start::Start;
 use super::commands::subscribe::Subscribe;
@@ -90,6 +92,10 @@ impl Handler {
             SetFilter::execute(db_pool, api, message);
         } else if command.starts_with(GetFilter::command()) {
             GetFilter::execute(db_pool, api, message);
+        } else if command.starts_with(SetTemplate::command()) {
+            SetTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(GetTemplate::command()) {
+            GetTemplate::execute(db_pool, api, message);
         } else {
             UnknownCommand::execute(db_pool, api, message);
         }
