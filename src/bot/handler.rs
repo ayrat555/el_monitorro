@@ -1,6 +1,8 @@
 use super::commands::help::Help;
 use super::commands::list_subscriptions::ListSubscriptions;
+use super::commands::start::Start;
 use super::commands::subscribe::Subscribe;
+use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
 use crate::bot::telegram_client::Api;
 use diesel::r2d2;
@@ -74,6 +76,10 @@ impl Handler {
             Unsubscribe::execute(db_pool, api, message);
         } else if command.starts_with(ListSubscriptions::command()) {
             ListSubscriptions::execute(db_pool, api, message);
+        } else if command.starts_with(Start::command()) {
+            Start::execute(db_pool, api, message);
+        } else {
+            UnknownCommand::execute(db_pool, api, message);
         }
     }
 

@@ -13,7 +13,9 @@ use std::env;
 
 pub mod help;
 pub mod list_subscriptions;
+pub mod start;
 pub mod subscribe;
+pub mod unknown_command;
 pub mod unsubscribe;
 
 impl From<Chat> for NewTelegramChat {
