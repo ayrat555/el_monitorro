@@ -11,8 +11,10 @@ use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use std::env;
 
+pub mod get_timezone;
 pub mod help;
 pub mod list_subscriptions;
+pub mod set_timezone;
 pub mod start;
 pub mod subscribe;
 pub mod unknown_command;

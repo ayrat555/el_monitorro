@@ -1,5 +1,7 @@
+use super::commands::get_timezone::GetTimezone;
 use super::commands::help::Help;
 use super::commands::list_subscriptions::ListSubscriptions;
+use super::commands::set_timezone::SetTimezone;
 use super::commands::start::Start;
 use super::commands::subscribe::Subscribe;
 use super::commands::unknown_command::UnknownCommand;
@@ -78,6 +80,10 @@ impl Handler {
             ListSubscriptions::execute(db_pool, api, message);
         } else if command.starts_with(Start::command()) {
             Start::execute(db_pool, api, message);
+        } else if command.starts_with(SetTimezone::command()) {
+            SetTimezone::execute(db_pool, api, message);
+        } else if command.starts_with(GetTimezone::command()) {
+            GetTimezone::execute(db_pool, api, message);
         } else {
             UnknownCommand::execute(db_pool, api, message);
         }
