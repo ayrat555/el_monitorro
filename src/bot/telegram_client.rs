@@ -147,6 +147,7 @@ impl TelegramApi for Api {
 
     // isahc doesn't support multipart uploads
     // https://github.com/sagebind/isahc/issues/14
+    // but it's fine because this bot doesn't need this feature
     fn request_with_form_data<T1: serde::ser::Serialize, T2: serde::de::DeserializeOwned>(
         &self,
         _method: &str,

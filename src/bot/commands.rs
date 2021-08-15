@@ -1,5 +1,9 @@
 use crate::bot::telegram_client::Api;
+use crate::db::feeds;
+use crate::db::telegram;
 use crate::db::telegram::NewTelegramChat;
+use crate::db::telegram::NewTelegramSubscription;
+use crate::models::telegram_subscription::TelegramSubscription;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
@@ -11,9 +15,11 @@ use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use std::env;
 
+pub mod get_filter;
 pub mod get_timezone;
 pub mod help;
 pub mod list_subscriptions;
+pub mod set_filter;
 pub mod set_timezone;
 pub mod start;
 pub mod subscribe;
@@ -91,6 +97,34 @@ pub trait Command {
 
                 Err("Failed to process your command. Please contact @Ayrat555".to_string())
             }
+        }
+    }
+
+    fn find_subscription(
+        &self,
+        db_connection: &PgConnection,
+        chat_id: i64,
+        feed_url: String,
+    ) -> Result<TelegramSubscription, String> {
+        let not_exists_error = Err("Subscription does not exist".to_string());
+        let feed = match feeds::find_by_link(db_connection, feed_url) {
+            Some(feed) => feed,
+            None => return not_exists_error,
+        };
+
+        let chat = match telegram::find_chat(db_connection, chat_id) {
+            Some(chat) => chat,
+            None => return not_exists_error,
+        };
+
+        let telegram_subscription = NewTelegramSubscription {
+            chat_id: chat.id,
+            feed_id: feed.id,
+        };
+
+        match telegram::find_subscription(db_connection, telegram_subscription) {
+            Some(subscription) => Ok(subscription),
+            None => not_exists_error,
         }
     }
 }
