@@ -37,16 +37,15 @@ impl Command for UnknownCommand {
     }
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        info!(
-            "{:?} wrote: {}",
-            message.chat().id(),
-            message.text().unwrap()
-        );
-
         if message.chat().type_field() == "private"
             || message.chat().type_field() == "group"
             || message.chat().type_field() == "supergroup"
         {
+            info!(
+                "{:?} wrote: {}",
+                message.chat().id(),
+                message.text().unwrap()
+            );
             let text = self.response(db_pool, &message);
 
             self.reply_to_message(api, message, text);
