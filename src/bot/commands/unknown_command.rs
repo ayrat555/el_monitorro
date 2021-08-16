@@ -5,9 +5,8 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
+static UNKNOWN_COMMAND_GROUP: &str = "Remove admin access from the bot in this group otherwise it will be replying to every message.";
 static UNKNOWN_COMMAND_PRIVATE: &str = "Unknown command. Use /help to show available commands";
-static UNKNOWN_COMMAND_GROUP: &str = "Unknown command. Use /help to show available commands.\n\
-  Remove admin access from the bot in this group otherwise it will be replying to every message.";
 
 static COMMAND: &str = "";
 
