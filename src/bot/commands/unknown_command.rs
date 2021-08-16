@@ -5,7 +5,9 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
-static UNKNOWN_COMMAND: &str = "Unknown command. Use /help to show available commands";
+static UNKNOWN_COMMAND_PRIVATE: &str = "Unknown command. Use /help to show available commands";
+static UNKNOWN_COMMAND_GROUP: &str = "Unknown command. Use /help to show available commands.\n\
+  Remove admin access from the bot in this group otherwise it will be replying to every message.";
 
 static COMMAND: &str = "";
 
@@ -25,13 +27,25 @@ impl Command for UnknownCommand {
     fn response(
         &self,
         _db_pool: Pool<ConnectionManager<PgConnection>>,
-        _message: &Message,
+        message: &Message,
     ) -> String {
-        UNKNOWN_COMMAND.to_string()
+        if message.chat().type_field() == "private" {
+            UNKNOWN_COMMAND_PRIVATE.to_string()
+        } else {
+            UNKNOWN_COMMAND_GROUP.to_string()
+        }
     }
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        if message.chat().type_field() == "private" {
+        if message.chat().type_field() == "private"
+            || message.chat().type_field() == "group"
+            || message.chat().type_field() == "supergroup"
+        {
+            info!(
+                "{:?} wrote: {}",
+                message.chat().id(),
+                message.text().unwrap()
+            );
             let text = self.response(db_pool, &message);
 
             self.reply_to_message(api, message, text);
