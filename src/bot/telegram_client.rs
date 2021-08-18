@@ -143,15 +143,16 @@ impl TelegramApi for Api {
             }
         };
 
-        let text = response.text()?;
+        let mut bytes = Vec::new();
+        response.copy_to(&mut bytes)?;
 
-        let parsed_result: Result<T2, serde_json::Error> = serde_json::from_str(&text);
+        let parsed_result: Result<T2, serde_json::Error> = serde_json::from_slice(&bytes);
 
         match parsed_result {
             Ok(result) => Ok(result),
             Err(_) => {
                 let parsed_error: Result<ErrorResponse, serde_json::Error> =
-                    serde_json::from_str(&text);
+                    serde_json::from_slice(&bytes);
 
                 match parsed_error {
                     Ok(result) => Err(Error::ApiError(result)),
