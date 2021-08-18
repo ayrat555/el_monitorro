@@ -10,8 +10,8 @@ pub struct AtomReader {
 }
 
 impl ReadFeed for AtomReader {
-    fn read_from_bytes(&self, data: &Vec<u8>) -> Result<FetchedFeed, FeedReaderError> {
-        match AtomFeed::read_from(data.as_slice()) {
+    fn read_from_bytes(&self, data: &[u8]) -> Result<FetchedFeed, FeedReaderError> {
+        match AtomFeed::read_from(data) {
             Ok(atom_feed) => {
                 let mut feed = FetchedFeed::from(atom_feed);
 

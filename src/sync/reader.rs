@@ -47,7 +47,7 @@ pub trait ReadFeed {
         self.read_from_bytes(&body)
     }
 
-    fn read_from_bytes(&self, data: &Vec<u8>) -> Result<FetchedFeed, FeedReaderError>;
+    fn read_from_bytes(&self, data: &[u8]) -> Result<FetchedFeed, FeedReaderError>;
 
     fn url(&self) -> String;
 }

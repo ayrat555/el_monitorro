@@ -8,8 +8,8 @@ pub struct RssReader {
 }
 
 impl ReadFeed for RssReader {
-    fn read_from_bytes(&self, data: &Vec<u8>) -> Result<FetchedFeed, FeedReaderError> {
-        match Channel::read_from(data.as_slice()) {
+    fn read_from_bytes(&self, data: &[u8]) -> Result<FetchedFeed, FeedReaderError> {
+        match Channel::read_from(data) {
             Ok(channel) => Ok(FetchedFeed::from(channel)),
             Err(err) => {
                 let msg = format!("{}", err);

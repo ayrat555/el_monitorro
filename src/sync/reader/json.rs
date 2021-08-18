@@ -10,8 +10,8 @@ pub struct JsonReader {
 }
 
 impl ReadFeed for JsonReader {
-    fn read_from_bytes(&self, data: &Vec<u8>) -> Result<FetchedFeed, FeedReaderError> {
-        match serde_json::from_slice::<Value>(data.as_slice()) {
+    fn read_from_bytes(&self, data: &[u8]) -> Result<FetchedFeed, FeedReaderError> {
+        match serde_json::from_slice::<Value>(data) {
             Ok(_) => (),
             Err(err) => {
                 let msg = format!("{:?}", err);
@@ -19,7 +19,7 @@ impl ReadFeed for JsonReader {
             }
         }
 
-        match parser::parse(data.as_slice()) {
+        match parser::parse(data) {
             Ok(feed) => {
                 let mut fetched_feed = FetchedFeed::from(feed);
                 fetched_feed.link = self.url.clone();
