@@ -57,6 +57,11 @@ Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_ite
 - Unread items delivery interval is 1 minute.
 - The number of subscriptions is limited to 20.
 
+The bot works in private chats, groups and channels. A couple of channels created with el monitorro:
+
+- https://t.me/emacs_posts - Emacs News and Posts
+- https://t.me/metacritic_tv - Latest Tv Show Metascores on Metacritic
+
 # Setup
 
 ## Automatic deploy to Heroku
