@@ -1,5 +1,4 @@
 use crate::db;
-use crate::sync::reader;
 use crate::sync::reader::{FeedReaderError, FetchedFeed, FetchedFeedItem, ReadFeed};
 use atom_syndication::Entry;
 use atom_syndication::Feed as AtomFeed;
@@ -11,10 +10,8 @@ pub struct AtomReader {
 }
 
 impl ReadFeed for AtomReader {
-    fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
-        let body = reader::read_url(&self.url)?;
-
-        match AtomFeed::read_from(&body[..]) {
+    fn read_from_bytes(&self, data: &Vec<u8>) -> Result<FetchedFeed, FeedReaderError> {
+        match AtomFeed::read_from(data.as_slice()) {
             Ok(atom_feed) => {
                 let mut feed = FetchedFeed::from(atom_feed);
 
@@ -29,6 +26,10 @@ impl ReadFeed for AtomReader {
                 Err(FeedReaderError { msg })
             }
         }
+    }
+
+    fn url(&self) -> String {
+        self.url.clone()
     }
 }
 

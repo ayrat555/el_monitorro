@@ -41,7 +41,15 @@ pub struct FetchedFeed {
 }
 
 pub trait ReadFeed {
-    fn read(&self) -> Result<FetchedFeed, FeedReaderError>;
+    fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
+        let body = read_url(&self.url())?;
+
+        self.read_from_bytes(&body)
+    }
+
+    fn read_from_bytes(&self, data: &Vec<u8>) -> Result<FetchedFeed, FeedReaderError>;
+
+    fn url(&self) -> String;
 }
 
 pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
@@ -80,11 +88,16 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
 }
 
 pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
+    let data = match read_url(url) {
+        Ok(data) => data,
+        Err(err) => return Err(err),
+    };
+
     let rss_reader = RssReader {
         url: url.to_string(),
     };
 
-    if rss_reader.read().is_ok() {
+    if rss_reader.read_from_bytes(&data).is_ok() {
         return Ok("rss".to_string());
     }
 
@@ -92,7 +105,7 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
         url: url.to_string(),
     };
 
-    if atom_reader.read().is_ok() {
+    if atom_reader.read_from_bytes(&data).is_ok() {
         return Ok("atom".to_string());
     }
 
@@ -100,7 +113,7 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
         url: url.to_string(),
     };
 
-    if json_reader.read().is_ok() {
+    if json_reader.read_from_bytes(&data).is_ok() {
         return Ok("json".to_string());
     }
 
