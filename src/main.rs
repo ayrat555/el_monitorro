@@ -12,6 +12,8 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
+    log::info!("isahc version: {}", isahc::version());
+
     let postgres = Queue::new();
 
     postgres.remove_all_periodic_tasks().unwrap();

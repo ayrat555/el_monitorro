@@ -1,5 +1,4 @@
 use crate::db;
-use crate::sync::reader;
 use crate::sync::reader::{FeedReaderError, FetchedFeed, FetchedFeedItem, ReadFeed};
 use chrono::{DateTime, Utc};
 use rss::Channel;
@@ -9,16 +8,18 @@ pub struct RssReader {
 }
 
 impl ReadFeed for RssReader {
-    fn read(&self) -> Result<FetchedFeed, FeedReaderError> {
-        let body = reader::read_url(&self.url)?;
-
-        match Channel::read_from(&body[..]) {
+    fn read_from_bytes(&self, data: &[u8]) -> Result<FetchedFeed, FeedReaderError> {
+        match Channel::read_from(data) {
             Ok(channel) => Ok(FetchedFeed::from(channel)),
             Err(err) => {
                 let msg = format!("{}", err);
                 Err(FeedReaderError { msg })
             }
         }
+    }
+
+    fn url(&self) -> String {
+        self.url.clone()
     }
 }
 
