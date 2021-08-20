@@ -31,7 +31,7 @@ impl Command for UnknownCommand {
         match message.chat().type_field().as_str() {
             "private" => UNKNOWN_COMMAND_PRIVATE.to_string(),
             "group" | "supergroup" => {
-                if message.text().unwrap().starts_with("/") {
+                if message.text().unwrap().starts_with('/') {
                     "".to_string()
                 } else {
                     UNKNOWN_COMMAND_GROUP.to_string()
