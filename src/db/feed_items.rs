@@ -89,6 +89,18 @@ pub fn delete_old_feed_items(
     }
 }
 
+pub fn get_latest_item(conn: &PgConnection, feed_id: i64) -> Option<FeedItem> {
+    match feed_items::table
+        .filter(feed_items::feed_id.eq(feed_id))
+        .order(feed_items::created_at.desc())
+        .limit(1)
+        .get_result::<FeedItem>(conn)
+    {
+        Ok(record) => Some(record),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::db;
@@ -261,6 +273,19 @@ mod tests {
 
             let found_feed_items = super::find(&connection, feed.id).unwrap();
             assert_eq!(found_feed_items.len(), 2);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn get_latest_item_returns_none_if_no_items() {
+        let connection = db::establish_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+
+            assert!(super::get_latest_item(&connection, feed.id).is_none());
 
             Ok(())
         });

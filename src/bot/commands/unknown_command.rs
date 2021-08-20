@@ -28,25 +28,31 @@ impl Command for UnknownCommand {
         _db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
     ) -> String {
-        if message.chat().type_field() == "private" {
-            UNKNOWN_COMMAND_PRIVATE.to_string()
-        } else {
-            UNKNOWN_COMMAND_GROUP.to_string()
+        match message.chat().type_field().as_str() {
+            "private" => UNKNOWN_COMMAND_PRIVATE.to_string(),
+            "group" | "supergroup" => {
+                if message.text().unwrap().starts_with('/') {
+                    "".to_string()
+                } else {
+                    UNKNOWN_COMMAND_GROUP.to_string()
+                }
+            }
+            &_ => "".to_string(),
         }
     }
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        if message.chat().type_field() == "private"
-            || message.chat().type_field() == "group"
-            || message.chat().type_field() == "supergroup"
-        {
+        if message.chat().type_field() != "channel" {
             info!(
                 "{:?} wrote: {}",
                 message.chat().id(),
                 message.text().unwrap()
             );
-            let text = self.response(db_pool, &message);
+        }
 
+        let text = self.response(db_pool, &message);
+
+        if !text.is_empty() {
             self.reply_to_message(api, message, text);
         }
     }

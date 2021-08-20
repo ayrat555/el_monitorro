@@ -88,10 +88,7 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
 }
 
 pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
-    let data = match read_url(url) {
-        Ok(data) => data,
-        Err(err) => return Err(err),
-    };
+    let data = read_url(url)?;
 
     let rss_reader = RssReader {
         url: url.to_string(),
