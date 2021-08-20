@@ -135,7 +135,7 @@ impl FeedSyncJob {
                     feed.created_at
                 };
 
-                if db::current_time() - Duration::hours(6) < created_at_or_last_synced_at {
+                if db::current_time() - Duration::hours(48) < created_at_or_last_synced_at {
                     let error = set_error(db_connection, &feed, err);
 
                     Err(error)
