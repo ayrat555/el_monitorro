@@ -16,6 +16,8 @@ use fang::Runnable;
 use log::error;
 use serde::{Deserialize, Serialize};
 
+const SYNC_FAILURE_LIMIT_IN_HOURS: i64 = 48;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FeedSyncJob {
     feed_id: i64,
@@ -135,7 +137,9 @@ impl FeedSyncJob {
                     feed.created_at
                 };
 
-                if db::current_time() - Duration::hours(48) < created_at_or_last_synced_at {
+                if db::current_time() - Duration::hours(SYNC_FAILURE_LIMIT_IN_HOURS)
+                    < created_at_or_last_synced_at
+                {
                     let error = set_error(db_connection, &feed, err);
 
                     Err(error)
