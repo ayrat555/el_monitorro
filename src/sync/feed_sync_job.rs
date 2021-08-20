@@ -1,5 +1,6 @@
+use crate::bot::telegram_client::Api;
 use crate::db;
-use crate::db::{feed_items, feeds};
+use crate::db::{feed_items, feeds, telegram};
 use crate::models::feed::Feed;
 use crate::sync::reader::atom::AtomReader;
 use crate::sync::reader::json::JsonReader;
@@ -9,9 +10,15 @@ use crate::sync::reader::ReadFeed;
 use crate::sync::FetchedFeed;
 use chrono::Duration;
 use diesel::pg::PgConnection;
+use fang::typetag;
+use fang::Error as FangError;
+use fang::Runnable;
 use log::error;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+const SYNC_FAILURE_LIMIT_IN_HOURS: i64 = 48;
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct FeedSyncJob {
     feed_id: i64,
 }
@@ -23,12 +30,60 @@ pub enum FeedSyncError {
     StaleError,
 }
 
+#[typetag::serde]
+impl Runnable for FeedSyncJob {
+    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+        self.sync_feed(connection);
+
+        Ok(())
+    }
+
+    fn task_type(&self) -> String {
+        "sync".to_string()
+    }
+}
+
 impl FeedSyncJob {
     pub fn new(feed_id: i64) -> Self {
         FeedSyncJob { feed_id }
     }
 
-    pub fn execute(&self, db_connection: &PgConnection) -> Result<(), FeedSyncError> {
+    pub fn sync_feed(&self, db_connection: &PgConnection) {
+        let feed_sync_result = self.execute(db_connection);
+
+        match feed_sync_result {
+            Err(FeedSyncError::StaleError) => {
+                error!("Feed can not be processed for a long time {}", self.feed_id);
+
+                self.remove_feed_and_notify_subscribers(db_connection);
+            }
+            Err(error) => error!("Failed to process feed {}: {:?}", self.feed_id, error),
+            Ok(_) => (),
+        }
+    }
+
+    fn remove_feed_and_notify_subscribers(&self, db_connection: &PgConnection) {
+        let feed = feeds::find(db_connection, self.feed_id).unwrap();
+        let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id).unwrap();
+
+        let message = format!("{} can not be processed. It was removed.", feed.link);
+
+        for chat in chats.into_iter() {
+            match Api::send_message(chat.id, message.clone()) {
+                Ok(_) => (),
+                Err(error) => {
+                    error!("Failed to send a message: {:?}", error);
+                }
+            }
+        }
+
+        match feeds::remove_feed(db_connection, self.feed_id) {
+            Ok(_) => info!("Feed was removed: {}", self.feed_id),
+            Err(err) => error!("Failed to remove feed: {} {}", self.feed_id, err),
+        }
+    }
+
+    fn execute(&self, db_connection: &PgConnection) -> Result<(), FeedSyncError> {
         let feed = match feeds::find(db_connection, self.feed_id) {
             None => {
                 let error = FeedSyncError::FeedError {
@@ -82,7 +137,9 @@ impl FeedSyncJob {
                     feed.created_at
                 };
 
-                if db::current_time() - Duration::hours(2) < created_at_or_last_synced_at {
+                if db::current_time() - Duration::hours(SYNC_FAILURE_LIMIT_IN_HOURS)
+                    < created_at_or_last_synced_at
+                {
                     let error = set_error(db_connection, &feed, err);
 
                     Err(error)
@@ -117,21 +174,24 @@ fn set_error(
 }
 
 fn read_feed(feed: &Feed) -> Result<FetchedFeed, FeedReaderError> {
-    if feed.feed_type == *"rss" {
-        RssReader {
+    match feed.feed_type.as_str() {
+        "rss" => RssReader {
             url: feed.link.clone(),
         }
-        .read()
-    } else if feed.feed_type == *"atom" {
-        AtomReader {
+        .read(),
+
+        "atom" => AtomReader {
             url: feed.link.clone(),
         }
-        .read()
-    } else {
-        JsonReader {
+        .read(),
+
+        "json" => JsonReader {
             url: feed.link.clone(),
         }
-        .read()
+        .read(),
+        &_ => Err(FeedReaderError {
+            msg: "Unknown feed type".to_string(),
+        }),
     }
 }
 

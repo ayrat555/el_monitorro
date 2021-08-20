@@ -1,8 +1,6 @@
-use crate::bot::telegram_client::Api;
 use crate::db;
 use crate::db::feeds;
-use crate::db::telegram;
-use crate::sync::feed_sync_job::{FeedSyncError, FeedSyncJob};
+use crate::sync::feed_sync_job::FeedSyncJob;
 use fang::typetag;
 use fang::Error as FangError;
 use fang::PgConnection;
@@ -54,7 +52,7 @@ impl Runnable for SyncJob {
             page += 1;
 
             for id in &unsynced_feed_ids {
-                Queue::push_task_query(connection, &SyncFeedJob { feed_id: *id }).unwrap();
+                Queue::push_task_query(connection, &FeedSyncJob::new(*id)).unwrap();
             }
 
             if unsynced_feed_ids.is_empty() {
@@ -68,58 +66,6 @@ impl Runnable for SyncJob {
             "Finished enqueuing feeds for sync. Total Number:  {}",
             total_number
         );
-
-        Ok(())
-    }
-
-    fn task_type(&self) -> String {
-        "sync".to_string()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct SyncFeedJob {
-    pub feed_id: i64,
-}
-
-impl SyncFeedJob {
-    pub fn sync_feed(&self, db_connection: &PgConnection) {
-        let feed_sync_result = FeedSyncJob::new(self.feed_id).execute(db_connection);
-        let feed_id = self.feed_id;
-
-        match feed_sync_result {
-            Err(FeedSyncError::StaleError) => {
-                log::error!("Feed can not be processed for a long time {}", feed_id);
-
-                let feed = feeds::find(db_connection, feed_id).unwrap();
-                let chats = telegram::find_chats_by_feed_id(db_connection, feed_id).unwrap();
-
-                let message = format!("{} can not be processed. It was removed.", feed.link);
-
-                for chat in chats.into_iter() {
-                    match Api::send_message(chat.id, message.clone()) {
-                        Ok(_) => (),
-                        Err(error) => {
-                            log::error!("Failed to send a message: {:?}", error);
-                        }
-                    }
-                }
-
-                match feeds::remove_feed(db_connection, feed_id) {
-                    Ok(_) => log::info!("Feed was removed: {}", feed_id),
-                    Err(err) => log::error!("Failed to remove feed: {} {}", feed_id, err),
-                }
-            }
-            Err(error) => log::error!("Failed to process feed {}: {:?}", feed_id, error),
-            Ok(_) => (),
-        }
-    }
-}
-
-#[typetag::serde]
-impl Runnable for SyncFeedJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        self.sync_feed(connection);
 
         Ok(())
     }
