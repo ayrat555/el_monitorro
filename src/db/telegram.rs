@@ -647,7 +647,7 @@ mod tests {
     }
 
     #[test]
-    fn find_subscriptions_for_chat_finds_subscriptions_for_chat() {
+    fn find_unread_subscriptions_for_chat_finds_subscriptions_for_chat() {
         let connection = db::establish_connection();
 
         let new_chat = build_new_chat();
@@ -673,7 +673,7 @@ mod tests {
 
             super::create_subscription(&connection, new_subscription2).unwrap();
 
-            let result = super::find_subscriptions_for_chat(&connection, chat.id).unwrap();
+            let result = super::find_unread_subscriptions_for_chat(&connection, chat.id).unwrap();
 
             assert_eq!(result.len(), 2);
             assert_eq!(result[0].feed_id, feed1.id);
@@ -684,7 +684,7 @@ mod tests {
     }
 
     #[test]
-    fn find_subscriptions_for_chat_does_not_return_wrong_chats() {
+    fn find_unread_subscriptions_for_chat_does_not_return_wrong_chats() {
         let connection = db::establish_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
@@ -701,7 +701,7 @@ mod tests {
 
             super::create_subscription(&connection, new_subscription).unwrap();
 
-            let result = super::find_subscriptions_for_chat(&connection, chat2.id).unwrap();
+            let result = super::find_unread_subscriptions_for_chat(&connection, chat2.id).unwrap();
 
             assert_eq!(result.len(), 0);
 
