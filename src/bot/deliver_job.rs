@@ -163,6 +163,7 @@ impl DeliverChatUpdatesJob {
             feed.link.clone(),
             delay,
             api,
+            &chat,
         )?;
 
         if !feed_items.is_empty() {
@@ -250,6 +251,7 @@ impl DeliverChatUpdatesJob {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn maybe_send_unread_messages_count(
         &self,
         subscription: &TelegramSubscription,
@@ -258,13 +260,19 @@ impl DeliverChatUpdatesJob {
         feed_link: String,
         delay: Duration,
         api: &Api,
+        chat: &TelegramChat,
     ) -> Result<(), DeliverJobError> {
         let undelivered_count = telegram::count_undelivered_feed_items(connection, subscription);
 
-        if subscription.filter_words.is_none()
-            && feed_items_count == MESSAGES_LIMIT
-            && undelivered_count > MESSAGES_LIMIT
-        {
+        if chat.kind == "channel" {
+            return Ok(());
+        }
+
+        if subscription.filter_words.is_none() {
+            return Ok(());
+        }
+
+        if feed_items_count == MESSAGES_LIMIT && undelivered_count > MESSAGES_LIMIT {
             let message = format!(
                 "You have {} unread items, below {} last items for {}",
                 undelivered_count, feed_items_count, feed_link
