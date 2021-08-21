@@ -23,7 +23,7 @@ pub struct Handler {}
 
 impl Handler {
     pub async fn start() {
-        let mut api = Api::new();
+        let mut api = Api::default();
 
         log::info!("Starting a bot");
 

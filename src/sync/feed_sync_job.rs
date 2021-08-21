@@ -69,7 +69,7 @@ impl FeedSyncJob {
 
         let message = format!("{} can not be processed. It was removed.", feed.link);
 
-        let api = Api::new();
+        let api = Api::default();
 
         for chat in chats.into_iter() {
             match api.send_text_message(chat.id, message.clone()) {

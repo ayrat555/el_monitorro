@@ -30,6 +30,12 @@ pub struct HttpError {
     pub message: String,
 }
 
+impl Default for Api {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Api {
     pub fn new() -> Api {
         let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
