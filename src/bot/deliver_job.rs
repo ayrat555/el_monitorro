@@ -120,12 +120,14 @@ pub struct DeliverChatUpdatesJob {
 impl DeliverChatUpdatesJob {
     pub fn deliver(&self, db_connection: &PgConnection) {
         let subscriptions =
-            telegram::find_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
+            telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
         let api = Api::default();
 
         for subscription in subscriptions {
             match self.deliver_subscription_updates(&subscription, db_connection, &api) {
-                Ok(()) => (),
+                Ok(()) => {
+                    telegram::mark_subscription_delivered(db_connection, &subscription).unwrap();
+                }
 
                 Err(error) => {
                     log::error!(

@@ -14,4 +14,5 @@ pub struct TelegramSubscription {
 
     pub template: Option<String>,
     pub filter_words: Option<Vec<String>>,
+    pub has_updates: bool,
 }
