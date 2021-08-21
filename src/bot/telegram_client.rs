@@ -31,8 +31,9 @@ pub struct HttpError {
 }
 
 impl Api {
-    pub fn new(api_key: String) -> Api {
-        let api_url = format!("{}{}", BASE_API_URL, api_key);
+    pub fn new() -> Api {
+        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
+        let api_url = format!("{}{}", BASE_API_URL, token);
 
         let mut update_params = GetUpdatesParams::new();
         update_params.set_allowed_updates(Some(vec![
@@ -73,14 +74,10 @@ impl Api {
         }
     }
 
-    pub fn send_message(chat_id: i64, message: String) -> Result<(), Error> {
-        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
-
-        let api = Self::new(token);
-
+    pub fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
         let send_message_params = SendMessageParams::new(ChatId::Integer(chat_id), message);
 
-        match api.send_message(&send_message_params) {
+        match self.send_message(&send_message_params) {
             Ok(_) => Ok(()),
             Err(err) => {
                 error!(

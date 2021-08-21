@@ -1,6 +1,6 @@
 use dotenv::dotenv;
-use el_monitorro::cleaner::clean_job::CleanJob;
-use el_monitorro::cleaner::clean_job::RemoveOldItemsJob;
+use el_monitorro::cleaner::CleanJob;
+use el_monitorro::cleaner::RemoveOldItemsJob;
 use fang::Queue;
 use fang::Runnable;
 use fang::WorkerParams;

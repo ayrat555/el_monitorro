@@ -2,7 +2,7 @@ use dotenv::dotenv;
 
 use el_monitorro::bot;
 use el_monitorro::bot::deliver_job::DeliverJob;
-use el_monitorro::cleaner::clean_job::CleanJob;
+use el_monitorro::cleaner::CleanJob;
 use el_monitorro::sync::sync_job::SyncJob;
 use fang::scheduler::Scheduler;
 use fang::Queue;
