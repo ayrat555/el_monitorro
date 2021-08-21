@@ -50,6 +50,7 @@ table! {
         updated_at -> Timestamptz,
         template -> Nullable<Text>,
         filter_words -> Nullable<Array<Text>>,
+        has_updates -> Bool,
     }
 }
 

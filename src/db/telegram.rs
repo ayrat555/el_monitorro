@@ -144,12 +144,22 @@ pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
         .unwrap()
 }
 
-pub fn find_subscriptions_for_chat(
+pub fn find_unread_subscriptions_for_chat(
     conn: &PgConnection,
     chat_id: i64,
 ) -> Result<Vec<TelegramSubscription>, Error> {
     telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(chat_id))
+        .filter(telegram_subscriptions::has_updates.eq(true))
+        .get_results::<TelegramSubscription>(conn)
+}
+
+pub fn find_subscriptions_for_feed(
+    conn: &PgConnection,
+    feed_id: i64,
+) -> Result<Vec<TelegramSubscription>, Error> {
+    telegram_subscriptions::table
+        .filter(telegram_subscriptions::feed_id.eq(feed_id))
         .get_results::<TelegramSubscription>(conn)
 }
 
@@ -199,6 +209,7 @@ pub fn fetch_chats_with_subscriptions(
 
     telegram_chats::table
         .inner_join(telegram_subscriptions::table)
+        .filter(telegram_subscriptions::has_updates.eq(true))
         .order(telegram_chats::id)
         .select(telegram_chats::id)
         .distinct()
@@ -253,6 +264,23 @@ pub fn set_subscription_last_delivered_at(
     diesel::update(subscription)
         .set(telegram_subscriptions::last_delivered_at.eq(last_delivered_at))
         .get_result::<TelegramSubscription>(conn)
+}
+
+pub fn mark_subscription_delivered(
+    conn: &PgConnection,
+    subscription: &TelegramSubscription,
+) -> Result<TelegramSubscription, Error> {
+    diesel::update(subscription)
+        .set(telegram_subscriptions::has_updates.eq(false))
+        .get_result::<TelegramSubscription>(conn)
+}
+
+pub fn set_subscriptions_has_updates(conn: &PgConnection, feed_id: i64) -> Result<usize, Error> {
+    let target = telegram_subscriptions::table.filter(telegram_subscriptions::feed_id.eq(feed_id));
+
+    diesel::update(target)
+        .set(telegram_subscriptions::has_updates.eq(true))
+        .execute(conn)
 }
 
 #[cfg(test)]
@@ -884,6 +912,61 @@ mod tests {
             let result = super::find_chats_by_feed_id(&connection, feed.id).unwrap();
 
             assert_eq!(result.len(), 2);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn set_subscriptions_has_updates() {
+        let connection = db::establish_connection();
+
+        let new_chat1 = build_new_chat_with_id(50);
+        let new_chat2 = build_new_chat_with_id(70);
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let feed1 = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed2 =
+                feeds::create(&connection, "Link88".to_string(), "rss".to_string()).unwrap();
+
+            let chat1 = super::create_chat(&connection, new_chat1).unwrap();
+            let chat2 = super::create_chat(&connection, new_chat2).unwrap();
+
+            let new_subscription1 = NewTelegramSubscription {
+                feed_id: feed1.id,
+                chat_id: chat1.id,
+            };
+
+            let subscription1 = super::create_subscription(&connection, new_subscription1).unwrap();
+            super::mark_subscription_delivered(&connection, &subscription1).unwrap();
+
+            let new_subscription2 = NewTelegramSubscription {
+                feed_id: feed1.id,
+                chat_id: chat2.id,
+            };
+
+            let subscription2 = super::create_subscription(&connection, new_subscription2).unwrap();
+            super::mark_subscription_delivered(&connection, &subscription2).unwrap();
+
+            let new_subscription3 = NewTelegramSubscription {
+                feed_id: feed2.id,
+                chat_id: chat2.id,
+            };
+
+            let subscription3 = super::create_subscription(&connection, new_subscription3).unwrap();
+            super::mark_subscription_delivered(&connection, &subscription3).unwrap();
+
+            super::set_subscriptions_has_updates(&connection, feed1.id).unwrap();
+
+            let result = super::find_subscriptions_for_feed(&connection, feed1.id).unwrap();
+
+            assert_eq!(result.len(), 2);
+            assert!(result[0].has_updates);
+            assert!(result[1].has_updates);
+
+            let found_sub = super::find_subscription(&connection, new_subscription3).unwrap();
+
+            assert!(!found_sub.has_updates);
 
             Ok(())
         });
