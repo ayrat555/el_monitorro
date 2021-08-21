@@ -210,6 +210,7 @@ pub fn fetch_chats_with_subscriptions(
 pub fn find_undelivered_feed_items(
     conn: &PgConnection,
     subscription: &TelegramSubscription,
+    count: i64,
 ) -> Result<Vec<FeedItem>, Error> {
     let last_delivered_at = match subscription.last_delivered_at {
         Some(value) => value,
@@ -223,7 +224,7 @@ pub fn find_undelivered_feed_items(
             feed_items::created_at.desc(),
             feed_items::publication_date.desc(),
         ))
-        .limit(10)
+        .limit(count)
         .get_results(conn)
 }
 

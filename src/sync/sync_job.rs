@@ -8,6 +8,8 @@ use fang::Queue;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 
+const FEEDS_PER_PAGE: i64 = 100;
+
 #[derive(Serialize, Deserialize)]
 pub struct SyncJob {}
 
@@ -39,15 +41,19 @@ impl Runnable for SyncJob {
 
         let last_synced_at = db::current_time();
         loop {
-            unsynced_feed_ids =
-                match feeds::find_unsynced_feeds(connection, last_synced_at, page, 100) {
-                    Ok(ids) => ids,
-                    Err(err) => {
-                        let description = format!("{:?}", err);
+            unsynced_feed_ids = match feeds::find_unsynced_feeds(
+                connection,
+                last_synced_at,
+                page,
+                FEEDS_PER_PAGE,
+            ) {
+                Ok(ids) => ids,
+                Err(err) => {
+                    let description = format!("{:?}", err);
 
-                        return Err(FangError { description });
-                    }
-                };
+                    return Err(FangError { description });
+                }
+            };
 
             page += 1;
 

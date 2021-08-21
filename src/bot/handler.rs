@@ -23,9 +23,7 @@ pub struct Handler {}
 
 impl Handler {
     pub async fn start() {
-        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
-
-        let mut api = Api::new(token);
+        let mut api = Api::default();
 
         log::info!("Starting a bot");
 

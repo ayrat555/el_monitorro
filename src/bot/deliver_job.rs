@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::value::Map;
 use std::time::Duration;
 
-static TELEGRAM_ERRORS: [&str; 13] = [
+const TELEGRAM_ERRORS: [&str; 13] = [
     "Forbidden: bot was blocked by the user",
     "Bad Request: chat not found",
     "Forbidden: bot was kicked from the supergroup chat",
@@ -36,9 +36,10 @@ static TELEGRAM_ERRORS: [&str; 13] = [
     "Bad Request: need administrator rights in the channel chat",
 ];
 
-static DISCRIPTION_LIMIT: usize = 2500;
-static UNICODE_EMPTY_CHARS: [char; 5] =
-    ['\u{200B}', '\u{200C}', '\u{200D}', '\u{2060}', '\u{FEFF}'];
+const DISCRIPTION_LIMIT: usize = 2500;
+const UNICODE_EMPTY_CHARS: [char; 5] = ['\u{200B}', '\u{200C}', '\u{200D}', '\u{2060}', '\u{FEFF}'];
+const MESSAGES_LIMIT: i64 = 10;
+const CHATS_PER_PAGE: i64 = 100;
 
 #[derive(Serialize, Deserialize)]
 pub struct DeliverJob {}
@@ -78,14 +79,15 @@ impl Runnable for DeliverJob {
         log::info!("Started delivering feed items");
 
         loop {
-            current_chats = match telegram::fetch_chats_with_subscriptions(connection, page, 1000) {
-                Ok(chats) => chats,
-                Err(error) => {
-                    let description = format!("{:?}", error);
+            current_chats =
+                match telegram::fetch_chats_with_subscriptions(connection, page, CHATS_PER_PAGE) {
+                    Ok(chats) => chats,
+                    Err(error) => {
+                        let description = format!("{:?}", error);
 
-                    return Err(FangError { description });
-                }
-            };
+                        return Err(FangError { description });
+                    }
+                };
 
             page += 1;
 
@@ -119,9 +121,10 @@ impl DeliverChatUpdatesJob {
     pub fn deliver(&self, db_connection: &PgConnection) {
         let subscriptions =
             telegram::find_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
+        let api = Api::default();
 
         for subscription in subscriptions {
-            match deliver_subscription_updates(&subscription, db_connection) {
+            match self.deliver_subscription_updates(&subscription, db_connection, &api) {
                 Ok(()) => (),
 
                 Err(error) => {
@@ -132,6 +135,198 @@ impl DeliverChatUpdatesJob {
                     );
                     break;
                 }
+            }
+        }
+    }
+
+    fn deliver_subscription_updates(
+        &self,
+        subscription: &TelegramSubscription,
+        connection: &PgConnection,
+        api: &Api,
+    ) -> Result<(), DeliverJobError> {
+        let feed_items =
+            telegram::find_undelivered_feed_items(connection, subscription, MESSAGES_LIMIT)?;
+
+        let chat_id = subscription.chat_id;
+        let feed = feeds::find(connection, subscription.feed_id).unwrap();
+
+        let chat = telegram::find_chat(connection, chat_id).unwrap();
+        let delay = delay_period(&chat);
+
+        self.maybe_send_unread_messages_count(
+            subscription,
+            connection,
+            feed_items.len() as i64,
+            feed.link.clone(),
+            delay,
+            api,
+        )?;
+
+        if !feed_items.is_empty() {
+            let template = match subscription.template.clone() {
+                Some(template) => Some(template),
+                None => chat.template,
+            };
+
+            let messages = format_messages(template, chat.utc_offset_minutes, feed_items, feed);
+
+            match subscription.filter_words.clone() {
+                None => {
+                    for (message, publication_date) in messages {
+                        self.send_text_message_and_updated_subscription(
+                            subscription,
+                            message,
+                            connection,
+                            delay,
+                            api,
+                            publication_date,
+                        )?
+                    }
+                }
+                Some(words) => self.send_messages_with_filter(
+                    words,
+                    messages,
+                    connection,
+                    subscription,
+                    api,
+                    delay,
+                )?,
+            }
+        }
+
+        Ok(())
+    }
+
+    fn send_messages_with_filter(
+        &self,
+        words: Vec<String>,
+        messages: Vec<(String, DateTime<Utc>)>,
+        connection: &PgConnection,
+        subscription: &TelegramSubscription,
+        api: &Api,
+        delay: Duration,
+    ) -> Result<(), DeliverJobError> {
+        let (negated_words, regular_words): (Vec<String>, Vec<String>) =
+            words.into_iter().partition(|word| word.starts_with('!'));
+
+        for (message, publication_date) in messages {
+            let mut mtch = true;
+
+            if !regular_words.is_empty() {
+                let regular_mtch = regular_words
+                    .iter()
+                    .any(|word| message.to_lowercase().contains(word));
+
+                mtch = regular_mtch;
+            }
+
+            if !negated_words.is_empty() {
+                let negated_mtch = negated_words.iter().all(|neg_word| {
+                    let word = neg_word.replace("!", "");
+
+                    !message.to_lowercase().contains(&word)
+                });
+
+                mtch = mtch && negated_mtch;
+            }
+
+            if mtch {
+                self.send_text_message_and_updated_subscription(
+                    subscription,
+                    message,
+                    connection,
+                    delay,
+                    api,
+                    publication_date,
+                )?;
+            } else {
+                self.update_last_deivered_at(connection, subscription, publication_date)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn maybe_send_unread_messages_count(
+        &self,
+        subscription: &TelegramSubscription,
+        connection: &PgConnection,
+        feed_items_count: i64,
+        feed_link: String,
+        delay: Duration,
+        api: &Api,
+    ) -> Result<(), DeliverJobError> {
+        let undelivered_count = telegram::count_undelivered_feed_items(connection, subscription);
+
+        if subscription.filter_words.is_none()
+            && feed_items_count == MESSAGES_LIMIT
+            && undelivered_count > MESSAGES_LIMIT
+        {
+            let message = format!(
+                "You have {} unread items, below {} last items for {}",
+                undelivered_count, feed_items_count, feed_link
+            );
+
+            self.send_text_message(subscription.chat_id, message, connection, delay, api)?;
+        }
+
+        Ok(())
+    }
+
+    fn send_text_message(
+        &self,
+        chat_id: i64,
+        message: String,
+        connection: &PgConnection,
+        delay: Duration,
+        api: &Api,
+    ) -> Result<(), DeliverJobError> {
+        match api.send_text_message(chat_id, message) {
+            Ok(_) => {
+                std::thread::sleep(delay);
+                Ok(())
+            }
+
+            Err(error) => {
+                let error_message = format!("{:?}", error);
+
+                Err(handle_error(error_message, connection, chat_id))
+            }
+        }
+    }
+
+    fn send_text_message_and_updated_subscription(
+        &self,
+        subscription: &TelegramSubscription,
+        message: String,
+        connection: &PgConnection,
+        delay: Duration,
+        api: &Api,
+        publication_date: DateTime<Utc>,
+    ) -> Result<(), DeliverJobError> {
+        self.send_text_message(subscription.chat_id, message, connection, delay, api)?;
+
+        self.update_last_deivered_at(connection, subscription, publication_date)
+    }
+
+    fn update_last_deivered_at(
+        &self,
+        connection: &PgConnection,
+        subscription: &TelegramSubscription,
+        publication_date: DateTime<Utc>,
+    ) -> Result<(), DeliverJobError> {
+        match telegram::set_subscription_last_delivered_at(
+            connection,
+            subscription,
+            publication_date,
+        ) {
+            Ok(_) => Ok(()),
+            Err(error) => {
+                log::error!("Failed to set last_delivered_at: {}", error);
+                Err(DeliverJobError {
+                    msg: format!("Failed to set last_delivered_at : {}", error),
+                })
             }
         }
     }
@@ -150,123 +345,6 @@ impl Runnable for DeliverChatUpdatesJob {
     }
 }
 
-fn deliver_subscription_updates(
-    subscription: &TelegramSubscription,
-    connection: &PgConnection,
-) -> Result<(), DeliverJobError> {
-    let feed_items = telegram::find_undelivered_feed_items(connection, subscription)?;
-    let undelivered_count = telegram::count_undelivered_feed_items(connection, subscription);
-    let chat_id = subscription.chat_id;
-    let feed = feeds::find(connection, subscription.feed_id).unwrap();
-
-    let chat = telegram::find_chat(connection, chat_id).unwrap();
-    let delay = delay_period(&chat);
-
-    if subscription.filter_words.is_none() && feed_items.len() == 10 && undelivered_count > 10 {
-        let message = format!(
-            "You have {} unread items, below {} last items for {}",
-            undelivered_count,
-            feed_items.len(),
-            feed.link
-        );
-
-        match Api::send_message(chat_id, message) {
-            Ok(_) => {
-                std::thread::sleep(delay);
-            }
-
-            Err(error) => {
-                let error_message = format!("{:?}", error);
-
-                return Err(handle_error(error_message, connection, chat_id));
-            }
-        }
-    }
-
-    if !feed_items.is_empty() {
-        let offset = match chat.utc_offset_minutes {
-            None => FixedOffset::west(0),
-            Some(value) => {
-                if value > 0 {
-                    FixedOffset::east(value * 60)
-                } else {
-                    FixedOffset::west(-value * 60)
-                }
-            }
-        };
-
-        let template = match subscription.template.clone() {
-            Some(template) => Some(template),
-            None => chat.template,
-        };
-
-        let mut messages = format_messages(template, offset, feed_items, feed);
-        messages.reverse();
-
-        for (message, publication_date) in messages {
-            match subscription.filter_words.clone() {
-                None => match Api::send_message(chat_id, message) {
-                    Ok(_) => {
-                        std::thread::sleep(delay);
-                        update_last_deivered_at(connection, subscription, publication_date)?;
-                    }
-                    Err(error) => {
-                        let error_message = format!("{:?}", error);
-
-                        return Err(handle_error(error_message, connection, chat_id));
-                    }
-                },
-                Some(words) => {
-                    let (negated_words, regular_words): (Vec<String>, Vec<String>) =
-                        words.into_iter().partition(|word| word.starts_with('!'));
-
-                    let mut mtch = true;
-
-                    if !regular_words.is_empty() {
-                        let regular_mtch = regular_words
-                            .iter()
-                            .any(|word| message.to_lowercase().contains(word));
-
-                        mtch = regular_mtch;
-                    }
-
-                    if !negated_words.is_empty() {
-                        let negated_mtch = negated_words.iter().all(|neg_word| {
-                            let word = neg_word.replace("!", "");
-
-                            !message.to_lowercase().contains(&word)
-                        });
-
-                        mtch = mtch && negated_mtch;
-                    }
-
-                    if mtch {
-                        match Api::send_message(chat_id, message) {
-                            Ok(_) => {
-                                std::thread::sleep(delay);
-                                update_last_deivered_at(
-                                    connection,
-                                    subscription,
-                                    publication_date,
-                                )?;
-                            }
-                            Err(error) => {
-                                let error_message = format!("{:?}", error);
-
-                                return Err(handle_error(error_message, connection, chat_id));
-                            }
-                        }
-                    } else {
-                        update_last_deivered_at(connection, subscription, publication_date)?;
-                    }
-                }
-            }
-        }
-    }
-
-    Ok(())
-}
-
 fn handle_error(error: String, connection: &PgConnection, chat_id: i64) -> DeliverJobError {
     log::error!("Failed to deliver updates: {}", error);
 
@@ -282,28 +360,23 @@ fn handle_error(error: String, connection: &PgConnection, chat_id: i64) -> Deliv
     }
 }
 
-fn update_last_deivered_at(
-    connection: &PgConnection,
-    subscription: &TelegramSubscription,
-    publication_date: DateTime<Utc>,
-) -> Result<(), DeliverJobError> {
-    match telegram::set_subscription_last_delivered_at(connection, subscription, publication_date) {
-        Ok(_) => Ok(()),
-        Err(error) => {
-            log::error!("Failed to set last_delivered_at: {}", error);
-            Err(DeliverJobError {
-                msg: format!("Failed to set last_delivered_at : {}", error),
-            })
-        }
-    }
-}
-
 fn format_messages(
     template: Option<String>,
-    date_offset: FixedOffset,
+    offset: Option<i32>,
     feed_items: Vec<FeedItem>,
     feed: Feed,
 ) -> Vec<(String, DateTime<Utc>)> {
+    let time_offset = match offset {
+        None => FixedOffset::west(0),
+        Some(value) => {
+            if value > 0 {
+                FixedOffset::east(value * 60)
+            } else {
+                FixedOffset::west(-value * 60)
+            }
+        }
+    };
+
     let mut data = Map::new();
 
     let templ = match template {
@@ -325,10 +398,10 @@ fn format_messages(
     );
     data.insert("bot_feed_link".to_string(), to_json(feed.link));
 
-    feed_items
+    let mut formatted_messages = feed_items
         .iter()
         .map(|item| {
-            let date = item.publication_date.with_timezone(&date_offset);
+            let date = item.publication_date.with_timezone(&time_offset);
 
             data.insert("bot_date".to_string(), to_json(format!("{}", date)));
             data.insert(
@@ -360,7 +433,11 @@ fn format_messages(
                 },
             }
         })
-        .collect::<Vec<(String, DateTime<Utc>)>>()
+        .collect::<Vec<(String, DateTime<Utc>)>>();
+
+    formatted_messages.reverse();
+
+    formatted_messages
 }
 
 fn remove_html(string: String) -> String {
@@ -421,7 +498,6 @@ mod tests {
     use crate::db;
     use crate::models::feed::Feed;
     use crate::models::feed_item::FeedItem;
-    use chrono::offset::FixedOffset;
     use chrono::{DateTime, Utc};
 
     #[test]
@@ -453,7 +529,7 @@ mod tests {
             feed_type: "rss".to_string(),
         };
 
-        let result = super::format_messages(None, FixedOffset::east(5 * 60), feed_items, feed);
+        let result = super::format_messages(None, Some(5), feed_items, feed);
 
         assert_eq!(
             result[0].0,
@@ -494,7 +570,7 @@ mod tests {
             feed_type: "rss".to_string(),
         };
 
-        let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_date}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), FixedOffset::east(600 * 60), feed_items, feed);
+        let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_date}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), Some(600), feed_items, feed);
 
         assert_eq!(
             result[0].0,
@@ -535,7 +611,7 @@ mod tests {
             feed_type: "".to_string(),
         };
 
-        let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), FixedOffset::east(600 * 60), feed_items, feed);
+        let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), Some(60), feed_items, feed);
 
         assert_eq!(
             result[0].0,
