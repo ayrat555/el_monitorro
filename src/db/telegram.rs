@@ -306,7 +306,7 @@ mod tests {
     #[test]
     fn create_chat_creates_new_telegram_chat() {
         let new_chat = build_new_chat();
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let result = connection.test_transaction::<TelegramChat, Error, _>(|| {
             super::create_chat(&connection, new_chat.clone())
@@ -337,7 +337,7 @@ mod tests {
             last_name: Some("Last1".to_string()),
             title: None,
         };
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_result = connection.test_transaction::<TelegramChat, Error, _>(|| {
             let result = super::create_chat(&connection, new_chat.clone()).unwrap();
@@ -360,7 +360,7 @@ mod tests {
 
     #[test]
     fn create_subscription_creates_new_subscription() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = NewTelegramChat {
             id: 42,
@@ -392,7 +392,7 @@ mod tests {
 
     #[test]
     fn create_subscription_fails_to_create_new_subscription_if_it_already_exists() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat();
 
@@ -433,7 +433,7 @@ mod tests {
 
     #[test]
     fn create_subscription_fails_to_create_new_subscription_if_it_chat_does_not_exist() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string(), "atom".to_string()).unwrap();
@@ -460,7 +460,7 @@ mod tests {
 
     #[test]
     fn find_subscription_finds_subscription() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat_with_id(999);
 
@@ -498,7 +498,7 @@ mod tests {
 
     #[test]
     fn find_subscription_fails_to_find_a_subscription() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let result = super::find_subscription(
@@ -517,7 +517,7 @@ mod tests {
 
     #[test]
     fn fetch_chats_with_subscriptions_fetches_chat_with_subscription() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let new_chat = build_new_chat();
@@ -542,7 +542,7 @@ mod tests {
 
     #[test]
     fn fetch_chats_with_subscriptions_does_not_fetch_chat_without_subscription() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let new_chat = build_new_chat();
@@ -558,7 +558,7 @@ mod tests {
 
     #[test]
     fn fetch_chats_with_subscriptions_paginates_result() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed =
@@ -595,7 +595,7 @@ mod tests {
 
     #[test]
     fn fetch_chats_with_subscriptions_does_no_return_duplicates() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed1 =
@@ -632,7 +632,7 @@ mod tests {
 
     #[test]
     fn count_subscriptions_for_chat_counts_the_number_of_subscriptions() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat();
 
@@ -658,7 +658,7 @@ mod tests {
 
     #[test]
     fn find_unread_subscriptions_for_chat_finds_subscriptions_for_chat() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat();
 
@@ -695,7 +695,7 @@ mod tests {
 
     #[test]
     fn find_unread_subscriptions_for_chat_does_not_return_wrong_chats() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let feed =
@@ -721,7 +721,7 @@ mod tests {
 
     #[test]
     fn set_subscription_last_delivered_at_updates_last_delivered_at() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat_with_id(900);
 
@@ -753,7 +753,7 @@ mod tests {
 
     #[test]
     fn remove_subscription_removes_subscription() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat_with_id(9001);
 
@@ -778,7 +778,7 @@ mod tests {
 
     #[test]
     fn remove_chat_removes_chat() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat();
 
@@ -799,7 +799,7 @@ mod tests {
 
     #[test]
     fn set_utc_offset_minutes_sets_offset() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat();
 
@@ -818,7 +818,7 @@ mod tests {
 
     #[test]
     fn set_global_template_sets_template() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat = build_new_chat_with_id(200);
 
@@ -836,7 +836,7 @@ mod tests {
 
     #[test]
     fn set_template_sets_template() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let new_chat = build_new_chat();
@@ -866,7 +866,7 @@ mod tests {
 
     #[test]
     fn set_filter_sets_filter() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), Error, _>(|| {
             let new_chat = build_new_chat();
@@ -895,7 +895,7 @@ mod tests {
 
     #[test]
     fn find_chats_by_feed_id_find_chats() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat1 = build_new_chat_with_id(10);
         let new_chat2 = build_new_chat_with_id(20);
@@ -929,7 +929,7 @@ mod tests {
 
     #[test]
     fn set_subscriptions_has_updates() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let new_chat1 = build_new_chat_with_id(50);
         let new_chat2 = build_new_chat_with_id(70);

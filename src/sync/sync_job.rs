@@ -1,6 +1,6 @@
+use super::SyncFeedJob;
 use crate::db;
 use crate::db::feeds;
-use crate::sync::feed_sync_job::FeedSyncJob;
 use fang::typetag;
 use fang::Error as FangError;
 use fang::PgConnection;
@@ -58,7 +58,7 @@ impl Runnable for SyncJob {
             page += 1;
 
             for id in &unsynced_feed_ids {
-                Queue::push_task_query(connection, &FeedSyncJob::new(*id)).unwrap();
+                Queue::push_task_query(connection, &SyncFeedJob::new(*id)).unwrap();
             }
 
             if unsynced_feed_ids.is_empty() {
@@ -77,6 +77,6 @@ impl Runnable for SyncJob {
     }
 
     fn task_type(&self) -> String {
-        "sync".to_string()
+        super::JOB_TYPE.to_string()
     }
 }

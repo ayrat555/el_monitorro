@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn create_creates_new_feed_items() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
@@ -162,7 +162,7 @@ mod tests {
 
     #[test]
     fn create_does_not_update_existing_feed_items() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string(), "atom".to_string()).unwrap();
@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn delete_old_feed_items() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn delete_old_feed_items_does_not_delete_if_not_enough_items() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
@@ -280,7 +280,7 @@ mod tests {
 
     #[test]
     fn get_latest_item_returns_none_if_no_items() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();

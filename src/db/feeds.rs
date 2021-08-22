@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn create_creates_new_feed() {
         let link = "Link";
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         let result = connection.test_transaction::<Feed, Error, _>(|| {
             super::create(&connection, link.to_string(), "atom".to_string())
@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn create_fails_to_create_feed_without_link() {
         let link = "".to_string();
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let result = super::create(&connection, link, "rss".to_string());
@@ -177,7 +177,7 @@ mod tests {
         let title = "Title".to_string();
         let description = "Description".to_string();
 
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let feed = super::create(&connection, link.clone(), "rss".to_string()).unwrap();
@@ -210,7 +210,7 @@ mod tests {
         let title = "Title".to_string();
         let description = "Description".to_string();
 
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let feed = super::create(&connection, link.clone(), "rss".to_string()).unwrap();
@@ -241,7 +241,7 @@ mod tests {
 
     #[test]
     fn find_finds_feed() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -260,7 +260,7 @@ mod tests {
 
     #[test]
     fn find_by_link_finds_feed() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn find_cant_find_feed() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let found_feed = super::find(&connection, 42);
@@ -292,7 +292,7 @@ mod tests {
 
     #[test]
     fn set_error_sets_error_message_to_feed() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -309,7 +309,7 @@ mod tests {
 
     #[test]
     fn set_synced_at_sets_current_time_to_synced_at() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -332,7 +332,7 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_does_not_fetch_feeds_without_telegram_subscriptions() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -351,7 +351,7 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_fetches_unsynced_feeds_without_synced_at() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -378,7 +378,7 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_fetches_unsynced_feeds_with_expired_synced_at() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_doesnt_fetch_synced_feeds() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -442,7 +442,7 @@ mod tests {
 
     #[test]
     fn delete_feeds_without_subscriptions() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();
@@ -460,7 +460,7 @@ mod tests {
 
     #[test]
     fn delete_feeds_without_subscriptions_doesnt_remove_feeds_with_subscriptions() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|| {
             let link = "Link".to_string();

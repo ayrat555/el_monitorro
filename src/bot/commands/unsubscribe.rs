@@ -105,7 +105,7 @@ mod unsubscribe_tests {
 
     #[test]
     fn removes_subscription() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
         let link = "Link88".to_string();
 
         connection.test_transaction::<(), (), _>(|| {
@@ -149,7 +149,7 @@ mod unsubscribe_tests {
 
     #[test]
     fn returns_error_if_subscription_does_not_exist() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
         let link = "Link88".to_string();
 
         connection.test_transaction::<(), (), _>(|| {

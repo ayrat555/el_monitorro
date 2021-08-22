@@ -488,15 +488,14 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
 name = "fang"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9346d0ac1e6a49be7e0f790b3a239e04cc54db847521d3b746c8493209713b4"
+checksum = "550f7ab0cf34aa89abb752edb50c1efa6783b203e2a213ec2d17e5deda114874"
 dependencies = [
  "chrono",
  "diesel",
  "diesel-derive-enum",
  "dotenv",
- "env_logger",
  "log",
  "serde",
  "serde_json",
