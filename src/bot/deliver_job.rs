@@ -154,14 +154,12 @@ impl DeliverChatUpdatesJob {
         let feed = feeds::find(connection, subscription.feed_id).unwrap();
 
         let chat = telegram::find_chat(connection, chat_id).unwrap();
-        let delay = delay_period(&chat);
 
         self.maybe_send_unread_messages_count(
             subscription,
             connection,
             feed_items.len() as i64,
             feed.link.clone(),
-            delay,
             api,
             &chat,
         )?;
@@ -169,7 +167,7 @@ impl DeliverChatUpdatesJob {
         if !feed_items.is_empty() {
             let template = match subscription.template.clone() {
                 Some(template) => Some(template),
-                None => chat.template,
+                None => chat.template.clone(),
             };
 
             let messages = format_messages(template, chat.utc_offset_minutes, feed_items, feed);
@@ -181,7 +179,7 @@ impl DeliverChatUpdatesJob {
                             subscription,
                             message,
                             connection,
-                            delay,
+                            &chat,
                             api,
                             publication_date,
                         )?
@@ -193,7 +191,7 @@ impl DeliverChatUpdatesJob {
                     connection,
                     subscription,
                     api,
-                    delay,
+                    &chat,
                 )?,
             }
         }
@@ -208,7 +206,7 @@ impl DeliverChatUpdatesJob {
         connection: &PgConnection,
         subscription: &TelegramSubscription,
         api: &Api,
-        delay: Duration,
+        chat: &TelegramChat,
     ) -> Result<(), DeliverJobError> {
         let (negated_words, regular_words): (Vec<String>, Vec<String>) =
             words.into_iter().partition(|word| word.starts_with('!'));
@@ -239,7 +237,7 @@ impl DeliverChatUpdatesJob {
                     subscription,
                     message,
                     connection,
-                    delay,
+                    chat,
                     api,
                     publication_date,
                 )?;
@@ -251,14 +249,12 @@ impl DeliverChatUpdatesJob {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn maybe_send_unread_messages_count(
         &self,
         subscription: &TelegramSubscription,
         connection: &PgConnection,
         feed_items_count: i64,
         feed_link: String,
-        delay: Duration,
         api: &Api,
         chat: &TelegramChat,
     ) -> Result<(), DeliverJobError> {
@@ -268,7 +264,7 @@ impl DeliverChatUpdatesJob {
             return Ok(());
         }
 
-        if subscription.filter_words.is_none() {
+        if subscription.filter_words.is_some() {
             return Ok(());
         }
 
@@ -278,7 +274,7 @@ impl DeliverChatUpdatesJob {
                 undelivered_count, feed_items_count, feed_link
             );
 
-            self.send_text_message(subscription.chat_id, message, connection, delay, api)?;
+            self.send_text_message(chat, message, connection, api)?;
         }
 
         Ok(())
@@ -286,13 +282,14 @@ impl DeliverChatUpdatesJob {
 
     fn send_text_message(
         &self,
-        chat_id: i64,
+        chat: &TelegramChat,
         message: String,
         connection: &PgConnection,
-        delay: Duration,
         api: &Api,
     ) -> Result<(), DeliverJobError> {
-        match api.send_text_message(chat_id, message) {
+        let delay = delay_period(chat);
+
+        match api.send_text_message(chat.id, message) {
             Ok(_) => {
                 std::thread::sleep(delay);
                 Ok(())
@@ -301,7 +298,7 @@ impl DeliverChatUpdatesJob {
             Err(error) => {
                 let error_message = format!("{:?}", error);
 
-                Err(handle_error(error_message, connection, chat_id))
+                Err(handle_error(error_message, connection, chat.id))
             }
         }
     }
@@ -311,11 +308,11 @@ impl DeliverChatUpdatesJob {
         subscription: &TelegramSubscription,
         message: String,
         connection: &PgConnection,
-        delay: Duration,
+        chat: &TelegramChat,
         api: &Api,
         publication_date: DateTime<Utc>,
     ) -> Result<(), DeliverJobError> {
-        self.send_text_message(subscription.chat_id, message, connection, delay, api)?;
+        self.send_text_message(chat, message, connection, api)?;
 
         self.update_last_deivered_at(connection, subscription, publication_date)
     }
