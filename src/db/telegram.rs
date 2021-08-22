@@ -5,10 +5,10 @@ use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::schema::feed_items;
 use crate::schema::{feeds, telegram_chats, telegram_subscriptions};
-
 use chrono::{DateTime, Duration, Utc};
 use diesel::dsl::*;
 use diesel::pg::upsert::excluded;
+use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
@@ -275,8 +275,18 @@ pub fn mark_subscription_delivered(
         .get_result::<TelegramSubscription>(conn)
 }
 
-pub fn set_subscriptions_has_updates(conn: &PgConnection, feed_id: i64) -> Result<usize, Error> {
-    let target = telegram_subscriptions::table.filter(telegram_subscriptions::feed_id.eq(feed_id));
+pub fn set_subscriptions_has_updates(
+    conn: &PgConnection,
+    feed_id: i64,
+    last_item_created_at: DateTime<Utc>,
+) -> Result<usize, Error> {
+    let target = telegram_subscriptions::table
+        .filter(telegram_subscriptions::feed_id.eq(feed_id))
+        .filter(
+            telegram_subscriptions::last_delivered_at
+                .lt(last_item_created_at)
+                .or(telegram_subscriptions::last_delivered_at.is_null()),
+        );
 
     diesel::update(target)
         .set(telegram_subscriptions::has_updates.eq(true))
@@ -956,7 +966,8 @@ mod tests {
             let subscription3 = super::create_subscription(&connection, new_subscription3).unwrap();
             super::mark_subscription_delivered(&connection, &subscription3).unwrap();
 
-            super::set_subscriptions_has_updates(&connection, feed1.id).unwrap();
+            super::set_subscriptions_has_updates(&connection, feed1.id, db::current_time())
+                .unwrap();
 
             let result = super::find_subscriptions_for_feed(&connection, feed1.id).unwrap();
 
