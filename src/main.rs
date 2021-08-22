@@ -6,6 +6,8 @@ use fang::Queue;
 async fn main() {
     dotenv().ok();
 
+    env_logger::init();
+
     let queue = Queue::new();
 
     el_monitorro::start_scheduler(&queue);
