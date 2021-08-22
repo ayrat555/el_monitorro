@@ -1,36 +1,17 @@
 use dotenv::dotenv;
-
 use el_monitorro::bot;
-use el_monitorro::bot::deliver_job::DeliverJob;
-use el_monitorro::cleaner::CleanJob;
-use el_monitorro::sync::sync_job::SyncJob;
-use fang::scheduler::Scheduler;
 use fang::Queue;
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    env_logger::init();
 
-    log::info!("isahc version: {}", isahc::version());
+    let queue = Queue::new();
 
-    let postgres = Queue::new();
-
-    postgres.remove_all_periodic_tasks().unwrap();
-
-    postgres
-        .push_periodic_task(&SyncJob::default(), 120)
-        .unwrap();
-
-    postgres
-        .push_periodic_task(&DeliverJob::default(), 60)
-        .unwrap();
-
-    postgres
-        .push_periodic_task(&CleanJob::default(), 12 * 60 * 60)
-        .unwrap();
-
-    Scheduler::start(10, 5);
+    el_monitorro::start_scheduler(&queue);
+    el_monitorro::start_sync_workers(&queue);
+    el_monitorro::start_delivery_workers(&queue);
+    el_monitorro::start_clean_workers(&queue);
 
     bot::handler::Handler::start().await;
 }
