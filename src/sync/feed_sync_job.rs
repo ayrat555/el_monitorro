@@ -10,7 +10,6 @@ use crate::sync::reader::ReadFeed;
 use crate::sync::FetchedFeed;
 use chrono::Duration;
 use diesel::pg::PgConnection;
-use diesel::prelude::*;
 use diesel::result::Error;
 use fang::typetag;
 use fang::Error as FangError;
@@ -118,37 +117,25 @@ impl FeedSyncJob {
         feed: Feed,
         fetched_feed: FetchedFeed,
     ) -> Result<(), FeedSyncError> {
-        let previous_last_item = feed_items::get_latest_item(db_connection, self.feed_id);
-
-        db_connection.transaction::<_, FeedSyncError, _>(|| {
-            match feed_items::create(db_connection, feed.id, fetched_feed.items) {
-                Err(err) => self.format_sync_error(err),
-                _ => {
-                    let new_last_item = feed_items::get_latest_item(db_connection, self.feed_id);
-
-                    match (previous_last_item, new_last_item) {
-                        (None, Some(_)) => {
-                            telegram::set_subscriptions_has_updates(db_connection, feed.id)?;
-                        }
-                        (Some(actual_old), Some(actual_new)) => {
-                            if !(actual_old.link == actual_new.link
-                                && actual_old.title == actual_new.title)
-                            {
-                                telegram::set_subscriptions_has_updates(db_connection, feed.id)?;
-                            }
-                        }
-                        (_, _) => (),
-                    };
-
-                    self.set_synced_at(
+        match feed_items::create(db_connection, feed.id, fetched_feed.items) {
+            Err(err) => self.format_sync_error(err),
+            _ => {
+                if let Some(last_item) = feed_items::get_latest_item(db_connection, self.feed_id) {
+                    telegram::set_subscriptions_has_updates(
                         db_connection,
-                        feed,
-                        fetched_feed.title,
-                        fetched_feed.description,
-                    )
+                        feed.id,
+                        last_item.created_at,
+                    )?;
                 }
+
+                self.set_synced_at(
+                    db_connection,
+                    feed,
+                    fetched_feed.title,
+                    fetched_feed.description,
+                )
             }
-        })
+        }
     }
 
     fn format_sync_error(&self, err: Error) -> Result<(), FeedSyncError> {
