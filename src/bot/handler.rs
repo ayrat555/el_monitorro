@@ -13,6 +13,7 @@ use super::commands::subscribe::Subscribe;
 use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
 use crate::bot::telegram_client::Api;
+use crate::db;
 use diesel::r2d2;
 use diesel::PgConnection;
 use frankenstein::Update;
@@ -24,16 +25,11 @@ pub struct Handler {}
 impl Handler {
     pub async fn start() {
         let mut api = Api::default();
+        let connection_pool = db::create_connection_pool(20);
 
         log::info!("Starting a bot");
 
         let mut interval = time::interval(std::time::Duration::from_secs(1));
-
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-        let manager = r2d2::ConnectionManager::<PgConnection>::new(database_url);
-
-        let connection_pool = r2d2::Pool::builder().max_size(20).build(manager).unwrap();
 
         loop {
             while let Some(update) = api.next_update() {

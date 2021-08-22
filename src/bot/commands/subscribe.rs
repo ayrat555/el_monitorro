@@ -160,7 +160,7 @@ mod subscribe_tests {
 
     #[test]
     fn creates_new_subscription() {
-        let db_connection = db::establish_connection();
+        let db_connection = db::establish_test_connection();
         let message = create_message();
 
         let path = "/feed";
@@ -188,7 +188,7 @@ mod subscribe_tests {
 
     #[test]
     fn create_subscription_fails_to_create_chat_when_rss_url_is_invalid() {
-        let db_connection = db::establish_connection();
+        let db_connection = db::establish_test_connection();
         let message = create_message();
 
         db_connection.test_transaction::<(), (), _>(|| {
@@ -205,7 +205,7 @@ mod subscribe_tests {
 
     #[test]
     fn create_subscription_fails_to_create_chat_when_rss_url_is_not_rss() {
-        let db_connection = db::establish_connection();
+        let db_connection = db::establish_test_connection();
         let message = create_message();
 
         let path = "/not_feed";
@@ -229,7 +229,7 @@ mod subscribe_tests {
 
     #[test]
     fn create_subscription_fails_to_create_a_subscription_if_it_already_exists() {
-        let db_connection = db::establish_connection();
+        let db_connection = db::establish_test_connection();
         let message = create_message();
 
         let path = "/feed";
@@ -256,7 +256,7 @@ mod subscribe_tests {
 
     #[test]
     fn create_subscription_fails_to_create_a_subscription_if_it_already_has_20_suscriptions() {
-        let db_connection = db::establish_connection();
+        let db_connection = db::establish_test_connection();
         let message = create_message();
 
         let response = feed_example();

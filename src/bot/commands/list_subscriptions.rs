@@ -68,7 +68,7 @@ mod list_subscriptions_tests {
 
     #[test]
     fn fetches_subscriptions() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), (), _>(|| {
             let new_chat = NewTelegramChat {
@@ -105,7 +105,7 @@ mod list_subscriptions_tests {
 
     #[test]
     fn returns_error_if_no_subscriptiops() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), (), _>(|| {
             let new_chat = NewTelegramChat {
@@ -130,7 +130,7 @@ mod list_subscriptions_tests {
 
     #[test]
     fn returns_error_if_chat_does_not_exist() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), (), _>(|| {
             let chat = Chat::new(42, "private".into());

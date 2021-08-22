@@ -261,7 +261,7 @@ mod tests {
             .with_body(response)
             .create();
         let link = format!("{}{}", mockito::server_url(), path);
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), (), _>(|| {
             let feed = feeds::create(&connection, link, "rss".to_string()).unwrap();
@@ -284,7 +284,7 @@ mod tests {
 
     #[test]
     fn it_returns_error_feed_is_not_found() {
-        let connection = db::establish_connection();
+        let connection = db::establish_test_connection();
         let sync_job = SyncFeedJob { feed_id: 5 };
 
         let result = sync_job.execute(&connection);
