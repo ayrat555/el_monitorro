@@ -1,8 +1,8 @@
-use crate::bot::deliver_job::{DeliverChatUpdatesJob, DeliverJob};
 use crate::cleaner::CleanJob;
 use crate::cleaner::RemoveOldItemsJob;
-use crate::sync::feed_sync_job::FeedSyncJob;
-use crate::sync::sync_job::SyncJob;
+use crate::deliver::{DeliverChatUpdatesJob, DeliverJob};
+use crate::sync::SyncFeedJob;
+use crate::sync::SyncJob;
 use fang::scheduler::Scheduler;
 use fang::Queue;
 use fang::Runnable;
@@ -18,6 +18,7 @@ extern crate log;
 pub mod bot;
 pub mod cleaner;
 pub mod db;
+pub mod deliver;
 mod models;
 mod schema;
 pub mod sync;
@@ -34,7 +35,7 @@ pub fn start_delivery_workers(queue: &Queue) {
 
 pub fn start_sync_workers(queue: &Queue) {
     assert_eq!(SyncJob::new().task_type(), "sync".to_string());
-    assert_eq!(FeedSyncJob::new(1).task_type(), "sync".to_string());
+    assert_eq!(SyncFeedJob::new(1).task_type(), "sync".to_string());
 
     start_workers(queue, "sync".to_string(), 10);
 }

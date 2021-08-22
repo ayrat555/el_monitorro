@@ -11,7 +11,6 @@ use diesel::result::Error;
 use fang::typetag;
 use fang::Error as FangError;
 use fang::PgConnection;
-use fang::Queue;
 use fang::Runnable;
 use handlebars::{to_json, Handlebars};
 use html2text::from_read;
@@ -39,16 +38,7 @@ const TELEGRAM_ERRORS: [&str; 13] = [
 const DISCRIPTION_LIMIT: usize = 2500;
 const UNICODE_EMPTY_CHARS: [char; 5] = ['\u{200B}', '\u{200C}', '\u{200D}', '\u{2060}', '\u{FEFF}'];
 const MESSAGES_LIMIT: i64 = 10;
-const CHATS_PER_PAGE: i64 = 100;
-
-#[derive(Serialize, Deserialize)]
-pub struct DeliverJob {}
-
-impl Default for DeliverJob {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+const JOB_TYPE: &str = "deliver";
 
 #[derive(Debug)]
 pub struct DeliverJobError {
@@ -60,55 +50,6 @@ impl From<Error> for DeliverJobError {
         let msg = format!("{:?}", error);
 
         DeliverJobError { msg }
-    }
-}
-
-impl DeliverJob {
-    pub fn new() -> Self {
-        DeliverJob {}
-    }
-}
-
-#[typetag::serde]
-impl Runnable for DeliverJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        let mut current_chats: Vec<i64>;
-        let mut page = 1;
-        let mut total_chat_number = 0;
-
-        log::info!("Started delivering feed items");
-
-        loop {
-            current_chats =
-                match telegram::fetch_chats_with_subscriptions(connection, page, CHATS_PER_PAGE) {
-                    Ok(chats) => chats,
-                    Err(error) => {
-                        let description = format!("{:?}", error);
-
-                        return Err(FangError { description });
-                    }
-                };
-
-            page += 1;
-
-            if current_chats.is_empty() {
-                break;
-            }
-
-            total_chat_number += current_chats.len();
-
-            for chat_id in current_chats {
-                Queue::push_task_query(connection, &DeliverChatUpdatesJob { chat_id }).unwrap();
-            }
-        }
-
-        log::info!("Started checking delivery for {} chats", total_chat_number,);
-
-        Ok(())
-    }
-
-    fn task_type(&self) -> String {
-        "deliver".to_string()
     }
 }
 
@@ -348,7 +289,7 @@ impl Runnable for DeliverChatUpdatesJob {
     }
 
     fn task_type(&self) -> String {
-        "deliver".to_string()
+        JOB_TYPE.to_string()
     }
 }
 

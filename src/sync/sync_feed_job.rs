@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 const SYNC_FAILURE_LIMIT_IN_HOURS: i64 = 48;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct FeedSyncJob {
+pub struct SyncFeedJob {
     feed_id: i64,
 }
 
@@ -40,7 +40,7 @@ impl From<Error> for FeedSyncError {
 }
 
 #[typetag::serde]
-impl Runnable for FeedSyncJob {
+impl Runnable for SyncFeedJob {
     fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
         self.sync_feed(connection);
 
@@ -48,13 +48,13 @@ impl Runnable for FeedSyncJob {
     }
 
     fn task_type(&self) -> String {
-        "sync".to_string()
+        super::JOB_TYPE.to_string()
     }
 }
 
-impl FeedSyncJob {
+impl SyncFeedJob {
     pub fn new(feed_id: i64) -> Self {
-        FeedSyncJob { feed_id }
+        SyncFeedJob { feed_id }
     }
 
     pub fn sync_feed(&self, db_connection: &PgConnection) {
@@ -246,7 +246,7 @@ impl FeedSyncJob {
 #[cfg(test)]
 mod tests {
     use super::FeedSyncError::FeedError;
-    use super::FeedSyncJob;
+    use super::SyncFeedJob;
     use crate::db;
     use crate::db::{feed_items, feeds};
     use diesel::Connection;
@@ -265,7 +265,7 @@ mod tests {
 
         connection.test_transaction::<(), (), _>(|| {
             let feed = feeds::create(&connection, link, "rss".to_string()).unwrap();
-            let sync_job = FeedSyncJob { feed_id: feed.id };
+            let sync_job = SyncFeedJob { feed_id: feed.id };
 
             sync_job.execute(&connection).unwrap();
 
@@ -285,7 +285,7 @@ mod tests {
     #[test]
     fn it_returns_error_feed_is_not_found() {
         let connection = db::establish_connection();
-        let sync_job = FeedSyncJob { feed_id: 5 };
+        let sync_job = SyncFeedJob { feed_id: 5 };
 
         let result = sync_job.execute(&connection);
 

@@ -1,5 +1,5 @@
 use dotenv::dotenv;
-use el_monitorro::bot::deliver_job::{DeliverChatUpdatesJob, DeliverJob};
+use el_monitorro::deliver::{DeliverChatUpdatesJob, DeliverJob};
 use fang::Queue;
 use fang::Runnable;
 use fang::WorkerParams;
