@@ -21,7 +21,7 @@ pub fn establish_test_connection() -> PgConnection {
 
     let url = database_url();
 
-    PgConnection::establish(&url).expect(&format!("Error connecting to {}", url))
+    PgConnection::establish(&url).unwrap_or_else(|_| panic!("Error connecting to {}", url))
 }
 
 pub fn current_time() -> DateTime<Utc> {

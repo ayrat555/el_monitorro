@@ -1,23 +1,13 @@
 use dotenv::dotenv;
-use el_monitorro::sync::SyncFeedJob;
-use el_monitorro::sync::SyncJob;
 use fang::Queue;
-use fang::Runnable;
-use fang::WorkerParams;
-use fang::WorkerPool;
 
 fn main() {
     dotenv().ok();
+    env_logger::init();
 
-    assert_eq!(SyncJob::new().task_type(), "sync".to_string());
-    assert_eq!(SyncFeedJob::new(1).task_type(), "sync".to_string());
+    let queue = Queue::new();
 
-    Queue::new().remove_tasks_of_type("sync").unwrap();
-
-    let mut worker_params = WorkerParams::new();
-    worker_params.set_task_type("sync".to_string());
-
-    WorkerPool::new_with_params(10, worker_params).start();
+    el_monitorro::start_sync_workers(&queue);
 
     std::thread::park();
 }
