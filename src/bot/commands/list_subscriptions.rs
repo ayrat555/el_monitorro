@@ -64,6 +64,7 @@ mod list_subscriptions_tests {
     use crate::db::telegram::NewTelegramSubscription;
     use diesel::connection::Connection;
     use frankenstein::Chat;
+    use frankenstein::ChatType;
     use frankenstein::Message;
 
     #[test]
@@ -92,7 +93,7 @@ mod list_subscriptions_tests {
                 telegram::create_subscription(&connection, new_subscription).unwrap();
             }
 
-            let chat = Chat::new(42, "private".into());
+            let chat = Chat::new(42, ChatType::Private);
             let message = Message::new(1, 1, chat);
 
             let result = ListSubscriptions {}.list_subscriptions(&connection, &message);
@@ -117,7 +118,7 @@ mod list_subscriptions_tests {
                 title: None,
             };
             telegram::create_chat(&connection, new_chat).unwrap();
-            let chat = Chat::new(42, "private".into());
+            let chat = Chat::new(42, ChatType::Private);
             let message = Message::new(1, 1, chat);
 
             let result = ListSubscriptions {}.list_subscriptions(&connection, &message);
@@ -133,7 +134,7 @@ mod list_subscriptions_tests {
         let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), (), _>(|| {
-            let chat = Chat::new(42, "private".into());
+            let chat = Chat::new(42, ChatType::Private);
             let message = Message::new(1, 1, chat);
 
             let result = ListSubscriptions {}.list_subscriptions(&connection, &message);

@@ -101,6 +101,7 @@ mod unsubscribe_tests {
     use crate::db::telegram::NewTelegramSubscription;
     use diesel::connection::Connection;
     use frankenstein::Chat;
+    use frankenstein::ChatType;
     use frankenstein::Message;
 
     #[test]
@@ -132,7 +133,7 @@ mod unsubscribe_tests {
             assert_eq!(result.len(), 1);
             assert_eq!(result[0], chat.id);
 
-            let chat = Chat::new(42, "private".into());
+            let chat = Chat::new(42, ChatType::Private);
             let message = Message::new(1, 1, chat);
 
             let result = Unsubscribe {}.unsubscribe(&connection, &message, link.clone());
@@ -153,7 +154,7 @@ mod unsubscribe_tests {
         let link = "Link88".to_string();
 
         connection.test_transaction::<(), (), _>(|| {
-            let chat = Chat::new(42, "private".into());
+            let chat = Chat::new(42, ChatType::Private);
             let message = Message::new(1, 1, chat);
 
             let result = Unsubscribe {}.unsubscribe(&connection, &message, link.clone());
