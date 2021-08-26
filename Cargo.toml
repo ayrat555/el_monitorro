@@ -14,7 +14,7 @@ dotenv = "0.15.0"
 env_logger = "0.9"
 fang = "0.4.1"
 feed-rs = "0.6.1"
-frankenstein = { git = "https://github.com/ayrat555/frankenstein", branch = "ayrat555/enum-types" }
+frankenstein = "0.6.0"
 handlebars = "4.1"
 html2text = "0.2"
 htmlescape = "0.3"
