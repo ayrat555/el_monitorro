@@ -155,6 +155,7 @@ mod subscribe_tests {
     use crate::db::telegram;
     use diesel::connection::Connection;
     use frankenstein::Chat;
+    use frankenstein::ChatType;
     use frankenstein::Message;
     use mockito::mock;
 
@@ -301,7 +302,7 @@ mod subscribe_tests {
     }
 
     fn create_message() -> Message {
-        let chat = Chat::new(1, "hey".into());
+        let chat = Chat::new(1, ChatType::Private);
 
         Message::new(1, 1, chat)
     }

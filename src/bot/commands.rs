@@ -10,6 +10,7 @@ use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatId;
+use frankenstein::ChatType;
 use frankenstein::Message;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
@@ -35,9 +36,16 @@ pub mod unsubscribe;
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
+        let kind = match chat.type_field() {
+            ChatType::Private => "private",
+            ChatType::Group => "group",
+            ChatType::Supergroup => "supergroup",
+            ChatType::Channel => "channel",
+        };
+
         NewTelegramChat {
             id: chat.id() as i64,
-            kind: chat.type_field(),
+            kind: kind.to_string(),
             username: chat.username(),
             first_name: chat.first_name(),
             last_name: chat.last_name(),

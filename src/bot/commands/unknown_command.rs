@@ -4,6 +4,7 @@ use crate::bot::telegram_client::Api;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use frankenstein::ChatType;
 
 static UNKNOWN_COMMAND_GROUP: &str = "Remove admin access from the bot in this group otherwise it will be replying to every message.";
 static UNKNOWN_COMMAND_PRIVATE: &str = "Unknown command. Use /help to show available commands";
@@ -28,21 +29,21 @@ impl Command for UnknownCommand {
         _db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
     ) -> String {
-        match message.chat().type_field().as_str() {
-            "private" => UNKNOWN_COMMAND_PRIVATE.to_string(),
-            "group" | "supergroup" => {
+        match message.chat().type_field() {
+            ChatType::Private => UNKNOWN_COMMAND_PRIVATE.to_string(),
+            ChatType::Group | ChatType::Supergroup => {
                 if message.text().unwrap().starts_with('/') {
                     "".to_string()
                 } else {
                     UNKNOWN_COMMAND_GROUP.to_string()
                 }
             }
-            &_ => "".to_string(),
+            ChatType::Channel => "".to_string(),
         }
     }
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        if message.chat().type_field() != "channel" {
+        if message.chat().type_field() != ChatType::Channel {
             info!(
                 "{:?} wrote: {}",
                 message.chat().id(),
