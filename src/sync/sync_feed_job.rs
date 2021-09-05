@@ -117,9 +117,19 @@ impl SyncFeedJob {
         feed: Feed,
         fetched_feed: FetchedFeed,
     ) -> Result<(), FeedSyncError> {
-        match feed_items::create(db_connection, feed.id, fetched_feed.items) {
-            Err(err) => self.format_sync_error(err),
-            _ => {
+        if fetched_feed.items.is_empty() {
+            return Ok(());
+        }
+
+        let last_item_in_db = feed_items::get_latest_item(db_connection, self.feed_id);
+        let last_fetched_item = fetched_feed.items[0].clone();
+
+        if last_item_in_db.is_none()
+            || last_fetched_item.publication_date > last_item_in_db.unwrap().publication_date
+        {
+            if let Err(err) = feed_items::create(db_connection, feed.id, fetched_feed.items) {
+                self.format_sync_error(err)?;
+            } else {
                 if let Some(last_item) = feed_items::get_latest_item(db_connection, self.feed_id) {
                     telegram::set_subscriptions_has_updates(
                         db_connection,
@@ -133,9 +143,11 @@ impl SyncFeedJob {
                     feed,
                     fetched_feed.title,
                     fetched_feed.description,
-                )
+                )?;
             }
         }
+
+        Ok(())
     }
 
     fn format_sync_error(&self, err: Error) -> Result<(), FeedSyncError> {
