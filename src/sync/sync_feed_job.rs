@@ -106,12 +106,12 @@ impl SyncFeedJob {
         };
 
         match self.read_feed(&feed) {
-            Ok(fetched_feed) => self.create_feed_items(db_connection, feed, fetched_feed),
+            Ok(fetched_feed) => self.maybe_upsert_feed_items(db_connection, feed, fetched_feed),
             Err(err) => self.check_staleness(err, db_connection, feed),
         }
     }
 
-    fn create_feed_items(
+    fn maybe_upsert_feed_items(
         &self,
         db_connection: &PgConnection,
         feed: Feed,
@@ -121,33 +121,56 @@ impl SyncFeedJob {
             return Ok(());
         }
 
-        let last_item_in_db = feed_items::get_latest_item(db_connection, self.feed_id);
+        let last_item_in_db_option = feed_items::get_latest_item(db_connection, self.feed_id);
         let last_fetched_item = fetched_feed.items[0].clone();
 
-        if last_item_in_db.is_none()
-            || last_fetched_item.publication_date > last_item_in_db.unwrap().publication_date
-        {
-            if let Err(err) = feed_items::create(db_connection, feed.id, fetched_feed.items) {
-                self.format_sync_error(err)?;
-            } else {
-                if let Some(last_item) = feed_items::get_latest_item(db_connection, self.feed_id) {
-                    telegram::set_subscriptions_has_updates(
+        match last_item_in_db_option {
+            None => {
+                self.create_feed_items(db_connection, feed, fetched_feed)?;
+            }
+            Some(last_item_in_db) => {
+                if last_fetched_item.publication_date >= last_item_in_db.publication_date
+                    && last_fetched_item.link != last_item_in_db.link
+                {
+                    self.create_feed_items(db_connection, feed, fetched_feed)?;
+                } else if feed.error.is_some() {
+                    self.set_synced_at(
                         db_connection,
-                        feed.id,
-                        last_item.created_at,
+                        feed,
+                        fetched_feed.title,
+                        fetched_feed.description,
                     )?;
                 }
-
-                self.set_synced_at(
-                    db_connection,
-                    feed,
-                    fetched_feed.title,
-                    fetched_feed.description,
-                )?;
             }
         }
 
         Ok(())
+    }
+
+    fn create_feed_items(
+        &self,
+        db_connection: &PgConnection,
+        feed: Feed,
+        fetched_feed: FetchedFeed,
+    ) -> Result<(), FeedSyncError> {
+        if let Err(err) = feed_items::create(db_connection, feed.id, fetched_feed.items) {
+            self.format_sync_error(err)
+        } else {
+            if let Some(last_item) = feed_items::get_latest_item(db_connection, self.feed_id) {
+                telegram::set_subscriptions_has_updates(
+                    db_connection,
+                    feed.id,
+                    last_item.created_at,
+                )?;
+            }
+
+            self.set_synced_at(
+                db_connection,
+                feed,
+                fetched_feed.title,
+                fetched_feed.description,
+            )
+        }
     }
 
     fn format_sync_error(&self, err: Error) -> Result<(), FeedSyncError> {
