@@ -25,9 +25,9 @@ pub struct Handler {}
 impl Handler {
     pub async fn start() {
         let mut api = Api::default();
-        let connection_pool = db::create_connection_pool(20);
+        let connection_pool = db::create_connection_pool(Config::commands_db_pool_number());
 
-        log::info!("Starting a bot");
+        log::info!("Starting the El Monitorro bot");
 
         let mut interval = time::interval(std::time::Duration::from_secs(1));
 

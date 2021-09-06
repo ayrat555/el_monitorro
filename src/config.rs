@@ -40,6 +40,10 @@ impl Config {
         Self::read_var_with_default("SUBSCRIPTION_LIMIT", "20")
     }
 
+    pub fn commands_db_pool_number() -> u32 {
+        Self::read_var_with_default("DATABASE_POOL_SIZE", "10")
+    }
+
     pub fn deliver_interval_in_seconds() -> i32 {
         Self::read_var_with_default("DELIVER_INTERVAL_SECONDS", "60")
     }
