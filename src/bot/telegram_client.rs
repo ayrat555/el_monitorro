@@ -1,3 +1,4 @@
+use crate::config::Config;
 use frankenstein::ChatId;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
@@ -6,7 +7,6 @@ use frankenstein::TelegramApi;
 use frankenstein::Update;
 use isahc::{prelude::*, Request};
 use std::collections::VecDeque;
-use std::env;
 use std::path::PathBuf;
 
 static BASE_API_URL: &str = "https://api.telegram.org/bot";
@@ -38,7 +38,7 @@ impl Default for Api {
 
 impl Api {
     pub fn new() -> Api {
-        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
+        let token = Config::telegram_bot_token();
         let api_url = format!("{}{}", BASE_API_URL, token);
 
         let mut update_params = GetUpdatesParams::new();

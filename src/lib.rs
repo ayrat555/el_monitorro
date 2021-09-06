@@ -17,6 +17,7 @@ extern crate log;
 
 pub mod bot;
 pub mod cleaner;
+pub mod config;
 pub mod db;
 pub mod deliver;
 mod models;

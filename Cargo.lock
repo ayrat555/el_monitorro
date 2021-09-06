@@ -499,7 +499,6 @@ dependencies = [
  "isahc",
  "log 0.4.14",
  "mockito",
- "once_cell",
  "regex",
  "rss",
  "serde",

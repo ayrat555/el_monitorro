@@ -1,9 +1,8 @@
+use crate::config::Config;
 use chrono::prelude::*;
 use chrono::{DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::r2d2;
-
-use std::env;
 
 #[cfg(test)]
 use diesel::connection::Connection;
@@ -37,5 +36,5 @@ pub fn create_connection_pool(size: u32) -> r2d2::Pool<r2d2::ConnectionManager<P
 }
 
 pub fn database_url() -> String {
-    env::var("DATABASE_URL").expect("DATABASE_URL must be set")
+    Config::database_url()
 }

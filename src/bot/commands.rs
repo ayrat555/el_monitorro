@@ -1,4 +1,5 @@
 use crate::bot::telegram_client::Api;
+use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramChat;
@@ -17,7 +18,6 @@ use frankenstein::TelegramApi;
 use handlebars::{to_json, Handlebars};
 use regex::Regex;
 use serde_json::value::Map;
-use std::env;
 
 pub mod get_filter;
 pub mod get_global_template;
@@ -88,7 +88,7 @@ pub trait Command {
 
     fn parse_argument(&self, full_command: &str) -> String {
         let command = self.command();
-        let handle = env::var("TELEGRAM_BOT_HANDLE").unwrap_or_else(|_| "".to_string());
+        let handle = Config::telegram_bot_handle();
         let command_with_handle = format!("{}@{}", command, handle);
 
         if full_command.starts_with(&command_with_handle) {
