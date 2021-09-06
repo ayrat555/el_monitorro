@@ -1,6 +1,7 @@
 use super::Command;
 use super::Message;
 use crate::bot::telegram_client::Api;
+use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
@@ -10,7 +11,6 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::Connection;
 use diesel::PgConnection;
-use std::env;
 use url::Url;
 
 static COMMAND: &str = "/subscribe";
@@ -116,9 +116,7 @@ impl Subscribe {
     }
 
     fn sub_limit() -> i64 {
-        let result = env::var("SUBSCRIPTION_LIMIT").unwrap_or_else(|_| "20".to_string());
-
-        result.parse().unwrap()
+        Config::subscription_limit()
     }
 
     pub fn command() -> &'static str {

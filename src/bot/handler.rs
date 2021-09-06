@@ -13,11 +13,11 @@ use super::commands::subscribe::Subscribe;
 use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
 use crate::bot::telegram_client::Api;
+use crate::config::Config;
 use crate::db;
 use diesel::r2d2;
 use diesel::PgConnection;
 use frankenstein::Update;
-use std::env;
 use tokio::time;
 
 pub struct Handler {}
@@ -25,9 +25,9 @@ pub struct Handler {}
 impl Handler {
     pub async fn start() {
         let mut api = Api::default();
-        let connection_pool = db::create_connection_pool(20);
+        let connection_pool = db::create_connection_pool(Config::commands_db_pool_number());
 
-        log::info!("Starting a bot");
+        log::info!("Starting the El Monitorro bot");
 
         let mut interval = time::interval(std::time::Duration::from_secs(1));
 
@@ -102,12 +102,6 @@ impl Handler {
     }
 
     fn owner_telegram_id() -> Option<i64> {
-        match env::var("OWNER_TELEGRAM_ID") {
-            Ok(val) => {
-                let parsed_value: i64 = val.parse().unwrap();
-                Some(parsed_value)
-            }
-            Err(_error) => None,
-        }
+        Config::owner_telegram_id()
     }
 }
