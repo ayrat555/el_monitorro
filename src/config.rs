@@ -24,8 +24,32 @@ impl Config {
         Self::read_var_with_default("TELEGRAM_BOT_HANDLE", "")
     }
 
+    pub fn deliver_workers_number() -> u32 {
+        Self::read_var_with_default("DELIVER_WORKERS_NUMBER", "5")
+    }
+
+    pub fn sync_workers_number() -> u32 {
+        Self::read_var_with_default("SYNC_WORKERS_NUMBER", "5")
+    }
+
+    pub fn clean_workers_number() -> u32 {
+        Self::read_var_with_default("CLEAN_WORKERS_NUMBER", "2")
+    }
+
     pub fn subscription_limit() -> i64 {
         Self::read_var_with_default("SUBSCRIPTION_LIMIT", "20")
+    }
+
+    pub fn deliver_interval_in_seconds() -> i32 {
+        Self::read_var_with_default("DELIVER_INTERVAL_SECONDS", "60")
+    }
+
+    pub fn sync_interval_in_seconds() -> i32 {
+        Self::read_var_with_default("SYNC_INTERVAL_SECONDS", "60")
+    }
+
+    pub fn clean_interval_in_seconds() -> i32 {
+        Self::read_var_with_default("CLEAN_INTERVAL_SECONDS", "3600")
     }
 
     fn read_var_with_default<T: FromStr + Debug>(name: &str, default_value: &str) -> T

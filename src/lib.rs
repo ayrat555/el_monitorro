@@ -1,11 +1,9 @@
 use crate::cleaner::CleanJob;
-use crate::cleaner::RemoveOldItemsJob;
-use crate::deliver::{DeliverChatUpdatesJob, DeliverJob};
-use crate::sync::SyncFeedJob;
+use crate::config::Config;
+use crate::deliver::DeliverJob;
 use crate::sync::SyncJob;
 use fang::scheduler::Scheduler;
 use fang::Queue;
-use fang::Runnable;
 use fang::WorkerParams;
 use fang::WorkerPool;
 
@@ -24,44 +22,44 @@ mod models;
 mod schema;
 pub mod sync;
 
-pub fn start_delivery_workers(queue: &Queue) {
-    assert_eq!(DeliverJob::new().task_type(), "deliver".to_string());
-    assert_eq!(
-        DeliverChatUpdatesJob { chat_id: 1 }.task_type(),
-        "deliver".to_string()
-    );
+const SCHEDULER_CHECK_PERIOD: u64 = 10;
+const SCHEDULER_ERROR_MARGIN_SECONDS: u64 = 10;
 
-    start_workers(queue, "deliver".to_string(), 10);
+pub fn start_delivery_workers(queue: &Queue) {
+    start_workers(
+        queue,
+        "deliver".to_string(),
+        Config::deliver_workers_number(),
+    );
 }
 
 pub fn start_sync_workers(queue: &Queue) {
-    assert_eq!(SyncJob::new().task_type(), "sync".to_string());
-    assert_eq!(SyncFeedJob::new(1).task_type(), "sync".to_string());
-
-    start_workers(queue, "sync".to_string(), 10);
+    start_workers(queue, "sync".to_string(), Config::sync_workers_number());
 }
 
 pub fn start_clean_workers(queue: &Queue) {
-    assert_eq!(CleanJob::new().task_type(), "clean".to_string());
-    assert_eq!(RemoveOldItemsJob::new(1).task_type(), "clean".to_string());
-
-    start_workers(queue, "clean".to_string(), 2);
+    start_workers(queue, "clean".to_string(), Config::clean_workers_number());
 }
 
 pub fn start_scheduler(queue: &Queue) {
     queue.remove_all_periodic_tasks().unwrap();
 
-    queue.push_periodic_task(&SyncJob::default(), 120).unwrap();
-
     queue
-        .push_periodic_task(&DeliverJob::default(), 60)
+        .push_periodic_task(&SyncJob::default(), Config::sync_interval_in_seconds())
         .unwrap();
 
     queue
-        .push_periodic_task(&CleanJob::default(), 12 * 60 * 60)
+        .push_periodic_task(
+            &DeliverJob::default(),
+            Config::deliver_interval_in_seconds(),
+        )
         .unwrap();
 
-    Scheduler::start(10, 5);
+    queue
+        .push_periodic_task(&CleanJob::default(), Config::clean_interval_in_seconds())
+        .unwrap();
+
+    Scheduler::start(SCHEDULER_CHECK_PERIOD, SCHEDULER_ERROR_MARGIN_SECONDS);
 }
 
 fn start_workers(queue: &Queue, typ: String, number: u32) {
