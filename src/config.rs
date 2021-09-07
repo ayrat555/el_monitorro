@@ -57,10 +57,7 @@ impl Config {
     }
 
     pub fn all_binaries() -> bool {
-        match Self::read_var_option::<String>("ALL_BINARIES") {
-            Some(_) => true,
-            None => false,
-        }
+        Self::read_var_option::<String>("ALL_BINARIES").is_some()
     }
 
     fn read_var_with_default<T: FromStr + Debug>(name: &str, default_value: &str) -> T
