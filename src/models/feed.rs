@@ -1,7 +1,7 @@
 use crate::schema::feeds;
 use chrono::{DateTime, Utc};
 
-#[derive(Queryable, Identifiable, Debug, Eq, PartialEq, Clone)]
+#[derive(Queryable, Identifiable, Debug, Eq, PartialEq)]
 #[table_name = "feeds"]
 pub struct Feed {
     pub id: i64,

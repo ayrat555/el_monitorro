@@ -124,23 +124,25 @@ impl SyncFeedJob {
         let last_item_in_db_option = feed_items::get_latest_item(db_connection, self.feed_id);
         let last_fetched_item = fetched_feed.items[0].clone();
 
-        let title = fetched_feed.title.clone();
-        let description = fetched_feed.description.clone();
-
         match last_item_in_db_option {
             None => {
-                self.create_feed_items(db_connection, feed.clone(), fetched_feed)?;
+                self.create_feed_items(db_connection, feed, fetched_feed)?;
             }
             Some(last_item_in_db) => {
                 if last_fetched_item.publication_date >= last_item_in_db.publication_date
                     && last_fetched_item.link != last_item_in_db.link
                 {
-                    self.create_feed_items(db_connection, feed.clone(), fetched_feed)?;
+                    self.create_feed_items(db_connection, feed, fetched_feed)?;
+                } else {
+                    self.set_synced_at(
+                        db_connection,
+                        feed,
+                        fetched_feed.title,
+                        fetched_feed.description,
+                    )?;
                 }
             }
         }
-
-        self.set_synced_at(db_connection, feed, title, description)?;
 
         Ok(())
     }
