@@ -14,7 +14,7 @@ dotenv = "0.15.0"
 env_logger = "0.9"
 fang = "0.4.1"
 feed-rs = "0.6.1"
-frankenstein = "0.6.0"
+frankenstein = { version = "0.6", default-features = false }
 handlebars = "4.1"
 html2text = "0.2"
 htmlescape = "0.3"

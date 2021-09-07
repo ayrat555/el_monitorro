@@ -4,7 +4,7 @@
 
 # el_monitorro
 
-`el_monitorro` is RSS, Atom and JSON feed reader as a Telegram bot.
+El Monitorro is RSS, Atom and JSON feed reader as a Telegram bot.
 
 It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 
@@ -83,7 +83,7 @@ diesel database setup
 
 You'll need diesel-cli for this
 
-3. Start a bot
+3. Start the bot
 
 - Start the command bot
 
@@ -108,7 +108,7 @@ RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin deliver
 RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin cleaner
 ```
 
-### Running all services from one binary
+### Running all services from a single binary
 
 Set `ALL_BINARIES` to run all binaries (clean, commands, deliver, sync) in the same binary:
 
