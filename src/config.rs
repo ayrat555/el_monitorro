@@ -25,15 +25,15 @@ impl Config {
     }
 
     pub fn deliver_workers_number() -> u32 {
-        Self::read_var_with_default("DELIVER_WORKERS_NUMBER", "5")
+        Self::read_var_with_default("DELIVER_WORKERS_NUMBER", "1")
     }
 
     pub fn sync_workers_number() -> u32 {
-        Self::read_var_with_default("SYNC_WORKERS_NUMBER", "5")
+        Self::read_var_with_default("SYNC_WORKERS_NUMBER", "1")
     }
 
     pub fn clean_workers_number() -> u32 {
-        Self::read_var_with_default("CLEAN_WORKERS_NUMBER", "2")
+        Self::read_var_with_default("CLEAN_WORKERS_NUMBER", "1")
     }
 
     pub fn subscription_limit() -> i64 {
@@ -41,7 +41,7 @@ impl Config {
     }
 
     pub fn commands_db_pool_number() -> u32 {
-        Self::read_var_with_default("DATABASE_POOL_SIZE", "10")
+        Self::read_var_with_default("DATABASE_POOL_SIZE", "5")
     }
 
     pub fn deliver_interval_in_seconds() -> i32 {
@@ -54,6 +54,13 @@ impl Config {
 
     pub fn clean_interval_in_seconds() -> i32 {
         Self::read_var_with_default("CLEAN_INTERVAL_SECONDS", "3600")
+    }
+
+    pub fn all_binaries() -> bool {
+        match Self::read_var_option::<String>("ALL_BINARIES") {
+            Some(_) => true,
+            None => false,
+        }
     }
 
     fn read_var_with_default<T: FromStr + Debug>(name: &str, default_value: &str) -> T

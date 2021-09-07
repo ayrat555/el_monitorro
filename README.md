@@ -64,13 +64,6 @@ The bot works in private chats, groups and channels. A couple of channels create
 
 # Setup
 
-## Automatic deploy to Heroku
-
-1. Customize `.env` and `Procfile` with personal settings
-2. Click to deploy this application on Heroku:
-
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
-
 ## Manual setup
 
 You can deploy your instance of `el_monitorro` by:
@@ -166,3 +159,12 @@ Run the following command in the `el_monitorro` directory to build the image fro
 ```sh
 docker build ./ -t ayratbadykov/el_monitorro:latest
 ```
+
+## Automatic deploy to Heroku
+
+Warning! Do not set your bot token in the publicly cloned repo. it will be available to anyone.
+
+1. Customize `.env` and `Procfile` with personal settings
+2. Click to deploy this application on Heroku:
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
