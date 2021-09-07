@@ -66,7 +66,9 @@ impl Config {
     {
         let value = env::var(name).unwrap_or_else(|_| default_value.to_string());
 
-        value.parse().unwrap()
+        value
+            .parse()
+            .unwrap_or_else(|_| panic!("{} can not be parsed", name))
     }
 
     fn read_var<T: FromStr + Debug>(name: &str) -> T
@@ -75,7 +77,9 @@ impl Config {
     {
         let value = env::var(name).unwrap_or_else(|_| panic!("{} must be set", name));
 
-        value.parse().unwrap()
+        value
+            .parse()
+            .unwrap_or_else(|_| panic!("{} can not be parsed", name))
     }
 
     fn read_var_option<T: FromStr + Debug>(name: &str) -> Option<T>
@@ -84,7 +88,9 @@ impl Config {
     {
         match env::var(name) {
             Ok(val) => {
-                let parsed_value: T = val.parse().unwrap();
+                let parsed_value: T = val
+                    .parse()
+                    .unwrap_or_else(|_| panic!("{} can not be parsed", name));
                 Some(parsed_value)
             }
             Err(_error) => None,

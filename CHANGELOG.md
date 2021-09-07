@@ -1,10 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2021-09-07)
 
-### Bugfixes
+### Major performance improvements
 
-- Do not send empty message ([#117](https://github.com/ayrat555/el_monitorro/pull/117))
+- migrate all background processing to [fang](https://github.com/ayrat555/fang)
+- allow to start all services from the main binary with `ALL_BINARIES` env var
+- maintain db pool for processing user commands
 
 ## 0.1.3 (2021-06-22)
 
