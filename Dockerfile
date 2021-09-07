@@ -1,4 +1,4 @@
-FROM rustlang/rust:nightly-buster
+FROM rustlang/rust:nightly-bullseye
 
 WORKDIR /app
 
