@@ -2,7 +2,7 @@
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/ayrat555)
 
-# el_monitorro
+# El Monitorro
 
 El Monitorro is RSS, Atom and JSON feed reader as a Telegram bot.
 
