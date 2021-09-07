@@ -108,37 +108,46 @@ RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin deliver
 RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin cleaner
 ```
 
+### Running all services from one binary
+
+Set `ALL_BINARIES` to run all binaries (clean, commands, deliver, sync) in the same binary:
+
+```
+ALL_BINARIES=true
+```
+
 ### Configuration
 
 All configuration is done through env variables
 
-| Name                     | Required | Default value | Example / Description                                                                                                                                                                |
-|--------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| DATABASE_URL             |   yes    |  --           |  postgres://postgres:postgres@localhost/el_monitorro                                                                                                                                 |
-| DATABASE_POOL_SIZE       |   no     |  10           |                                                                                                                                                                                      |
-| TELEGRAM_BOT_TOKEN       |   yes    |  --           |  6666618370:AAGx5YhNQvUG4eUcQXN-OB_a09ZzYl6aaaa                                                                                                                                      |
-| TELEGRAM_BOT_HANDLE      |   no     |  --           |  This value is used during parsing of commands. If you set autocompletion menu for your bot,  the bot will understand commands like `/subscribe@handle` along with just `/subscribe` |
-| SUBSCRIPTION_LIMIT       |   no     |  20           |                                                                                                                                                                                      |
-| SYNC_INTERVAL_SECONDS    |   no     |  60           |  The bot tries to sync feeds every `SYNC_INTERVAL_SECONDS` seconds                                                                                                                   |
-| DELIVER_INTERVAL_SECONDS |   no     |  60           |  The bot tries to deliver new feed items every `DELIVER_INTERVAL_SECONDS` seconds                                                                                                    |
-| CLEAN_INTERVAL_SECONDS   |   no     |  3600         |  The bot cleans old feed items and feeds without subscriptions every `CLEAN_INTERVAL_SECONDS` seconds                                                                                |
-| OWNER_TELEGRAM_ID        |   no     |  --           |  If this value is set, the bot will process commands from the specified chat id
-| REQUEST_TIMEOUT          |   no     |  5            |  Timeout in seconds for feed syncing requests
+| Name                     | Required | Default value | Example / Description                                                                                                                                                               |
+|--------------------------|----------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| DATABASE_URL             | yes      | --            | postgres://postgres:postgres@localhost/el_monitorro                                                                                                                                 |
+| TELEGRAM_BOT_TOKEN       | yes      | --            | 6666618370:AAGx5YhNQvUG4eUcQXN-OB_a09ZzYl6aaaa                                                                                                                                      |
+| DATABASE_POOL_SIZE       | no       | 5             | Db pool size to process user commands                                                                                                                                               |
+| ALL_BINARIES             | no       | --            | If this var is set, all services will be started in the main binary                                                                                                                 |
+| TELEGRAM_BOT_HANDLE      | no       | --            | This value is used during parsing of commands. If you set autocompletion menu for your bot,  the bot will understand commands like `/subscribe@handle` along with just `/subscribe` |
+| SUBSCRIPTION_LIMIT       | no       | 20            |                                                                                                                                                                                     |
+| SYNC_INTERVAL_SECONDS    | no       | 60            | The bot tries to sync feeds every `SYNC_INTERVAL_SECONDS` seconds                                                                                                                   |
+| SYNC_WORKERS_NUMBER      | no       | 1             | The number of workers to sync feeds                                                                                                                                                 |
+| DELIVER_INTERVAL_SECONDS | no       | 60            | The bot tries to deliver new feed items every `DELIVER_INTERVAL_SECONDS` seconds                                                                                                    |
+| DELIVER_WORKERS_NUMBER   | no       | 1             | The number of workers to deliver updates                                                                                                                                            |
+| CLEAN_INTERVAL_SECONDS   | no       | 3600          | The bot cleans old feed items and feeds without subscriptions every `CLEAN_INTERVAL_SECONDS` seconds                                                                                |
+| CLEAN_WORKERS_NUMBER     | no       | 1             | The number of workers to remove old data                                                                                                                                            |
+| OWNER_TELEGRAM_ID        | no       | --            | If this value is set, the bot will process commands from the specified chat id                                                                                                      |
+| REQUEST_TIMEOUT          | no       | 5             | Timeout in seconds for feed syncing requests                                                                                                                                        |
 
 ### Using docker image
 
 The image is published on docker hub under [ayratbadykov/el_monitorro](https://hub.docker.com/r/ayratbadykov/el_monitorro). It accepts additional env variables:
 
 - `RUN_MIGRATION` - if this variable is not empty, `diesel database setup` is run. It creates DB and runs migrations.
-- `BOT_BINARY` - depending on this variable, docker container will run one of four binaries. Possible values are `commands`, `sync`, `deliver`, `cleaner`, `all`.
-
-You'll have to set these variables in the `.env` file. For example:
+- `BOT_BINARY` - depending on this variable, docker container will run one of four binaries. Possible values are `commands`, `sync`, `deliver`, `cleaner`. To run all services in the main binary, set:
 
 ```
-...
-
 RUN_MIGRATION=true
 BOT_BINARY=commands
+ALL_BINARIES=true
 ```
 
 Run the docker container:
@@ -150,7 +159,6 @@ docker run --env-file ./.env --network host -t ayratbadykov/el_monitorro:latest
 Notes:
 
 - `--network host` is used so the docker container can access a host network if you're running Postgres on the same machine
-- To run all binaries (commands, sync, deliver and cleaner), you'll have to start 4 containers replacing `BOT_BINARY` variable, or run with `BOT_BINARY` set to `all`. If you choose to use the `all` option, it would be wise to set a cron job to restart the container periodically in case one of the executables crashes.
 
 #### Creating a docker image from the latest master branch
 
