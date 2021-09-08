@@ -133,7 +133,7 @@ impl SyncFeedJob {
                     && last_fetched_item.link != last_item_in_db.link
                 {
                     self.create_feed_items(db_connection, feed, fetched_feed)?;
-                } else if feed.error.is_some() {
+                } else {
                     self.set_synced_at(
                         db_connection,
                         feed,
