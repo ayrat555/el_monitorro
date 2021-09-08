@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 (2021-09-08)
+
+- always update synced_at in feeds ([#154](https://github.com/ayrat555/el_monitorro/pull/154))
+
 ## 0.2.0 (2021-09-07)
 
 ### Major performance improvements
