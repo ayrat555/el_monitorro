@@ -15,4 +15,7 @@ pub struct Feed {
     pub updated_at: DateTime<Utc>,
 
     pub feed_type: String,
+
+    pub sync_retries: i32,
+    pub sync_skips: i32,
 }

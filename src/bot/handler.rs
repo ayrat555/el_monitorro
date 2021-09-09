@@ -70,7 +70,9 @@ impl Handler {
 
         let command = &text.unwrap();
 
-        if command.starts_with(Subscribe::command()) {
+        if !command.starts_with("/") {
+            UnknownCommand::execute(db_pool, api, message);
+        } else if command.starts_with(Subscribe::command()) {
             Subscribe::execute(db_pool, api, message);
         } else if command.starts_with(Help::command()) {
             Help::execute(db_pool, api, message);

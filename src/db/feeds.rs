@@ -2,6 +2,8 @@ use crate::db;
 use crate::models::feed::Feed;
 use crate::schema::{feeds, telegram_subscriptions};
 use chrono::{DateTime, Utc};
+use diesel::dsl::sql;
+use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
@@ -89,16 +91,25 @@ pub fn find_unsynced_feeds(
 ) -> Result<Vec<i64>, Error> {
     let offset = (page - 1) * count;
 
-    feeds::table
+    let query = feeds::table
         .inner_join(telegram_subscriptions::table)
-        .filter(feeds::synced_at.lt(last_updated_at))
-        .or_filter(feeds::synced_at.is_null())
+        .filter(
+            feeds::synced_at
+                .lt(last_updated_at)
+                .or(feeds::synced_at.is_null()),
+        )
+        .filter(
+            feeds::sync_retries
+                .eq(0)
+                .or(sql("skips = pow(2, retries - 1)")),
+        )
         .select(feeds::id)
         .order(feeds::id)
         .distinct()
         .limit(count)
-        .offset(offset)
-        .load::<i64>(conn)
+        .offset(offset);
+
+    query.load::<i64>(conn)
 }
 
 pub fn load_feed_ids(conn: &PgConnection, page: i64, count: i64) -> Result<Vec<i64>, Error> {
