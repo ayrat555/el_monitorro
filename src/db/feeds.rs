@@ -596,7 +596,7 @@ mod tests {
                 let found_unsynced_feeds =
                     super::find_unsynced_feeds(&connection, Utc::now(), 1, 1).unwrap();
 
-                if i == (2 as i32).pow((retry - 1) as u32) {
+                if i == 2_i32.pow((retry - 1) as u32) {
                     assert_eq!(found_unsynced_feeds.len(), 1);
                     super::set_error(&connection, &feed, "error").unwrap();
                 } else {
