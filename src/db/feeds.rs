@@ -98,16 +98,18 @@ pub fn find_unsynced_feeds(
                 .lt(last_updated_at)
                 .or(feeds::synced_at.is_null()),
         )
-        .filter(
-            feeds::sync_retries
-                .eq(0)
-                .or(sql("skips = pow(2, retries - 1)")),
-        )
+        .filter(feeds::sync_retries.eq(0).or(sql(
+            "\"feeds\".\"sync_skips\" = pow(2, \"feeds\".\"sync_retries\" - 1)",
+        )))
         .select(feeds::id)
         .order(feeds::id)
         .distinct()
         .limit(count)
         .offset(offset);
+
+    let sql = diesel::debug_query(&query).to_string();
+
+    eprintln!("{:?}", sql);
 
     query.load::<i64>(conn)
 }
