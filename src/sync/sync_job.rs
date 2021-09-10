@@ -73,6 +73,8 @@ impl Runnable for SyncJob {
             total_number
         );
 
+        feeds::increment_and_reset_skips(connection).unwrap();
+
         Ok(())
     }
 
