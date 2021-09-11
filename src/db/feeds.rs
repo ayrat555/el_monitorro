@@ -166,7 +166,7 @@ pub fn count_feeds_with_subscriptions(conn: &PgConnection) -> Result<i64, Error>
     feeds::table
         .inner_join(telegram_subscriptions::table)
         .distinct()
-        .select(diesel::dsl::count_star())
+        .select(diesel::dsl::count(feeds::id))
         .first::<i64>(conn)
 }
 

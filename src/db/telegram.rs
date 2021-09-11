@@ -222,7 +222,7 @@ pub fn count_chats_with_subscriptions(conn: &PgConnection) -> Result<i64, Error>
     telegram_chats::table
         .inner_join(telegram_subscriptions::table)
         .distinct()
-        .select(diesel::dsl::count_star())
+        .select(diesel::dsl::count(telegram_chats::id))
         .first::<i64>(conn)
 }
 
@@ -231,7 +231,7 @@ pub fn count_chats_of_type(conn: &PgConnection, kind: &str) -> Result<i64, Error
         .inner_join(telegram_subscriptions::table)
         .filter(telegram_chats::kind.eq(kind))
         .distinct()
-        .select(diesel::dsl::count_star())
+        .select(diesel::dsl::count(telegram_chats::id))
         .first::<i64>(conn)
 }
 
