@@ -219,20 +219,30 @@ pub fn fetch_chats_with_subscriptions(
 }
 
 pub fn count_chats_with_subscriptions(conn: &PgConnection) -> Result<i64, Error> {
-    telegram_chats::table
+    let result = telegram_chats::table
         .inner_join(telegram_subscriptions::table)
-        .distinct()
-        .select(diesel::dsl::count_star())
-        .first::<i64>(conn)
+        .select(sql("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
+        .first::<i64>(conn);
+
+    if let Err(Error::NotFound) = result {
+        return Ok(0);
+    }
+
+    result
 }
 
 pub fn count_chats_of_type(conn: &PgConnection, kind: &str) -> Result<i64, Error> {
-    telegram_chats::table
+    let result = telegram_chats::table
         .inner_join(telegram_subscriptions::table)
         .filter(telegram_chats::kind.eq(kind))
-        .distinct()
-        .select(diesel::dsl::count_star())
-        .first::<i64>(conn)
+        .select(sql("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
+        .first::<i64>(conn);
+
+    if let Err(Error::NotFound) = result {
+        return Ok(0);
+    }
+
+    result
 }
 
 pub fn find_undelivered_feed_items(

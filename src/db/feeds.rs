@@ -163,11 +163,16 @@ pub fn delete_feeds_without_subscriptions(conn: &PgConnection) -> Result<usize, 
 }
 
 pub fn count_feeds_with_subscriptions(conn: &PgConnection) -> Result<i64, Error> {
-    feeds::table
+    let result = feeds::table
         .inner_join(telegram_subscriptions::table)
-        .distinct()
-        .select(diesel::dsl::count_star())
-        .first::<i64>(conn)
+        .select(sql("COUNT (DISTINCT \"feeds\".\"id\")"))
+        .first::<i64>(conn);
+
+    if let Err(Error::NotFound) = result {
+        return Ok(0);
+    }
+
+    result
 }
 
 #[cfg(test)]
@@ -541,7 +546,6 @@ mod tests {
             assert_eq!(5, feed.sync_retries);
 
             for i in 9..17 {
-                eprintln!("{}", i);
                 let result = super::increment_and_reset_skips(&connection).unwrap();
                 assert_eq!(1, result);
 
