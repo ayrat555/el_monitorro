@@ -123,13 +123,10 @@ pub fn find_unsynced_feeds(
 pub fn increment_and_reset_skips(conn: &PgConnection) -> Result<usize, Error> {
     // diesel doesn't support updates with joins
     // https://github.com/diesel-rs/diesel/issues/1478
-    let query = format!(
-        "UPDATE \"feeds\" SET \"sync_skips\" = 0\
+    let query = "UPDATE \"feeds\" SET \"sync_skips\" = -1\
                  FROM \"telegram_subscriptions\"
                  WHERE \"telegram_subscriptions\".\"feed_id\" = \"feeds\".\"id\" AND\
-                 \"feeds\".\"sync_retries\" != 0 AND \"feeds\".\"sync_skips\" = pow(2, {})",
-        MAX_RETRIES - 1
-    );
+                 \"feeds\".\"sync_retries\" != 0 AND \"feeds\".\"sync_skips\" = pow(2, \"feeds\".\"sync_retries\" - 1)";
 
     diesel::sql_query(query).execute(conn)?;
 
@@ -483,11 +480,25 @@ mod tests {
             assert_eq!(1, result_feed1.sync_skips);
 
             let result2 = super::increment_and_reset_skips(&connection).unwrap();
-            assert_eq!(0, result2);
+            assert_eq!(1, result2);
 
-            let result = super::find(&connection, feed.id).unwrap();
+            let result_feed2 = super::find(&connection, feed.id).unwrap();
 
-            assert_eq!(1, result.sync_skips);
+            assert_eq!(0, result_feed2.sync_skips);
+
+            let result3 = super::increment_and_reset_skips(&connection).unwrap();
+            assert_eq!(1, result3);
+
+            let result_feed3 = super::find(&connection, feed.id).unwrap();
+
+            assert_eq!(1, result_feed3.sync_skips);
+
+            let result4 = super::increment_and_reset_skips(&connection).unwrap();
+            assert_eq!(1, result4);
+
+            let result_feed4 = super::find(&connection, feed.id).unwrap();
+
+            assert_eq!(0, result_feed4.sync_skips);
 
             Ok(())
         })
@@ -539,7 +550,7 @@ mod tests {
             assert_eq!(1, result);
 
             let result_feed = super::find(&connection, feed.id).unwrap();
-            assert_eq!(1, result_feed.sync_skips);
+            assert_eq!(0, result_feed.sync_skips);
 
             Ok(())
         })
