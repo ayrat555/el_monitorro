@@ -24,6 +24,7 @@ pub mod get_global_template;
 pub mod get_template;
 pub mod get_timezone;
 pub mod help;
+pub mod info;
 pub mod list_subscriptions;
 pub mod set_filter;
 pub mod set_global_template;

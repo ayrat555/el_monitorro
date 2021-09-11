@@ -3,6 +3,7 @@ use super::commands::get_global_template::GetGlobalTemplate;
 use super::commands::get_template::GetTemplate;
 use super::commands::get_timezone::GetTimezone;
 use super::commands::help::Help;
+use super::commands::info::Info;
 use super::commands::list_subscriptions::ListSubscriptions;
 use super::commands::set_filter::SetFilter;
 use super::commands::set_global_template::SetGlobalTemplate;
@@ -98,6 +99,8 @@ impl Handler {
             SetGlobalTemplate::execute(db_pool, api, message);
         } else if command.starts_with(GetGlobalTemplate::command()) {
             GetGlobalTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(Info::command()) {
+            Info::execute(db_pool, api, message);
         } else {
             UnknownCommand::execute(db_pool, api, message);
         }

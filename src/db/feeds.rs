@@ -162,6 +162,14 @@ pub fn delete_feeds_without_subscriptions(conn: &PgConnection) -> Result<usize, 
     diesel::delete(delete_query).execute(conn)
 }
 
+pub fn count_feeds_with_subscriptions(conn: &PgConnection) -> Result<i64, Error> {
+    feeds::table
+        .inner_join(telegram_subscriptions::table)
+        .distinct()
+        .select(diesel::dsl::count_star())
+        .first::<i64>(conn)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::db;
