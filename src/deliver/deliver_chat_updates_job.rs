@@ -475,6 +475,8 @@ mod tests {
             created_at: db::current_time(),
             updated_at: db::current_time(),
             feed_type: "rss".to_string(),
+            sync_retries: 0,
+            sync_skips: 0,
         };
 
         let result = super::format_messages(None, Some(5), feed_items, feed);
@@ -516,6 +518,8 @@ mod tests {
             created_at: db::current_time(),
             updated_at: db::current_time(),
             feed_type: "rss".to_string(),
+            sync_retries: 0,
+            sync_skips: 0,
         };
 
         let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_date}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), Some(600), feed_items, feed);
@@ -557,6 +561,8 @@ mod tests {
             created_at: db::current_time(),
             updated_at: db::current_time(),
             feed_type: "".to_string(),
+            sync_retries: 0,
+            sync_skips: 0,
         };
 
         let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), Some(60), feed_items, feed);

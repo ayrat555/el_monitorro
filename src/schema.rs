@@ -23,6 +23,8 @@ table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         feed_type -> Text,
+        sync_retries -> Int4,
+        sync_skips -> Int4,
     }
 }
 
