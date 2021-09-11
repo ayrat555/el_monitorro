@@ -35,11 +35,25 @@ impl Info {
             }
         };
 
-        format!(
+        let mut result_message = format!(
             "the number of feeds is {}\n\
              the number of chats is {} \n",
             total_feeds, total_chats
-        )
+        );
+
+        for kind in ["private", "group", "supergroup", "channel"] {
+            let result = match telegram::count_chats_of_type(db_connection, kind) {
+                Ok(res) => res,
+                Err(err) => {
+                    log::error!("Failed to fetch {} chats count {:?}", kind, err);
+                    return "Failed to fetch chats count".to_string();
+                }
+            };
+
+            result_message = format!("{}\n{} chats - {}", result_message, kind, result);
+        }
+
+        result_message
     }
 
     pub fn command() -> &'static str {
@@ -49,15 +63,16 @@ impl Info {
 
 impl Command for Info {
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        info!(
-            "{:?} wrote: {}",
-            message.chat().id(),
-            message.text().unwrap()
-        );
         match Config::admin_telegram_id() {
             None => UnknownCommand::execute(db_pool, api, message),
             Some(id) => {
                 if id == message.chat().id() {
+                    info!(
+                        "{:?} wrote: {}",
+                        message.chat().id(),
+                        message.text().unwrap()
+                    );
+
                     let text = self.response(db_pool, &message);
 
                     self.reply_to_message(api, message, text)
