@@ -619,7 +619,7 @@ mod tests {
 
             feed = super::find(&connection, feed.id).unwrap();
             assert_eq!(5, feed.sync_retries);
-            assert_eq!(1, feed.sync_skips);
+            assert_eq!(0, feed.sync_skips);
 
             Ok(())
         })
