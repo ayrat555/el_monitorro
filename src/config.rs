@@ -20,6 +20,10 @@ impl Config {
         Self::read_var_option("OWNER_TELEGRAM_ID")
     }
 
+    pub fn admin_telegram_id() -> Option<i64> {
+        Self::read_var_option("ADMIN_TELEGRAM_ID")
+    }
+
     pub fn telegram_bot_handle() -> String {
         Self::read_var_with_default("TELEGRAM_BOT_HANDLE", "")
     }
