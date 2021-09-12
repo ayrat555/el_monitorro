@@ -6,7 +6,7 @@ then
     echo "Proceeding without setting the database"
 else
     echo "Setting the database"
-    diesel database setup
+    ./diesel database setup
 fi
 
 

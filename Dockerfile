@@ -1,21 +1,57 @@
-FROM rustlang/rust:nightly-bullseye
+####################################################################################################
+## Builder
+####################################################################################################
+FROM rustlang/rust:nightly-bullseye AS builder
+RUN apt update && apt install -y libssl-dev pkg-config libz-dev libcurl4 postgresql
+RUN update-ca-certificates
 
-WORKDIR /app
+# Create appuser
+ENV USER=bot
+ENV UID=10001
 
-COPY ./. .
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    "${USER}"
+
+WORKDIR /bot
+
+COPY ./ .
 
 RUN cargo install diesel_cli --no-default-features --features postgres
 
 RUN cargo build --release
 
-RUN cp ./target/release/cleaner ./cleaner
+####################################################################################################
+## Final image
+####################################################################################################
+FROM debian:bullseye-slim
 
-RUN cp ./target/release/sync ./sync
+RUN apt update && apt install -y postgresql
 
-RUN cp ./target/release/el_monitorro ./el_monitorro
+# Import from builder.
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
 
-RUN cp ./target/release/deliver ./deliver
+WORKDIR /bot
 
-RUN rm -rf ./target
+# Copy our build
+COPY --from=builder /bot/target/release/el_monitorro ./
+COPY --from=builder /bot/target/release/deliver ./
+COPY --from=builder /bot/target/release/sync ./
+COPY --from=builder /bot/target/release/cleaner ./
 
-CMD ["bash", "/app/docker/start.sh"]
+COPY --from=builder /bot/docker/start.sh ./
+
+COPY --from=builder /usr/local/cargo/bin/diesel ./
+COPY --from=builder /bot/migrations/ ./migrations/
+
+
+# Use an unprivileged user.
+USER bot:bot
+
+CMD ["bash", "/bot/start.sh"]
