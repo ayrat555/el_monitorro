@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2 (2021-09-12)
+
+- Add exponential backoff for failing feeds ([#155](https://github.com/ayrat555/el_monitorro/pull/155))
+- Add admin stats (/info) commands ([#156](https://github.com/ayrat555/el_monitorro/pull/156), [#157](https://github.com/ayrat555/el_monitorro/pull/157))
+- Decrease docker image size ([#c93b02233bff](https://github.com/ayrat555/el_monitorro/commit/c93b02233bff8adeed77ffe32f2a5215006ac108))
+
 ## 0.2.1 (2021-09-08)
 
 - always update synced_at in feeds ([#154](https://github.com/ayrat555/el_monitorro/pull/154))

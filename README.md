@@ -136,6 +136,7 @@ All configuration is done through env variables
 | CLEAN_WORKERS_NUMBER     | no       | 1             | The number of workers to remove old data                                                                                                                                            |
 | OWNER_TELEGRAM_ID        | no       | --            | If this value is set, the bot will process commands from the specified chat id                                                                                                      |
 | REQUEST_TIMEOUT          | no       | 5             | Timeout in seconds for feed syncing requests                                                                                                                                        |
+| ADMIN_TELEGRAM_ID        | no       | --            | If this value is set, `/info` command with stats is available for ADMIN_TELEGRAM_ID                                                                                                 |
 
 ### Using docker image
 

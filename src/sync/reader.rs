@@ -51,7 +51,7 @@ pub trait ReadFeed {
 pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
     let client = match Request::get(url)
         .timeout(Duration::from_secs(request_timeout_seconds()))
-        .header("User-Agent", "el_monitorro/0.2.1")
+        .header("User-Agent", "el_monitorro/0.2.2")
         .redirect_policy(RedirectPolicy::Limit(10))
         .body(())
     {
