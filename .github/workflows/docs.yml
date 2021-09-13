@@ -1,0 +1,21 @@
+name: docs
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: deploy-docs
+
+jobs:
+  build:
+    name: Deploy to now branch
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: 'master'
+        submodules: 'recursive'
+    - run: |
+        git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+    - name: Deloy docs
+      run: |
+        source ./docs/deploy-docs.sh && build && deploy
