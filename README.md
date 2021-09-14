@@ -1,5 +1,3 @@
-<p align="center"><img src="el_monitorro_logo.png" alt="el_monitorro" width="300px"></p>
-
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/ayrat555)
 
 # El Monitorro
@@ -138,7 +136,7 @@ All configuration is done through env variables
 | REQUEST_TIMEOUT          | no       | 5             | Timeout in seconds for feed syncing requests                                                                                                                                        |
 | ADMIN_TELEGRAM_ID        | no       | --            | If this value is set, `/info` command with stats is available for ADMIN_TELEGRAM_ID                                                                                                 |
 
-### Using docker image
+## Using docker image
 
 The image is published on docker hub under [ayratbadykov/el_monitorro](https://hub.docker.com/r/ayratbadykov/el_monitorro). It accepts additional env variables:
 
@@ -168,12 +166,3 @@ Run the following command in the `el_monitorro` directory to build the image fro
 ```sh
 docker build ./ -t ayratbadykov/el_monitorro:latest
 ```
-
-## Automatic deploy to Heroku
-
-Warning! Do not set your bot token in the publicly cloned repo. it will be available to anyone.
-
-1. Customize `.env` and `Procfile` with personal settings
-2. Click to deploy this application on Heroku:
-
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)

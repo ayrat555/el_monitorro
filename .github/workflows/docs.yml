@@ -16,6 +16,10 @@ jobs:
         submodules: 'recursive'
     - run: |
         git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+    - run: |
+        cp ./README.md ./docs/content/_index.md
+    - run: |
+        cp ./CHANGELOG.md ./docs/content/changelog.md
     - name: Deloy docs
       run: |
         source ./docs/deploy.sh && build && deploy
