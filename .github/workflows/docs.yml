@@ -1,13 +1,13 @@
 name: docs
 
 on:
-  workflow_dispatch:
-  repository_dispatch:
-    types: deploy-docs
+  push:
+    branches:
+      - master
 
 jobs:
   build:
-    name: Deploy to now branch
+    name: Deploy to gh-pages
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -18,4 +18,4 @@ jobs:
         git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
     - name: Deloy docs
       run: |
-        source ./docs/deploy-docs.sh && build && deploy
+        source ./docs/deploy.sh && build && deploy
