@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://el_monitorro.badykov.com/sitemap.xml

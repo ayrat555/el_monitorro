@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+    :root {
+        /* Primary theme color */
+        --primary-color: #FED43F;
+        /* Primary theme text color */
+        --primary-text-color: #543631;
+        /* Primary theme link color */
+        --primary-link-color: #F9BB2D;
+        /* Secondary color: the background body color */
+        --secondary-color: #fcfaf6;
+        --secondary-text-color: #303030;
+        /* Highlight text color of table of content */
+        --toc-highlight-text-color: #d46e13;
+    }
+</style>
+
+    <link href="https://fonts.googleapis.com/css?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Fira+Sans:400,500,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/normalize.css">
+    <link rel="stylesheet" href="https://el_monitorro.badykov.com/juice.css">
+    
+    
+</head>
+
+<body>
+    
+
+    <header class="pos-absolute" style="background-color: transparent">
+        
+
+<a href="https:&#x2F;&#x2F;el_monitorro.badykov.com&#x2F;">
+    <div class="logo">
+        <img src="https://el_monitorro.badykov.com/el_monitorro_logo.png" alt="logo">
+        El Monitorro
+    </div>
+</a>
+
+<nav>
+    
+    
+        
+        <a class="nav-item subtitle-text" href="https:&#x2F;&#x2F;github.com&#x2F;ayrat555&#x2F;el_monitorro">Github</a>
+        
+    
+</nav>
+
+    </header>
+
+    <div class="hero">
+        
+        <script async defer src="https://buttons.github.io/buttons.js"></script>
+        <section class="text-center">
+            <h1 class="heading-text" style="font-size: 50px">
+              El Monitorro
+            </h1>
+            <h3 class="title-text">
+              <b>El Monitorro</b> is a high-performance RSS/ATOM/JSON feed reader as a Telegram bot. It's available at <a href="https://t.me/el_monitorro_bot" target="_blank">https://t.me/el_monitorro_bot</a>
+            </h3>
+            <div>
+                <a class="github-button" href="https://github.com/ayrat555/el_monitorro" data-size="large" data-show-count="true"
+                   aria-label="Star El Monitorro on GitHub">Star</a>
+                <a class="github-button" href="https://github.com/ayrat555/el_monitorro/fork" data-size="large"
+                   data-show-count="true" aria-label="Fork ayrat555/el_monitorro on GitHub">Fork</a>
+            </div>
+        </section>
+        <img class="hero-image" style="width: 40%; margin-right: 70px" src="https://el_monitorro.badykov.com/el_monitorro_logo.png">
+
+        <div class="explore-more text"
+            onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})">
+            Explore More ⇩
+        </div>
+        <style>
+            .hero section {
+                padding: 0 5rem;
+            }
+            @media screen and (max-width: 768px) {
+                .hero section {
+                    padding: 0 2rem;
+                }
+
+                .hero-image {
+                    display: none
+                }
+            }
+        </style>
+
+    </div>
+
+    
+
+    <main>
+        
+        
+        
+        
+        
+        <div class="toc">
+            <div class="toc-sticky">
+                
+                <div class="toc-item">
+                    <a class="subtext" href="https://el_monitorro.badykov.com/#el-monitorro">El Monitorro</a>
+                </div>
+                
+                
+                <div class="toc-item">
+                    <a class="subtext" href="https://el_monitorro.badykov.com/#usage">Usage</a>
+                </div>
+                
+                
+                <div class="toc-item-child">
+                    <a class="subtext" href="https://el_monitorro.badykov.com/#commands"><small>- Commands</small></a>
+                </div>
+                
+                <div class="toc-item-child">
+                    <a class="subtext" href="https://el_monitorro.badykov.com/#common-info"><small>- Common info</small></a>
+                </div>
+                
+                
+                
+                <div class="toc-item">
+                    <a class="subtext" href="https://el_monitorro.badykov.com/#setup">Setup</a>
+                </div>
+                
+                
+                <div class="toc-item-child">
+                    <a class="subtext" href="https://el_monitorro.badykov.com/#manual-setup"><small>- Manual setup</small></a>
+                </div>
+                
+                <div class="toc-item-child">
+                    <a class="subtext" href="https://el_monitorro.badykov.com/#using-docker-image"><small>- Using docker image</small></a>
+                </div>
+                
+                
+                
+            </div>
+        </div>
+        
+        
+
+        <div class="content text">
+            
+            <div id="features" class="heading-text">Overview</div>
+            <p><a href="https://paypal.me/ayrat555"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="paypal" /></a></p>
+<h1 id="el-monitorro">El Monitorro</h1>
+<p>El Monitorro is RSS, Atom and JSON feed reader as a Telegram bot.</p>
+<p>It's available at <a href="https://t.me/el_monitorro_bot">@el_monitorro_bot</a>.</p>
+<h1 id="usage">Usage</h1>
+<h3 id="commands">Commands</h3>
+<pre class="z-code"><code><span class="z-text z-plain">/start - show the bot&#39;s description and contact information
+
+/subscribe url - subscribe to feed
+
+/unsubscribe url - unsubscribe from feed
+
+/list_subscriptions - list your subscriptions
+
+/help - show available commands
+
+/set_timezone - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600
+
+/get_timezone - get your timezone
+
+/set_template url template - set a template for all received items for the specified subscription. All new updates will be converted to the format defined by this subscription. Supported fields you can use for templates:
+- bot_feed_name - name of the feed
+- bot_feed_link - url of the feed
+- bot_item_name - name of the item
+- bot_item_link - url of the item
+- bot_item_description - description of the item
+- bot_date - publication date of the feed
+- bot_space - defines a space character
+- bot_new_line - defines a new line character
+Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description.
+
+/get_template url - get a template for the subscription
+
+/set_global_template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.
+
+/get_global_template - get global template
+
+/get_filter url - get a filter for the subscription
+
+/set_filter url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You&#39;ll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`
+
+/remove_filter url - remove filter
+</span></code></pre>
+<h3 id="common-info">Common info</h3>
+<ul>
+<li>Feed updates check interval is 1 minute.</li>
+<li>Unread items delivery interval is 1 minute.</li>
+<li>The number of subscriptions is limited to 20.</li>
+</ul>
+<p>The bot works in private chats, groups and channels. A couple of channels created with el monitorro:</p>
+<ul>
+<li>https://t.me/emacs_posts - Emacs News and Posts</li>
+<li>https://t.me/metacritic_tv - Latest Tv Show Metascores on Metacritic</li>
+</ul>
+<h1 id="setup">Setup</h1>
+<h2 id="manual-setup">Manual setup</h2>
+<p>You can deploy your instance of <code>el_monitorro</code> by:</p>
+<ol>
+<li>Set postgres db url (<code>DATABASE_URL</code>) and telegram bot token (<code>TELEGRAM_BOT_TOKEN</code>) to <code>.env</code> file in the root directory. For example:</li>
+</ol>
+<pre class="z-code"><code><span class="z-text z-plain">DATABASE_URL=postgres://admin:pass@localhost/el_monitorro
+TELEGRAM_BOT_TOKEN=MYTOKEN
+</span></code></pre>
+<ol start="2">
+<li>Setup database by running:</li>
+</ol>
+<pre class="z-code"><code><span class="z-text z-plain">diesel database setup
+</span></code></pre>
+<p>You'll need diesel-cli for this</p>
+<ol start="3">
+<li>Start the bot</li>
+</ol>
+<ul>
+<li>Start the command bot</li>
+</ul>
+<pre class="z-code"><code><span class="z-text z-plain">RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin el_monitorro
+</span></code></pre>
+<ul>
+<li>Start the sync binary</li>
+</ul>
+<pre class="z-code"><code><span class="z-text z-plain">RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin sync
+</span></code></pre>
+<ul>
+<li>Start the delivery binary</li>
+</ul>
+<pre class="z-code"><code><span class="z-text z-plain">RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin deliver
+</span></code></pre>
+<ul>
+<li>If you don't want to store all feed items that were synced and feeds without any subscriptions, start the cleaner binary</li>
+</ul>
+<pre class="z-code"><code><span class="z-text z-plain">RUST_LOG=info RUST_BACKTRACE=1 cargo run --bin cleaner
+</span></code></pre>
+<h3 id="running-all-services-from-a-single-binary">Running all services from a single binary</h3>
+<p>Set <code>ALL_BINARIES</code> to run all binaries (clean, commands, deliver, sync) in the same binary:</p>
+<pre class="z-code"><code><span class="z-text z-plain">ALL_BINARIES=true
+</span></code></pre>
+<h3 id="configuration">Configuration</h3>
+<p>All configuration is done through env variables</p>
+<table><thead><tr><th>Name</th><th>Required</th><th>Default value</th><th>Example / Description</th></tr></thead><tbody>
+<tr><td>DATABASE_URL</td><td>yes</td><td>--</td><td>postgres://postgres:postgres@localhost/el_monitorro</td></tr>
+<tr><td>TELEGRAM_BOT_TOKEN</td><td>yes</td><td>--</td><td>6666618370:AAGx5YhNQvUG4eUcQXN-OB_a09ZzYl6aaaa</td></tr>
+<tr><td>DATABASE_POOL_SIZE</td><td>no</td><td>5</td><td>Db pool size to process user commands</td></tr>
+<tr><td>ALL_BINARIES</td><td>no</td><td>--</td><td>If this var is set, all services will be started in the main binary</td></tr>
+<tr><td>TELEGRAM_BOT_HANDLE</td><td>no</td><td>--</td><td>This value is used during parsing of commands. If you set autocompletion menu for your bot,  the bot will understand commands like <code>/subscribe@handle</code> along with just <code>/subscribe</code></td></tr>
+<tr><td>SUBSCRIPTION_LIMIT</td><td>no</td><td>20</td><td></td></tr>
+<tr><td>SYNC_INTERVAL_SECONDS</td><td>no</td><td>60</td><td>The bot tries to sync feeds every <code>SYNC_INTERVAL_SECONDS</code> seconds</td></tr>
+<tr><td>SYNC_WORKERS_NUMBER</td><td>no</td><td>1</td><td>The number of workers to sync feeds</td></tr>
+<tr><td>DELIVER_INTERVAL_SECONDS</td><td>no</td><td>60</td><td>The bot tries to deliver new feed items every <code>DELIVER_INTERVAL_SECONDS</code> seconds</td></tr>
+<tr><td>DELIVER_WORKERS_NUMBER</td><td>no</td><td>1</td><td>The number of workers to deliver updates</td></tr>
+<tr><td>CLEAN_INTERVAL_SECONDS</td><td>no</td><td>3600</td><td>The bot cleans old feed items and feeds without subscriptions every <code>CLEAN_INTERVAL_SECONDS</code> seconds</td></tr>
+<tr><td>CLEAN_WORKERS_NUMBER</td><td>no</td><td>1</td><td>The number of workers to remove old data</td></tr>
+<tr><td>OWNER_TELEGRAM_ID</td><td>no</td><td>--</td><td>If this value is set, the bot will process commands from the specified chat id</td></tr>
+<tr><td>REQUEST_TIMEOUT</td><td>no</td><td>5</td><td>Timeout in seconds for feed syncing requests</td></tr>
+<tr><td>ADMIN_TELEGRAM_ID</td><td>no</td><td>--</td><td>If this value is set, <code>/info</code> command with stats is available for ADMIN_TELEGRAM_ID</td></tr>
+</tbody></table>
+<h2 id="using-docker-image">Using docker image</h2>
+<p>The image is published on docker hub under <a href="https://hub.docker.com/r/ayratbadykov/el_monitorro">ayratbadykov/el_monitorro</a>. It accepts additional env variables:</p>
+<ul>
+<li><code>RUN_MIGRATION</code> - if this variable is not empty, <code>diesel database setup</code> is run. It creates DB and runs migrations.</li>
+<li><code>BOT_BINARY</code> - depending on this variable, docker container will run one of four binaries. Possible values are <code>commands</code>, <code>sync</code>, <code>deliver</code>, <code>cleaner</code>. To run all services in the main binary, set:</li>
+</ul>
+<pre class="z-code"><code><span class="z-text z-plain">RUN_MIGRATION=true
+BOT_BINARY=commands
+ALL_BINARIES=true
+</span></code></pre>
+<p>Run the docker container:</p>
+<pre data-lang="sh" class="language-sh z-code"><code class="language-sh" data-lang="sh"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">docker</span></span><span class="z-meta z-function-call z-arguments z-shell"> run<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> --</span>env-file</span> ./.env<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> --</span>network</span> host<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>t</span> ayratbadykov/el_monitorro:latest</span>
+</span></code></pre>
+<p>Notes:</p>
+<ul>
+<li><code>--network host</code> is used so the docker container can access a host network if you're running Postgres on the same machine</li>
+</ul>
+<h4 id="creating-a-docker-image-from-the-latest-master-branch">Creating a docker image from the latest master branch</h4>
+<p>Run the following command in the <code>el_monitorro</code> directory to build the image from the master branch:</p>
+<pre data-lang="sh" class="language-sh z-code"><code class="language-sh" data-lang="sh"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">docker</span></span><span class="z-meta z-function-call z-arguments z-shell"> build ./<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>t</span> ayratbadykov/el_monitorro:latest</span>
+</span></code></pre>
+
+            
+        </div>
+
+        
+        
+    </main>
+
+    
+  <footer>
+    <small class="subtext">
+      <a href="https://www.badykov.com">Ayrat Badykov</a> © 2020
+    </small>
+  </footer>
+
+</body>
+<script>
+    function highlightNav(heading) {
+        let pathname = location.pathname;
+        document.querySelectorAll(".toc a").forEach((item) => {
+            item.classList.remove("active");
+        });
+        document.querySelector(".toc a[href$='" + pathname + "#" + heading + "']").classList.add("active");
+    }
+
+    let currentHeading = "";
+    window.onscroll = function () {
+        let h = document.querySelectorAll("h1,h2,h3,h4,h5,h6");
+        let elementArr = [];
+
+        h.forEach(item => {
+            if (item.id !== "") {
+                elementArr[item.id] = item.getBoundingClientRect().top;
+            }
+        });
+        elementArr.sort();
+        for (let key in elementArr) {
+            if (!elementArr.hasOwnProperty(key)) {
+                continue;
+            }
+            if (elementArr[key] > 0 && elementArr[key] < 300) {
+                if (currentHeading !== key) {
+                    highlightNav(key);
+                    currentHeading = key;
+                }
+                break;
+            }
+        }
+    }
+</script>
+
+</html>
