@@ -4,6 +4,11 @@ description = "Changelog"
 weight = 3
 +++
 
+## Unreleased
+
+- Bump deps (tokeo, serde_json, feed-rs, diesel)
+- Set retention mode for workers - [RemoveAll](https://github.com/ayrat555/el_monitorro/commit/b363e7d3fce90534b4ebfacf72f9349060bdfba0)
+
 ## 0.2.2 (2021-09-12)
 
 - Add exponential backoff for failing feeds ([#155](https://github.com/ayrat555/el_monitorro/pull/155))
