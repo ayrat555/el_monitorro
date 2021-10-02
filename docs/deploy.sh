@@ -7,8 +7,7 @@ build() {
   echo "Starting building..."
 
   cd docs
-  git add .
-  git commit -m "Commit copied files"
+
   sudo snap install --edge zola
   zola build
   mv public /tmp/public
