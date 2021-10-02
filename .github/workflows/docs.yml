@@ -19,6 +19,8 @@ jobs:
     - run: |
         cp ./CHANGELOG.md ./docs/content/changelog.md
     - run: |
+          git config --global user.email "ayratin555@gmail.com"
+          git config --global user.name "Ayrat Badykov"
           git add . && git commit -m "Commit copied files"
     - name: Deloy docs
       run: |
