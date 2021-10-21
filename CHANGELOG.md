@@ -6,7 +6,7 @@ weight = 3
 
 ## Unreleased
 
-- Bump deps (tokeo, serde_json, feed-rs, diesel)
+- Bump deps (tokio, serde_json, feed-rs, diesel, isahc)
 - Set retention mode for workers - [RemoveAll](https://github.com/ayrat555/el_monitorro/commit/b363e7d3fce90534b4ebfacf72f9349060bdfba0)
 
 ## 0.2.2 (2021-09-12)

@@ -8,7 +8,7 @@ compile_sass = true
 build_search_index = false
 theme = "juice"
 
-
+title = "El Monitorro - high-performance feed reader"
 
 [markdown]
 # Whether to do syntax highlighting
