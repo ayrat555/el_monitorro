@@ -4,9 +4,9 @@ description = "Changelog"
 weight = 3
 +++
 
-## Unreleased
+## 0.2.3 (2021-11-09)
 
-- Bump deps (tokio, serde_json, feed-rs, diesel, isahc)
+- Bump deps (tokio, serde_json, feed-rs, diesel, isahc, frankenstein)
 - Set retention mode for workers - [RemoveAll](https://github.com/ayrat555/el_monitorro/commit/b363e7d3fce90534b4ebfacf72f9349060bdfba0)
 
 ## 0.2.2 (2021-09-12)
