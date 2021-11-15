@@ -18,7 +18,7 @@ frankenstein = { version = "0.7", default-features = false }
 handlebars = "4.1"
 html2text = "0.2"
 htmlescape = "0.3"
-isahc = "1.5"
+isahc = "1.6"
 log = "0.4"
 regex = { version = "1", features = ["pattern"] }
 rss = "2.0"
