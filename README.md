@@ -164,6 +164,8 @@ Notes:
 
 - `--network host` is used so the docker container can access a host network if you're running Postgres on the same machine
 
+You can check out an example of docker-compose file in the root directory of the project.
+
 #### Creating a docker image from the latest master branch
 
 Run the following command in the `el_monitorro` directory to build the image from the master branch:
