@@ -9,23 +9,23 @@ edition = "2018"
 [dependencies]
 atom_syndication = "0.11"
 chrono = "0.4"
-diesel = { version = "1.4", features = ["postgres", "chrono", "r2d2"] }
-dotenv = "0.15.0"
+diesel = { version = "1", features = ["postgres", "chrono", "r2d2"] }
+dotenv = "0.15"
 env_logger = "0.9"
-fang = "0.4.1"
-feed-rs = "1.0.0"
+fang = "0.4"
+feed-rs = "1"
 frankenstein = { version = "0.7", default-features = false }
-handlebars = "4.1"
+handlebars = "4"
 html2text = "0.2"
 htmlescape = "0.3"
-isahc = "1.6"
+isahc = "1"
 log = "0.4"
 regex = { version = "1", features = ["pattern"] }
-rss = "2.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1.13", features = ["full"] }
-url = "2.2"
+rss = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+url = "2"
 
 
 [dev-dependencies]
