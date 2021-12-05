@@ -12,7 +12,7 @@ chrono = "0.4"
 diesel = { version = "1", features = ["postgres", "chrono", "r2d2"] }
 dotenv = "0.15"
 env_logger = "0.9"
-fang = "0.4"
+fang = "0.5"
 feed-rs = "1"
 frankenstein = { version = "0.7", default-features = false }
 handlebars = "4"

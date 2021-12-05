@@ -421,9 +421,9 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
 name = "fang"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99745204d3bcc6cf2a98905534c6fbc9544af6c5e63af9f34edcb9c27408b8ad"
+checksum = "3659013479aa8f32c4d58f877e9a8ae6867ed5d6eb19158d2c3303e5bad060dc"
 dependencies = [
  "chrono",
  "diesel",
@@ -432,6 +432,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "thiserror",
  "typetag",
  "uuid",
 ]
@@ -569,9 +570,9 @@ dependencies = [
 
 [[package]]
 name = "handlebars"
-version = "4.1.5"
+version = "4.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ad84da8f63da982543fc85fcabaee2ad1fdd809d99d64a48887e2e942ddfe46"
+checksum = "167fa173496c9eadd8749cca6f8339ac88e248f3ad2442791d0b743318a94fc0"
 dependencies = [
  "log",
  "pest",
@@ -730,9 +731,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.108"
+version = "0.2.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8521a1b57e76b1ec69af7599e75e38e7b7fad6610f037db8c79b127201b5d119"
+checksum = "f98a04dce437184842841303488f70d0188c5f51437d2a834dc097eafa909a01"
 
 [[package]]
 name = "libnghttp2-sys"
@@ -1504,6 +1505,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dfed899f0eb03f32ee8c6a0aabdb8a7949659e3466561fc0adf54e26d88c5f4"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "thiserror"
+version = "1.0.30"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "854babe52e4df1653706b98fcfc05843010039b406875930a70e4d9644e5c417"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.30"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa32fd3f627f367fe16f893e2597ae3c05020f8bba2666a4e6ea73d377e5714b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

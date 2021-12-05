@@ -69,5 +69,7 @@ fn start_workers(queue: &Queue, typ: String, number: u32) {
     let mut worker_params = WorkerParams::new();
     worker_params.set_task_type(typ);
     worker_params.set_retention_mode(RetentionMode::RemoveAll);
-    WorkerPool::new_with_params(number, worker_params).start();
+    WorkerPool::new_with_params(number, worker_params)
+        .start()
+        .unwrap();
 }
