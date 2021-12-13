@@ -165,7 +165,7 @@ impl DeliverChatUpdatesJob {
 
             if !negated_words.is_empty() {
                 let negated_mtch = negated_words.iter().all(|neg_word| {
-                    let word = neg_word.replace("!", "");
+                    let word = neg_word.replace('!', "");
 
                     !message.to_lowercase().contains(&word)
                 });
