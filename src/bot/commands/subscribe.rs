@@ -133,7 +133,7 @@ impl Command for Subscribe {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
-                let argument = self.parse_argument(&text);
+                let argument = self.parse_argument(text);
                 self.subscribe(&connection, message, argument)
             }
             Err(error_message) => error_message,
