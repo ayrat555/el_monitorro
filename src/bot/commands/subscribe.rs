@@ -152,9 +152,10 @@ mod subscribe_tests {
     use crate::db::feeds;
     use crate::db::telegram;
     use diesel::connection::Connection;
-    use frankenstein::Chat;
+    use frankenstein::ChatBuilder;
     use frankenstein::ChatType;
     use frankenstein::Message;
+    use frankenstein::MessageBuilder;
     use mockito::mock;
 
     #[test]
@@ -300,9 +301,17 @@ mod subscribe_tests {
     }
 
     fn create_message() -> Message {
-        let chat = Chat::new(1, ChatType::Private);
-
-        Message::new(1, 1, chat)
+        let chat = ChatBuilder::default()
+            .id(1)
+            .type_field(ChatType::Private)
+            .build()
+            .unwrap();
+        MessageBuilder::default()
+            .message_id(1)
+            .date(1_u64)
+            .chat(chat)
+            .build()
+            .unwrap()
     }
 
     fn feed_example() -> String {
