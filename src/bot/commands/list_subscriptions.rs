@@ -16,7 +16,7 @@ impl ListSubscriptions {
     }
 
     fn list_subscriptions(&self, db_connection: &PgConnection, message: &Message) -> String {
-        match telegram::find_feeds_by_chat_id(db_connection, message.chat().id()) {
+        match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
             Err(_) => "Couldn't fetch your subscriptions".to_string(),
             Ok(feeds) => {
                 if feeds.is_empty() {

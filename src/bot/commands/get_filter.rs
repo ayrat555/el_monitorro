@@ -20,7 +20,7 @@ impl GetFilter {
         message: &Message,
         feed_url: String,
     ) -> String {
-        match self.find_subscription(db_connection, message.chat().id(), feed_url) {
+        match self.find_subscription(db_connection, message.chat.id, feed_url) {
             Err(message) => message,
             Ok(subscription) => match subscription.filter_words {
                 None => "You did not set a filter for this subcription".to_string(),
@@ -42,7 +42,7 @@ impl Command for GetFilter {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text().unwrap();
+                let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(&text);
                 self.get_filter(&connection, message, argument)
             }

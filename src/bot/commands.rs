@@ -10,10 +10,9 @@ use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::Chat;
-use frankenstein::ChatId;
 use frankenstein::ChatType;
 use frankenstein::Message;
-use frankenstein::SendMessageParams;
+use frankenstein::SendMessageParamsBuilder;
 use frankenstein::TelegramApi;
 use handlebars::{to_json, Handlebars};
 use regex::Regex;
@@ -37,7 +36,7 @@ pub mod unsubscribe;
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
-        let kind = match chat.type_field() {
+        let kind = match chat.type_field {
             ChatType::Private => "private",
             ChatType::Group => "group",
             ChatType::Supergroup => "supergroup",
@@ -45,12 +44,12 @@ impl From<Chat> for NewTelegramChat {
         };
 
         NewTelegramChat {
-            id: chat.id() as i64,
+            id: chat.id as i64,
             kind: kind.to_string(),
-            username: chat.username(),
-            first_name: chat.first_name(),
-            last_name: chat.last_name(),
-            title: chat.title(),
+            username: chat.username,
+            first_name: chat.first_name,
+            last_name: chat.last_name,
+            title: chat.title,
         }
     }
 }
@@ -60,11 +59,7 @@ pub trait Command {
         -> String;
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        info!(
-            "{:?} wrote: {}",
-            message.chat().id(),
-            message.text().unwrap()
-        );
+        info!("{:?} wrote: {}", message.chat.id, message.text.unwrap());
 
         let text = self.response(db_pool, &message);
 
@@ -72,10 +67,12 @@ pub trait Command {
     }
 
     fn reply_to_message(&self, api: Api, message: Message, text: String) {
-        let mut send_message_params =
-            SendMessageParams::new(ChatId::Integer(message.chat().id()), text);
-
-        send_message_params.set_reply_to_message_id(Some(message.message_id()));
+        let send_message_params = SendMessageParamsBuilder::default()
+            .chat_id(message.chat.id)
+            .text(text)
+            .reply_to_message_id(message.message_id)
+            .build()
+            .unwrap();
 
         if let Err(err) = api.send_message(&send_message_params) {
             error!(

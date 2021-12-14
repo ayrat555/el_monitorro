@@ -35,7 +35,7 @@ impl SetTimezone {
     ) -> Result<(), &str> {
         let offset = self.validate_offset(data)?;
 
-        match telegram::find_chat(db_connection, message.chat().id()) {
+        match telegram::find_chat(db_connection, message.chat.id) {
             None => Err(
                 "You'll be able to set your timezone only after you'll have at least one subscription",
             ),
@@ -76,7 +76,7 @@ impl Command for SetTimezone {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text().unwrap();
+                let text = message.text.unwrap();
                 let argument = self.parse_argument(&text);
                 self.set_timezone(&connection, message, argument)
             }

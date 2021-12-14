@@ -26,7 +26,7 @@ impl SetGlobalTemplate {
             return "Template can not be empty".to_string();
         }
 
-        let chat = match telegram::find_chat(db_connection, message.chat().id()) {
+        let chat = match telegram::find_chat(db_connection, message.chat.id) {
             Some(chat) => chat,
             None => return "You don't have any subcriptions".to_string(),
         };
@@ -59,7 +59,7 @@ impl Command for SetGlobalTemplate {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text().unwrap();
+                let text = message.text.unwrap();
                 let argument = self.parse_argument(&text);
                 self.set_global_template(&connection, message, argument)
             }

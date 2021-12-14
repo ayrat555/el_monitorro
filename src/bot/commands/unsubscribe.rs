@@ -43,7 +43,7 @@ impl Unsubscribe {
             None => return Err(DeleteSubscriptionError::FeedNotFound),
         };
 
-        let chat = match telegram::find_chat(db_connection, message.chat().id()) {
+        let chat = match telegram::find_chat(db_connection, message.chat.id) {
             Some(chat) => chat,
             None => return Err(DeleteSubscriptionError::ChatNotFound),
         };
@@ -78,7 +78,7 @@ impl Command for Unsubscribe {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text().unwrap();
+                let text = message.text.unwrap();
                 let argument = self.parse_argument(&text);
                 self.unsubscribe(&connection, message, argument)
             }

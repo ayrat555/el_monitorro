@@ -63,7 +63,7 @@ impl Subscribe {
         let feed_type = self.validate_rss_url(&url)?;
 
         db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|| {
-            let chat = telegram::create_chat(db_connection, message.chat().into()).unwrap();
+            let chat = telegram::create_chat(db_connection, message.chat.into()).unwrap();
             let feed = feeds::create(db_connection, url, feed_type).unwrap();
 
             let new_telegram_subscription = NewTelegramSubscription {
@@ -132,7 +132,7 @@ impl Command for Subscribe {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text().unwrap();
+                let text = message.text.unwrap();
                 let argument = self.parse_argument(&text);
                 self.subscribe(&connection, message, argument)
             }
@@ -178,7 +178,7 @@ mod subscribe_tests {
             let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
 
             assert_eq!(1, subscriptions.len());
-            assert_eq!(message.chat().id(), subscriptions[0].chat_id);
+            assert_eq!(message.chat.id, subscriptions[0].chat_id);
             assert!(feeds::find_by_link(&db_connection, feed_url).is_some());
 
             Ok(())
