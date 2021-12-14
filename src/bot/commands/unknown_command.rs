@@ -29,10 +29,10 @@ impl Command for UnknownCommand {
         _db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
     ) -> String {
-        match message.chat().type_field() {
+        match message.chat.type_field {
             ChatType::Private => UNKNOWN_COMMAND_PRIVATE.to_string(),
             ChatType::Group | ChatType::Supergroup => {
-                if message.text().unwrap().starts_with('/') {
+                if message.text.as_ref().unwrap().starts_with('/') {
                     "".to_string()
                 } else {
                     UNKNOWN_COMMAND_GROUP.to_string()
@@ -43,11 +43,11 @@ impl Command for UnknownCommand {
     }
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        if message.chat().type_field() != ChatType::Channel {
+        if message.chat.type_field != ChatType::Channel {
             info!(
                 "{:?} wrote: {}",
-                message.chat().id(),
-                message.text().unwrap()
+                message.chat.id,
+                message.text.as_ref().unwrap()
             );
         }
 

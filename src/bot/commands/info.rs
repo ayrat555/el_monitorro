@@ -66,11 +66,11 @@ impl Command for Info {
         match Config::admin_telegram_id() {
             None => UnknownCommand::execute(db_pool, api, message),
             Some(id) => {
-                if id == message.chat().id() {
+                if id == message.chat.id {
                     info!(
                         "{:?} wrote: {}",
-                        message.chat().id(),
-                        message.text().unwrap()
+                        message.chat.id,
+                        message.text.as_ref().unwrap()
                     );
 
                     let text = self.response(db_pool, &message);

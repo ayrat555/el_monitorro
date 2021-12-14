@@ -50,12 +50,12 @@ impl Handler {
         api: Api,
         update: Update,
     ) {
-        let message = match update.message() {
-            None => update.channel_post().unwrap(),
+        let message = match update.message {
+            None => update.channel_post.unwrap(),
             Some(message) => message,
         };
 
-        let chat_id = message.chat().id() as i64;
+        let chat_id = message.chat.id as i64;
 
         if let Some(id) = Self::owner_telegram_id() {
             if id != chat_id {
@@ -63,7 +63,7 @@ impl Handler {
             }
         }
 
-        let text = message.text();
+        let text = message.text.clone();
 
         if text.is_none() {
             return;

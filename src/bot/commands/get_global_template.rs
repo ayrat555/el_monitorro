@@ -16,7 +16,7 @@ impl GetGlobalTemplate {
     }
 
     fn get_global_template(&self, db_connection: &PgConnection, message: &Message) -> String {
-        match telegram::find_chat(db_connection, message.chat().id()) {
+        match telegram::find_chat(db_connection, message.chat.id) {
             None => "You don't have the global template set".to_string(),
             Some(chat) => match chat.template {
                 None => "You don't have the global template set".to_string(),

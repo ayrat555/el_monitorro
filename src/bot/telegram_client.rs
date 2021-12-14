@@ -1,8 +1,7 @@
 use crate::config::Config;
-use frankenstein::ChatId;
 use frankenstein::ErrorResponse;
-use frankenstein::GetUpdatesParams;
-use frankenstein::SendMessageParams;
+use frankenstein::GetUpdatesParamsBuilder;
+use frankenstein::SendMessageParamsBuilder;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
 use isahc::{prelude::*, Request};
@@ -11,10 +10,10 @@ use std::path::PathBuf;
 
 static BASE_API_URL: &str = "https://api.telegram.org/bot";
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone)]
 pub struct Api {
     pub api_url: String,
-    pub update_params: GetUpdatesParams,
+    pub update_params_builder: GetUpdatesParamsBuilder,
     pub buffer: VecDeque<Update>,
 }
 
@@ -41,15 +40,13 @@ impl Api {
         let token = Config::telegram_bot_token();
         let api_url = format!("{}{}", BASE_API_URL, token);
 
-        let mut update_params = GetUpdatesParams::new();
-        update_params.set_allowed_updates(Some(vec![
-            "message".to_string(),
-            "channel_post".to_string(),
-        ]));
+        let mut update_params_builder = GetUpdatesParamsBuilder::default();
+        update_params_builder
+            .allowed_updates(vec!["message".to_string(), "channel_post".to_string()]);
 
         Api {
             api_url,
-            update_params,
+            update_params_builder,
             buffer: VecDeque::new(),
         }
     }
@@ -59,15 +56,16 @@ impl Api {
             return Some(update);
         }
 
-        match self.get_updates(&self.update_params) {
+        let update_params = self.update_params_builder.build().unwrap();
+
+        match self.get_updates(&update_params) {
             Ok(updates) => {
                 for update in updates.result {
                     self.buffer.push_back(update);
                 }
 
                 if let Some(last_update) = self.buffer.back() {
-                    self.update_params
-                        .set_offset(Some(last_update.update_id() + 1));
+                    self.update_params_builder.offset(last_update.update_id + 1);
                 }
 
                 self.buffer.pop_front()
@@ -81,7 +79,11 @@ impl Api {
     }
 
     pub fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
-        let send_message_params = SendMessageParams::new(ChatId::Integer(chat_id), message);
+        let send_message_params = SendMessageParamsBuilder::default()
+            .chat_id(chat_id)
+            .text(message)
+            .build()
+            .unwrap();
 
         match self.send_message(&send_message_params) {
             Ok(_) => Ok(()),

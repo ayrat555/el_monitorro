@@ -32,7 +32,7 @@ impl SetFilter {
         }
 
         let subscription =
-            match self.find_subscription(db_connection, message.chat().id(), vec[0].to_string()) {
+            match self.find_subscription(db_connection, message.chat.id, vec[0].to_string()) {
                 Err(message) => return message,
                 Ok(subscription) => subscription,
             };
@@ -63,8 +63,8 @@ impl Command for SetFilter {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text().unwrap();
-                let argument = self.parse_argument(&text);
+                let text = message.text.as_ref().unwrap();
+                let argument = self.parse_argument(text);
                 self.set_filter(&connection, message, argument)
             }
             Err(error_message) => error_message,

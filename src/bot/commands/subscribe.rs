@@ -63,7 +63,7 @@ impl Subscribe {
         let feed_type = self.validate_rss_url(&url)?;
 
         db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|| {
-            let chat = telegram::create_chat(db_connection, message.chat().into()).unwrap();
+            let chat = telegram::create_chat(db_connection, message.chat.clone().into()).unwrap();
             let feed = feeds::create(db_connection, url, feed_type).unwrap();
 
             let new_telegram_subscription = NewTelegramSubscription {
@@ -132,8 +132,8 @@ impl Command for Subscribe {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text().unwrap();
-                let argument = self.parse_argument(&text);
+                let text = message.text.as_ref().unwrap();
+                let argument = self.parse_argument(text);
                 self.subscribe(&connection, message, argument)
             }
             Err(error_message) => error_message,
@@ -152,9 +152,10 @@ mod subscribe_tests {
     use crate::db::feeds;
     use crate::db::telegram;
     use diesel::connection::Connection;
-    use frankenstein::Chat;
+    use frankenstein::ChatBuilder;
     use frankenstein::ChatType;
     use frankenstein::Message;
+    use frankenstein::MessageBuilder;
     use mockito::mock;
 
     #[test]
@@ -178,7 +179,7 @@ mod subscribe_tests {
             let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
 
             assert_eq!(1, subscriptions.len());
-            assert_eq!(message.chat().id(), subscriptions[0].chat_id);
+            assert_eq!(message.chat.id, subscriptions[0].chat_id);
             assert!(feeds::find_by_link(&db_connection, feed_url).is_some());
 
             Ok(())
@@ -300,9 +301,17 @@ mod subscribe_tests {
     }
 
     fn create_message() -> Message {
-        let chat = Chat::new(1, ChatType::Private);
-
-        Message::new(1, 1, chat)
+        let chat = ChatBuilder::default()
+            .id(1)
+            .type_field(ChatType::Private)
+            .build()
+            .unwrap();
+        MessageBuilder::default()
+            .message_id(1)
+            .date(1_u64)
+            .chat(chat)
+            .build()
+            .unwrap()
     }
 
     fn feed_example() -> String {

@@ -20,7 +20,7 @@ impl GetTemplate {
         message: &Message,
         feed_url: String,
     ) -> String {
-        match self.find_subscription(db_connection, message.chat().id(), feed_url) {
+        match self.find_subscription(db_connection, message.chat.id, feed_url) {
             Err(message) => message,
             Ok(subscription) => match subscription.template {
                 None => "You did not set a template for this subcription".to_string(),
@@ -42,8 +42,8 @@ impl Command for GetTemplate {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text().unwrap();
-                let argument = self.parse_argument(&text);
+                let text = message.text.as_ref().unwrap();
+                let argument = self.parse_argument(text);
                 self.get_template(&connection, message, argument)
             }
             Err(error_message) => error_message,
