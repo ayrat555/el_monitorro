@@ -59,7 +59,11 @@ pub trait Command {
         -> String;
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        info!("{:?} wrote: {}", message.chat.id, message.text.unwrap());
+        info!(
+            "{:?} wrote: {}",
+            message.chat.id,
+            message.text.as_ref().unwrap()
+        );
 
         let text = self.response(db_pool, &message);
 

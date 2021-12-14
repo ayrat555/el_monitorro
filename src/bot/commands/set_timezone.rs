@@ -76,7 +76,7 @@ impl Command for SetTimezone {
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
-                let text = message.text.unwrap();
+                let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(&text);
                 self.set_timezone(&connection, message, argument)
             }
