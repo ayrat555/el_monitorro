@@ -137,7 +137,7 @@ All configuration is done through env variables
 | DELIVER_WORKERS_NUMBER   | no       | 1             | The number of workers to deliver updates                                                                                                                                            |
 | CLEAN_INTERVAL_SECONDS   | no       | 3600          | The bot cleans old feed items and feeds without subscriptions every `CLEAN_INTERVAL_SECONDS` seconds                                                                                |
 | CLEAN_WORKERS_NUMBER     | no       | 1             | The number of workers to remove old data                                                                                                                                            |
-| OWNER_TELEGRAM_ID        | no       | --            | If this value is set, the bot will process commands from the specified chat id                                                                                                      |
+| OWNER_TELEGRAM_ID        | no       | --            | If this value is set, the bot will process commands only from the specified user id                                                                                                      |
 | REQUEST_TIMEOUT          | no       | 5             | Timeout in seconds for feed syncing requests                                                                                                                                        |
 | ADMIN_TELEGRAM_ID        | no       | --            | If this value is set, `/info` command with stats is available for ADMIN_TELEGRAM_ID                                                                                                 |
 

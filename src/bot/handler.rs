@@ -55,10 +55,12 @@ impl Handler {
             Some(message) => message,
         };
 
-        let chat_id = message.chat.id as i64;
+        if let Some(owner_id) = Self::owner_telegram_id() {
+            if message.from.is_none() {
+                return;
+            }
 
-        if let Some(id) = Self::owner_telegram_id() {
-            if id != chat_id {
+            if message.from.as_ref().unwrap().id as i64 != owner_id {
                 return;
             }
         }
