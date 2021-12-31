@@ -6,8 +6,8 @@ weight = 3
 
 ## 0.2.5 (2021-12-31)
 
-- Update deps
 - if `OWNER_TELEGRAM_ID` is set, process commands only from this user - [#8bd0253d8f7ae7fb0ac70c](https://github.com/ayrat555/el_monitorro/commit/8bd0253d8f7ae7fb0ac70cc7bafa7df3d8096f33)
+- Update deps
 
 ## 0.2.4 (2021-12-05)
 
