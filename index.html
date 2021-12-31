@@ -264,7 +264,7 @@ TELEGRAM_BOT_TOKEN=MYTOKEN
 <tr><td>DELIVER_WORKERS_NUMBER</td><td>no</td><td>1</td><td>The number of workers to deliver updates</td></tr>
 <tr><td>CLEAN_INTERVAL_SECONDS</td><td>no</td><td>3600</td><td>The bot cleans old feed items and feeds without subscriptions every <code>CLEAN_INTERVAL_SECONDS</code> seconds</td></tr>
 <tr><td>CLEAN_WORKERS_NUMBER</td><td>no</td><td>1</td><td>The number of workers to remove old data</td></tr>
-<tr><td>OWNER_TELEGRAM_ID</td><td>no</td><td>--</td><td>If this value is set, the bot will process commands from the specified chat id</td></tr>
+<tr><td>OWNER_TELEGRAM_ID</td><td>no</td><td>--</td><td>If this value is set, the bot will process commands only from the specified user id</td></tr>
 <tr><td>REQUEST_TIMEOUT</td><td>no</td><td>5</td><td>Timeout in seconds for feed syncing requests</td></tr>
 <tr><td>ADMIN_TELEGRAM_ID</td><td>no</td><td>--</td><td>If this value is set, <code>/info</code> command with stats is available for ADMIN_TELEGRAM_ID</td></tr>
 </tbody></table>
@@ -285,6 +285,7 @@ ALL_BINARIES=true
 <ul>
 <li><code>--network host</code> is used so the docker container can access a host network if you're running Postgres on the same machine</li>
 </ul>
+<p>You can check out an example of docker-compose file in the root directory of the project.</p>
 <h4 id="creating-a-docker-image-from-the-latest-master-branch">Creating a docker image from the latest master branch</h4>
 <p>Run the following command in the <code>el_monitorro</code> directory to build the image from the master branch:</p>
 <pre data-lang="sh" class="language-sh z-code"><code class="language-sh" data-lang="sh"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">docker</span></span><span class="z-meta z-function-call z-arguments z-shell"> build ./<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>t</span> ayratbadykov/el_monitorro:latest</span>
