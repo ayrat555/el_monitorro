@@ -162,7 +162,7 @@ impl TelegramApi for Api {
                 match parsed_error {
                     Ok(result) => Err(Error::ApiError(result)),
                     Err(error) => {
-                        let message = format!("{:?}", error);
+                        let message = format!("{:?} {:?}", error, std::str::from_utf8(&bytes));
 
                         let error = HttpError { code: 500, message };
 
