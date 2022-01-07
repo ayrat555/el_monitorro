@@ -9,6 +9,7 @@ table! {
         publication_date -> Timestamptz,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        content_hash -> Varchar,
     }
 }
 
