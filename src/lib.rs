@@ -20,6 +20,7 @@ pub mod config;
 pub mod db;
 pub mod deliver;
 mod models;
+pub mod populate_content_hash;
 mod schema;
 pub mod sync;
 
