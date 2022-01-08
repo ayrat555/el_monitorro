@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 use html2text::from_read;
+use sha2::{Digest, Sha256};
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "feed_items"]
@@ -16,6 +17,7 @@ pub struct NewFeedItem {
     pub author: Option<String>,
     pub guid: Option<String>,
     pub publication_date: DateTime<Utc>,
+    pub content_hash: String,
 }
 
 pub fn create(
@@ -25,16 +27,21 @@ pub fn create(
 ) -> Result<Vec<FeedItem>, Error> {
     let new_feed_items = fetched_items
         .into_iter()
-        .map(|fetched_feed_item| NewFeedItem {
-            feed_id,
-            title: from_read(fetched_feed_item.title.as_bytes(), 500)
-                .trim()
-                .to_string(),
-            description: fetched_feed_item.description,
-            link: fetched_feed_item.link,
-            author: fetched_feed_item.author,
-            guid: fetched_feed_item.guid,
-            publication_date: fetched_feed_item.publication_date,
+        .map(|fetched_feed_item| {
+            let hash = calculate_content_hash(&fetched_feed_item);
+
+            NewFeedItem {
+                feed_id,
+                title: from_read(fetched_feed_item.title.as_bytes(), 500)
+                    .trim()
+                    .to_string(),
+                description: fetched_feed_item.description,
+                link: fetched_feed_item.link,
+                author: fetched_feed_item.author,
+                guid: fetched_feed_item.guid,
+                publication_date: fetched_feed_item.publication_date,
+                content_hash: hash,
+            }
         })
         .collect::<Vec<NewFeedItem>>();
 
@@ -87,6 +94,18 @@ pub fn delete_old_feed_items(
         }
         Err(error) => Err(error),
     }
+}
+
+fn calculate_content_hash(fetched_feed_item: &FetchedFeedItem) -> String {
+    let mut content_hash: String = "".to_string();
+    content_hash.push_str(&fetched_feed_item.link);
+    content_hash.push_str(&fetched_feed_item.title);
+
+    let mut hasher = Sha256::new();
+    hasher.update(content_hash.as_bytes());
+
+    let result = hasher.finalize();
+    hex::encode(result)
 }
 
 pub fn get_latest_item(conn: &PgConnection, feed_id: i64) -> Option<FeedItem> {

@@ -16,6 +16,7 @@ fang = "0.5"
 feed-rs = "1"
 frankenstein = { version = "0.9", default-features = false }
 handlebars = "4"
+hex = "0.4"
 html2text = "0.2"
 htmlescape = "0.3"
 isahc = "1"
@@ -24,9 +25,9 @@ regex = { version = "1", features = ["pattern"] }
 rss = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.10"
 tokio = { version = "1", features = ["full"] }
 url = "2"
-
 
 [dev-dependencies]
 mockito = "0.30"

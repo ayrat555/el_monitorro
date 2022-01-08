@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 
-
-if [ -z "$RUN_MIGRATION" ]
+if [ -z "$SETUP_DB" ]
 then
     echo "Proceeding without setting the database"
 else
@@ -9,6 +8,13 @@ else
     ./diesel database setup
 fi
 
+if [ -z "$RUN_MIGRATION" ]
+then
+    echo "Proceeding without running migrations"
+else
+    echo "Setting the database"
+    ./diesel migration run
+fi
 
 case "$BOT_BINARY" in
     commands*)
