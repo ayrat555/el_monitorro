@@ -462,6 +462,7 @@ mod tests {
             link: "dsd".to_string(),
             author: None,
             guid: None,
+            content_hash: None,
             created_at: publication_date,
             updated_at: db::current_time(),
         }];
@@ -504,6 +505,7 @@ mod tests {
             link: "dsd".to_string(),
             author: None,
             guid: None,
+            content_hash: None,
             created_at: current_time,
             updated_at: current_time,
         }];
@@ -547,6 +549,7 @@ mod tests {
             link: "".to_string(),
             author: None,
             guid: None,
+            content_hash: None,
             created_at: current_time,
             updated_at: current_time,
         }];
