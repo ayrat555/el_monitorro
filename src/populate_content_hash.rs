@@ -38,6 +38,7 @@ impl Runnable for PopulateContentHashJob {
                             {
                                 let description = format!("{:?}", error);
 
+                                log::info!("Failed populating content hash {}", description);
                                 return Err(FangError { description });
                             }
                         }

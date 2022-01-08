@@ -11,13 +11,13 @@ async fn main() {
 
     let queue = Queue::new();
 
-    queue.push_task(&PopulateContentHashJob::default()).unwrap();
-
     if Config::all_binaries() {
         el_monitorro::start_clean_workers(&queue);
         el_monitorro::start_sync_workers(&queue);
         el_monitorro::start_delivery_workers(&queue);
     }
+
+    queue.push_task(&PopulateContentHashJob::default()).unwrap();
 
     el_monitorro::start_scheduler(&queue);
 

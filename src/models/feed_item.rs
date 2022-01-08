@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 
 #[derive(Queryable, Identifiable, Debug, Clone)]
 #[table_name = "feed_items"]
-#[primary_key(feed_id, link, title)]
+#[primary_key(feed_id, title, link)]
 pub struct FeedItem {
     pub feed_id: i64,
     pub title: String,
