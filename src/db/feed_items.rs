@@ -1,3 +1,4 @@
+use crate::db;
 use crate::models::feed_item::FeedItem;
 use crate::schema::feed_items;
 use crate::sync::FetchedFeedItem;
@@ -28,7 +29,7 @@ pub fn create(
     let new_feed_items = fetched_items
         .into_iter()
         .map(|fetched_feed_item| {
-            let hash = calculate_content_hash(&fetched_feed_item);
+            let hash = calculate_content_hash(&fetched_feed_item.link, &fetched_feed_item.title);
 
             NewFeedItem {
                 feed_id,
@@ -96,10 +97,36 @@ pub fn delete_old_feed_items(
     }
 }
 
-fn calculate_content_hash(fetched_feed_item: &FetchedFeedItem) -> String {
+pub fn set_content_hash(conn: &PgConnection, feed_item: &FeedItem) -> Result<FeedItem, Error> {
+    let hash = calculate_content_hash(&feed_item.link, &feed_item.title);
+
+    diesel::update(feed_item)
+        .set((
+            feed_items::content_hash.eq(hash),
+            feed_items::updated_at.eq(db::current_time()),
+        ))
+        .get_result::<FeedItem>(conn)
+}
+
+pub fn find_feed_items_without_content_hash(
+    conn: &PgConnection,
+    page: i64,
+    count: i64,
+) -> Result<Vec<FeedItem>, Error> {
+    let offset = (page - 1) * count;
+
+    feed_items::table
+        .order((feed_items::feed_id, feed_items::link, feed_items::title))
+        .filter(feed_items::content_hash.is_null())
+        .limit(count)
+        .offset(offset)
+        .load::<FeedItem>(conn)
+}
+
+fn calculate_content_hash(link: &str, title: &str) -> String {
     let mut content_hash: String = "".to_string();
-    content_hash.push_str(&fetched_feed_item.link);
-    content_hash.push_str(&fetched_feed_item.title);
+    content_hash.push_str(link);
+    content_hash.push_str(title);
 
     let mut hasher = Sha256::new();
     hasher.update(content_hash.as_bytes());
