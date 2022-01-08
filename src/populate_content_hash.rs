@@ -25,13 +25,12 @@ impl PopulateContentHashJob {
 impl Runnable for PopulateContentHashJob {
     fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
         let mut current_feed_items: Vec<FeedItem>;
-        let mut page = 1;
 
         log::info!("Started populating content hash");
 
         loop {
             current_feed_items =
-                match feed_items::find_feed_items_without_content_hash(connection, page, 100) {
+                match feed_items::find_feed_items_without_content_hash(connection, 100) {
                     Ok(items) => {
                         for feed_item in &items {
                             if let Err(error) = feed_items::set_content_hash(connection, feed_item)
@@ -51,8 +50,6 @@ impl Runnable for PopulateContentHashJob {
                         return Err(FangError { description });
                     }
                 };
-
-            page += 1;
 
             if current_feed_items.is_empty() {
                 break;

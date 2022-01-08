@@ -110,16 +110,11 @@ pub fn set_content_hash(conn: &PgConnection, feed_item: &FeedItem) -> Result<Fee
 
 pub fn find_feed_items_without_content_hash(
     conn: &PgConnection,
-    page: i64,
     count: i64,
 ) -> Result<Vec<FeedItem>, Error> {
-    let offset = (page - 1) * count;
-
     feed_items::table
-        .order((feed_items::feed_id, feed_items::link, feed_items::title))
         .filter(feed_items::content_hash.is_null())
         .limit(count)
-        .offset(offset)
         .load::<FeedItem>(conn)
 }
 
