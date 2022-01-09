@@ -12,7 +12,7 @@ if [ -z "$RUN_MIGRATION" ]
 then
     echo "Proceeding without running migrations"
 else
-    echo "Setting the database"
+    echo "Running migrations"
     ./diesel migration run
 fi
 
