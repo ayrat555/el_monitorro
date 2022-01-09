@@ -97,7 +97,7 @@ pub fn delete_old_feed_items(
     }
 }
 
-pub fn set_content_hash(conn: &PgConnection, feed_item: &FeedItem) -> Result<FeedItem, Error> {
+pub fn set_content_hash(conn: &PgConnection, feed_item: &FeedItem) -> Result<usize, Error> {
     let hash = calculate_content_hash(&feed_item.link, &feed_item.title);
 
     diesel::update(
@@ -110,7 +110,7 @@ pub fn set_content_hash(conn: &PgConnection, feed_item: &FeedItem) -> Result<Fee
         feed_items::content_hash.eq(hash),
         feed_items::updated_at.eq(db::current_time()),
     ))
-    .get_result::<FeedItem>(conn)
+    .execute(conn)
 }
 
 pub fn find_feed_items_without_content_hash(
