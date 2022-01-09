@@ -444,6 +444,7 @@ fn delay_period(chat: &TelegramChat) -> Duration {
 #[cfg(test)]
 mod tests {
     use crate::db;
+    use crate::db::feed_items;
     use crate::models::feed::Feed;
     use crate::models::feed_item::FeedItem;
     use chrono::{DateTime, Utc};
@@ -462,7 +463,7 @@ mod tests {
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            content_hash: None,
+            content_hash: feed_items::calculate_content_hash("dsd", "Title"),
             created_at: publication_date,
             updated_at: db::current_time(),
         }];
@@ -505,7 +506,7 @@ mod tests {
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            content_hash: None,
+            content_hash: feed_items::calculate_content_hash("dsd", "Title"),
             created_at: current_time,
             updated_at: current_time,
         }];
@@ -549,7 +550,7 @@ mod tests {
             link: "".to_string(),
             author: None,
             guid: None,
-            content_hash: None,
+            content_hash: feed_items::calculate_content_hash("", ""),
             created_at: current_time,
             updated_at: current_time,
         }];

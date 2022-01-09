@@ -1,5 +1,5 @@
 table! {
-    feed_items (feed_id, title, link) {
+    feed_items (feed_id, content_hash) {
         feed_id -> Int8,
         title -> Text,
         description -> Nullable<Text>,
@@ -9,7 +9,7 @@ table! {
         publication_date -> Timestamptz,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
-        content_hash -> Nullable<Bpchar>,
+        content_hash -> Bpchar,
     }
 }
 

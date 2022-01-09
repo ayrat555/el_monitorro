@@ -1,11 +1,9 @@
-use crate::db;
 use crate::models::feed_item::FeedItem;
 use crate::schema::feed_items;
 use crate::sync::FetchedFeedItem;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
-use html2text::from_read;
 use sha2::{Digest, Sha256};
 
 #[derive(Insertable, AsChangeset)]
@@ -33,9 +31,7 @@ pub fn create(
 
             NewFeedItem {
                 feed_id,
-                title: from_read(fetched_feed_item.title.as_bytes(), 500)
-                    .trim()
-                    .to_string(),
+                title: fetched_feed_item.title,
                 description: fetched_feed_item.description,
                 link: fetched_feed_item.link,
                 author: fetched_feed_item.author,
@@ -48,7 +44,7 @@ pub fn create(
 
     diesel::insert_into(feed_items::table)
         .values(new_feed_items)
-        .on_conflict((feed_items::feed_id, feed_items::title, feed_items::link))
+        .on_conflict((feed_items::feed_id, feed_items::content_hash))
         .do_nothing()
         .get_results(conn)
 }
@@ -97,44 +93,6 @@ pub fn delete_old_feed_items(
     }
 }
 
-pub fn set_content_hash(conn: &PgConnection, feed_item: &FeedItem) -> Result<usize, Error> {
-    let hash = calculate_content_hash(&feed_item.link, &feed_item.title);
-
-    diesel::update(
-        feed_items::table
-            .filter(feed_items::feed_id.eq(feed_item.feed_id))
-            .filter(feed_items::title.eq(&feed_item.title))
-            .filter(feed_items::link.eq(&feed_item.link)),
-    )
-    .set((
-        feed_items::content_hash.eq(hash),
-        feed_items::updated_at.eq(db::current_time()),
-    ))
-    .execute(conn)
-}
-
-pub fn find_feed_items_without_content_hash(
-    conn: &PgConnection,
-    count: i64,
-) -> Result<Vec<FeedItem>, Error> {
-    feed_items::table
-        .filter(feed_items::content_hash.is_null())
-        .limit(count)
-        .load::<FeedItem>(conn)
-}
-
-fn calculate_content_hash(link: &str, title: &str) -> String {
-    let mut content_hash: String = "".to_string();
-    content_hash.push_str(link);
-    content_hash.push_str(title);
-
-    let mut hasher = Sha256::new();
-    hasher.update(content_hash.as_bytes());
-
-    let result = hasher.finalize();
-    hex::encode(result)
-}
-
 pub fn get_latest_item(conn: &PgConnection, feed_id: i64) -> Option<FeedItem> {
     match feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
@@ -145,6 +103,18 @@ pub fn get_latest_item(conn: &PgConnection, feed_id: i64) -> Option<FeedItem> {
         Ok(record) => Some(record),
         _ => None,
     }
+}
+
+pub fn calculate_content_hash(link: &str, title: &str) -> String {
+    let mut content_hash: String = "".to_string();
+    content_hash.push_str(link);
+    content_hash.push_str(title);
+
+    let mut hasher = Sha256::new();
+    hasher.update(content_hash.as_bytes());
+
+    let result = hasher.finalize();
+    hex::encode(result)
 }
 
 #[cfg(test)]

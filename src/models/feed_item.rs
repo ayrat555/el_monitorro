@@ -13,5 +13,5 @@ pub struct FeedItem {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 
-    pub content_hash: Option<String>,
+    pub content_hash: String,
 }
