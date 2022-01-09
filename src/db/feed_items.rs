@@ -96,18 +96,6 @@ pub fn delete_old_feed_items(
     }
 }
 
-fn calculate_content_hash(link: &str, title: &str) -> String {
-    let mut content_hash: String = "".to_string();
-    content_hash.push_str(link);
-    content_hash.push_str(title);
-
-    let mut hasher = Sha256::new();
-    hasher.update(content_hash.as_bytes());
-
-    let result = hasher.finalize();
-    hex::encode(result)
-}
-
 pub fn get_latest_item(conn: &PgConnection, feed_id: i64) -> Option<FeedItem> {
     match feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
@@ -118,6 +106,18 @@ pub fn get_latest_item(conn: &PgConnection, feed_id: i64) -> Option<FeedItem> {
         Ok(record) => Some(record),
         _ => None,
     }
+}
+
+pub fn calculate_content_hash(link: &str, title: &str) -> String {
+    let mut content_hash: String = "".to_string();
+    content_hash.push_str(link);
+    content_hash.push_str(title);
+
+    let mut hasher = Sha256::new();
+    hasher.update(content_hash.as_bytes());
+
+    let result = hasher.finalize();
+    hex::encode(result)
 }
 
 #[cfg(test)]
