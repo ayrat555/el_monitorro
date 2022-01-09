@@ -1,4 +1,3 @@
-use crate::db;
 use crate::models::feed_item::FeedItem;
 use crate::schema::feed_items;
 use crate::sync::FetchedFeedItem;
@@ -48,7 +47,7 @@ pub fn create(
 
     diesel::insert_into(feed_items::table)
         .values(new_feed_items)
-        .on_conflict((feed_items::feed_id, feed_items::title, feed_items::link))
+        .on_conflict((feed_items::feed_id, feed_items::content_hash))
         .do_nothing()
         .get_results(conn)
 }
@@ -95,32 +94,6 @@ pub fn delete_old_feed_items(
         }
         Err(error) => Err(error),
     }
-}
-
-pub fn set_content_hash(conn: &PgConnection, feed_item: &FeedItem) -> Result<usize, Error> {
-    let hash = calculate_content_hash(&feed_item.link, &feed_item.title);
-
-    diesel::update(
-        feed_items::table
-            .filter(feed_items::feed_id.eq(feed_item.feed_id))
-            .filter(feed_items::title.eq(&feed_item.title))
-            .filter(feed_items::link.eq(&feed_item.link)),
-    )
-    .set((
-        feed_items::content_hash.eq(hash),
-        feed_items::updated_at.eq(db::current_time()),
-    ))
-    .execute(conn)
-}
-
-pub fn find_feed_items_without_content_hash(
-    conn: &PgConnection,
-    count: i64,
-) -> Result<Vec<FeedItem>, Error> {
-    feed_items::table
-        .filter(feed_items::content_hash.is_null())
-        .limit(count)
-        .load::<FeedItem>(conn)
 }
 
 fn calculate_content_hash(link: &str, title: &str) -> String {
