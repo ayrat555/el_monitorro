@@ -145,7 +145,8 @@ All configuration is done through env variables
 
 The image is published on docker hub under [ayratbadykov/el_monitorro](https://hub.docker.com/r/ayratbadykov/el_monitorro). It accepts additional env variables:
 
-- `RUN_MIGRATION` - if this variable is not empty, `diesel database setup` is run. It creates DB and runs migrations.
+- `SETUP_DB` - if this variable is not empty, `diesel database setup` is run. It creates DB and runs migrations.
+- `RUN_MIGRATION` - if this variable is not empty, `diesel migration run` is run. It just runs migrations.
 - `BOT_BINARY` - depending on this variable, docker container will run one of four binaries. Possible values are `commands`, `sync`, `deliver`, `cleaner`. To run all services in the main binary, set:
 
 ```

@@ -4,6 +4,10 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.3.0 (2022-01-10)
+
+- Change the primary key of feed_items from `(feed_id, title, link)` to `(feed_id, content_hash)` - [#183](https://github.com/ayrat555/el_monitorro/pull/183), [#184](https://github.com/ayrat555/el_monitorro/pull/184), [#185](https://github.com/ayrat555/el_monitorro/pull/185), [#186](https://github.com/ayrat555/el_monitorro/pull/186)
+
 ## 0.2.6 (2022-01-03)
 
 - Update frankenstein
