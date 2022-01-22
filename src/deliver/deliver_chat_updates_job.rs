@@ -13,7 +13,6 @@ use fang::Error as FangError;
 use fang::PgConnection;
 use fang::Runnable;
 use handlebars::{to_json, Handlebars};
-use html2text::from_read;
 use htmlescape::decode_html;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Map;
@@ -37,6 +36,7 @@ const TELEGRAM_ERRORS: [&str; 13] = [
 
 const DISCRIPTION_LIMIT: usize = 2500;
 const UNICODE_EMPTY_CHARS: [char; 5] = ['\u{200B}', '\u{200C}', '\u{200D}', '\u{2060}', '\u{FEFF}'];
+const HTML_SPACE: &str = "&#32;";
 const MESSAGES_LIMIT: i64 = 10;
 const JOB_TYPE: &str = "deliver";
 
@@ -388,8 +388,10 @@ fn format_messages(
     formatted_messages
 }
 
-fn remove_html(string: String) -> String {
-    from_read(string.as_bytes(), 2000).trim().to_string()
+fn remove_html(string_with_maybe_html: String) -> String {
+    let text = nanohtml2text::html2text(&string_with_maybe_html);
+
+    truncate(&text, 2000).trim().to_string()
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
@@ -406,7 +408,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
 
     let trimmed_result = result.trim();
 
-    remove_empty_unicode_characters(trimmed_result)
+    remove_empty_characters(trimmed_result)
 }
 
 fn truncate_and_check(s: &str, max_chars: usize) -> String {
@@ -419,13 +421,13 @@ fn truncate_and_check(s: &str, max_chars: usize) -> String {
     }
 }
 
-fn remove_empty_unicode_characters(string: &str) -> String {
+fn remove_empty_characters(string: &str) -> String {
     let mut result = string.to_string();
     for character in UNICODE_EMPTY_CHARS {
         result = result.replace(character, "");
     }
 
-    result
+    result.replace(HTML_SPACE, "")
 }
 
 fn bot_blocked(error_message: &str) -> bool {
