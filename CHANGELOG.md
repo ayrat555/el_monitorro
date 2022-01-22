@@ -4,6 +4,10 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.4.0 (2022-01-22)
+
+- Migrate from html2text to nanohtml2text ([#189](https://github.com/ayrat555/el_monitorro/pull/189))
+
 ## 0.3.0 (2022-01-10)
 
 - Change the primary key of feed_items from `(feed_id, title, link)` to `(feed_id, content_hash)` - [#183](https://github.com/ayrat555/el_monitorro/pull/183), [#184](https://github.com/ayrat555/el_monitorro/pull/184), [#185](https://github.com/ayrat555/el_monitorro/pull/185), [#186](https://github.com/ayrat555/el_monitorro/pull/186)
