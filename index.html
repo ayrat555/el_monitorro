@@ -274,7 +274,8 @@ TELEGRAM_BOT_TOKEN=MYTOKEN
 <h2 id="using-docker-image">Using docker image</h2>
 <p>The image is published on docker hub under <a href="https://hub.docker.com/r/ayratbadykov/el_monitorro">ayratbadykov/el_monitorro</a>. It accepts additional env variables:</p>
 <ul>
-<li><code>RUN_MIGRATION</code> - if this variable is not empty, <code>diesel database setup</code> is run. It creates DB and runs migrations.</li>
+<li><code>SETUP_DB</code> - if this variable is not empty, <code>diesel database setup</code> is run. It creates DB and runs migrations.</li>
+<li><code>RUN_MIGRATION</code> - if this variable is not empty, <code>diesel migration run</code> is run. It just runs migrations.</li>
 <li><code>BOT_BINARY</code> - depending on this variable, docker container will run one of four binaries. Possible values are <code>commands</code>, <code>sync</code>, <code>deliver</code>, <code>cleaner</code>. To run all services in the main binary, set:</li>
 </ul>
 <pre class="z-code"><code><span class="z-text z-plain">RUN_MIGRATION=true
