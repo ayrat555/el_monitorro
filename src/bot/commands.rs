@@ -15,7 +15,6 @@ use frankenstein::Message;
 use frankenstein::SendMessageParamsBuilder;
 use frankenstein::TelegramApi;
 use handlebars::{to_json, Handlebars};
-use regex::Regex;
 use serde_json::value::Map;
 
 pub mod get_filter;
@@ -146,76 +145,22 @@ pub trait Command {
     }
 }
 
-pub trait Template {
-    fn parse_template(&self, template: &str) -> String {
-        let allowed_fields = vec![
-            "bot_feed_name",
-            "bot_item_name",
-            "bot_date",
-            "bot_feed_link",
-            "bot_item_link",
-            "bot_item_description",
-        ];
-        let separators = vec!["bot_new_line", "bot_space"];
-        let all_words = [&allowed_fields[..], &separators[..]].concat();
-        let regex_string = all_words.join("|");
-        let regex = Regex::new(&regex_string).unwrap();
+fn template_example(template: &str) -> Result<String, String> {
+    let mut data = Map::new();
+    data.insert("bot_feed_name".to_string(), to_json("feed_name"));
+    data.insert("bot_item_name".to_string(), to_json("item_name"));
+    data.insert("bot_date".to_string(), to_json("date"));
+    data.insert("bot_feed_link".to_string(), to_json("feed_link"));
+    data.insert("bot_item_link".to_string(), to_json("item_link"));
+    data.insert(
+        "bot_item_description".to_string(),
+        to_json("item_description"),
+    );
 
-        let mut result = "".to_string();
+    let reg = Handlebars::new();
 
-        for part in self.split_keep(&regex, template) {
-            if allowed_fields.iter().any(|&i| i == part) {
-                let new_part = format!("{{{{{}}}}}", part);
-                result.push_str(&new_part);
-            } else if part == "bot_space" {
-                result.push(' ');
-            } else if part == "bot_new_line" {
-                result.push('\n');
-            } else {
-                result.push_str(part);
-            }
-        }
-
-        result
-    }
-
-    fn split_keep<'a>(&self, r: &Regex, text: &'a str) -> Vec<&'a str> {
-        let mut result = Vec::new();
-        let mut last = 0;
-        for (index, matched) in text.match_indices(r) {
-            if last != index {
-                result.push(&text[last..index]);
-            }
-            result.push(matched);
-            last = index + matched.len();
-        }
-        if last < text.len() {
-            result.push(&text[last..]);
-        }
-        result
-    }
-
-    fn parse_template_and_send_example(
-        &self,
-        raw_template: String,
-    ) -> Result<(String, String), String> {
-        let mut data = Map::new();
-        data.insert("bot_feed_name".to_string(), to_json("feed_name"));
-        data.insert("bot_item_name".to_string(), to_json("item_name"));
-        data.insert("bot_date".to_string(), to_json("date"));
-        data.insert("bot_feed_link".to_string(), to_json("feed_link"));
-        data.insert("bot_item_link".to_string(), to_json("item_link"));
-        data.insert(
-            "bot_item_description".to_string(),
-            to_json("item_description"),
-        );
-
-        let reg = Handlebars::new();
-        let template = self.parse_template(&raw_template);
-
-        match reg.render_template(&template, &data) {
-            Err(_) => Err("Failed to update the template".to_string()),
-            Ok(result) => Ok((template, result)),
-        }
+    match reg.render_template(template, &data) {
+        Err(_) => Err("Failed to update the template".to_string()),
+        Ok(result) => Ok(result),
     }
 }
