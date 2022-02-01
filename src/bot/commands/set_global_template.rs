@@ -1,6 +1,5 @@
 use super::Command;
 use super::Message;
-use super::Template;
 use crate::bot::telegram_client::Api;
 use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
@@ -31,18 +30,17 @@ impl SetGlobalTemplate {
             None => return "You don't have any subcriptions".to_string(),
         };
 
-        match self.parse_template_and_send_example(template) {
-            Ok((template, example)) => {
-                match telegram::set_global_template(db_connection, &chat, template) {
-                    Ok(_) => format!(
-                        "The global template was updated. Your messages will look like:\n\n{}",
-                        example
-                    ),
-                    Err(_) => "Failed to update the template".to_string(),
-                }
-            }
+        let example = match super::template_example(&template) {
+            Ok(example) => example,
+            Err(_) => return "The template is invalid".to_string(),
+        };
 
-            Err(error) => error,
+        match telegram::set_global_template(db_connection, &chat, template) {
+            Ok(_) => format!(
+                "The global template was updated. Your messages will look like:\n\n{}",
+                example
+            ),
+            Err(_) => "Failed to update the template".to_string(),
         }
     }
 
@@ -71,5 +69,3 @@ impl Command for SetGlobalTemplate {
         Self::command()
     }
 }
-
-impl Template for SetGlobalTemplate {}

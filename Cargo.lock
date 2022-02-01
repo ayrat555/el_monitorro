@@ -407,7 +407,6 @@ dependencies = [
  "log",
  "mockito",
  "nanohtml2text",
- "regex",
  "rss",
  "serde",
  "serde_json",

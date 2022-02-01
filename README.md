@@ -37,9 +37,16 @@ It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 - bot_item_link - url of the item
 - bot_item_description - description of the item
 - bot_date - publication date of the feed
-- bot_space - defines a space character
-- bot_new_line - defines a new line character
-Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description.
+Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
+
+
+    {{bot_item_name}}
+
+
+    {{bot_date}}
+
+
+    {{bot_item_link}}
 
 /get_template url - get a template for the subscription
 

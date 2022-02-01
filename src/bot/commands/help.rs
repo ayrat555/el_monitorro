@@ -20,9 +20,7 @@ static HELP: &str =
          - bot_item_link - url of the item\n\
          - bot_item_description - description of the item\n\
          - bot_date - publication date of the feed\n\
-         - bot_space - defines a space character\n\
-         - bot_new_line - defines a new line character\n\
-         Example: /set_template https://www.badykov.com/feed.xml bot_datebot_spacebot_item_namebot_new_linebot_item_description\n\n\
+         Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}\n\n\n{{bot_item_name}}\n\n\n{{bot_date}}\n\n\n{{bot_item_link}}\n\n\
          /get_template url - get the template for the subscription\n\n\
          /set_global_template template - set global template. This template will be used for all subscriptions. If the subscription has its own template, it will be used instead. See /set_template for available fields.\n\n\
          /get_global_template - get global template\n\n\

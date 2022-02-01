@@ -1,6 +1,5 @@
 use super::Command;
 use super::Message;
-use super::Template;
 use crate::bot::telegram_client::Api;
 use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
@@ -22,7 +21,7 @@ impl SetTemplate {
         message: &Message,
         params: String,
     ) -> String {
-        let vec: Vec<&str> = params.split(' ').collect();
+        let vec: Vec<&str> = params.splitn(2, ' ').collect();
 
         if vec.len() != 2 {
             return "Wrong number of parameters".to_string();
@@ -32,24 +31,25 @@ impl SetTemplate {
             return "Template can not be empty".to_string();
         }
 
-        let subscription =
-            match self.find_subscription(db_connection, message.chat.id, vec[0].to_string()) {
-                Err(message) => return message,
-                Ok(subscription) => subscription,
-            };
+        let feed_url = vec[0].to_string();
+        let template = vec[1];
 
-        match self.parse_template_and_send_example(vec[1].to_string()) {
-            Ok((template, example)) => {
-                match telegram::set_template(db_connection, &subscription, template) {
-                    Ok(_) => format!(
-                        "The template was updated. Your messages will look like:\n\n{}",
-                        example
-                    ),
-                    Err(_) => "Failed to update the template".to_string(),
-                }
-            }
+        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
+            Err(message) => return message,
+            Ok(subscription) => subscription,
+        };
 
-            Err(error) => error,
+        let example = match super::template_example(template) {
+            Ok(example) => example,
+            Err(_) => return "The template is invalid".to_string(),
+        };
+
+        match telegram::set_template(db_connection, &subscription, template.to_string()) {
+            Ok(_) => format!(
+                "The template was updated. Your messages will look like:\n\n{}",
+                example
+            ),
+            Err(_) => "Failed to update the template".to_string(),
         }
     }
 
@@ -76,21 +76,5 @@ impl Command for SetTemplate {
 
     fn command(&self) -> &str {
         Self::command()
-    }
-}
-
-impl Template for SetTemplate {}
-
-#[cfg(test)]
-mod set_template_tests {
-    use super::SetTemplate;
-    use crate::bot::commands::Template;
-
-    #[test]
-    fn parse_template() {
-        let template = "bot_feed_namehellobot_new_linebot_datebot_space";
-        let result = SetTemplate {}.parse_template(template);
-
-        assert_eq!(result, "{{bot_feed_name}}hello\n{{bot_date}} ".to_string());
     }
 }
