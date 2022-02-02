@@ -35,7 +35,7 @@ impl SetGlobalTemplate {
             Err(_) => return "The template is invalid".to_string(),
         };
 
-        match telegram::set_global_template(db_connection, &chat, template) {
+        match telegram::set_global_template(db_connection, &chat, Some(template)) {
             Ok(_) => format!(
                 "The global template was updated. Your messages will look like:\n\n{}",
                 example

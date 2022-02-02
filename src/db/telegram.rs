@@ -69,7 +69,7 @@ pub fn set_utc_offset_minutes(
 pub fn set_global_template(
     conn: &PgConnection,
     chat: &TelegramChat,
-    template: String,
+    template: Option<String>,
 ) -> Result<TelegramChat, Error> {
     diesel::update(chat)
         .set(telegram_chats::template.eq(template))
@@ -853,7 +853,8 @@ mod tests {
             let chat = super::create_chat(&connection, new_chat).unwrap();
 
             let result =
-                super::set_global_template(&connection, &chat, "template".to_string()).unwrap();
+                super::set_global_template(&connection, &chat, Some("template".to_string()))
+                    .unwrap();
 
             assert_eq!(result.template.unwrap(), "template".to_string());
 

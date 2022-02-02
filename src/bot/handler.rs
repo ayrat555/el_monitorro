@@ -6,6 +6,7 @@ use super::commands::help::Help;
 use super::commands::info::Info;
 use super::commands::list_subscriptions::ListSubscriptions;
 use super::commands::remove_filter::RemoveFilter;
+use super::commands::remove_global_template::RemoveGlobalTemplate;
 use super::commands::remove_template::RemoveTemplate;
 use super::commands::set_filter::SetFilter;
 use super::commands::set_global_template::SetGlobalTemplate;
@@ -105,6 +106,8 @@ impl Handler {
             RemoveTemplate::execute(db_pool, api, message);
         } else if command.starts_with(SetGlobalTemplate::command()) {
             SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(RemoveGlobalTemplate::command()) {
+            RemoveGlobalTemplate::execute(db_pool, api, message);
         } else if command.starts_with(GetGlobalTemplate::command()) {
             GetGlobalTemplate::execute(db_pool, api, message);
         } else if command.starts_with(Info::command()) {
