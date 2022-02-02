@@ -79,7 +79,7 @@ pub fn set_global_template(
 pub fn set_template(
     conn: &PgConnection,
     chat: &TelegramSubscription,
-    template: String,
+    template: Option<String>,
 ) -> Result<TelegramSubscription, Error> {
     diesel::update(chat)
         .set(telegram_subscriptions::template.eq(template))
@@ -880,7 +880,8 @@ mod tests {
             assert_eq!(subscription.template, None);
 
             let updated_subscription =
-                super::set_template(&connection, &subscription, "my_template".to_string()).unwrap();
+                super::set_template(&connection, &subscription, Some("my_template".to_string()))
+                    .unwrap();
 
             assert_eq!(
                 updated_subscription.template,

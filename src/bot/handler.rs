@@ -5,6 +5,8 @@ use super::commands::get_timezone::GetTimezone;
 use super::commands::help::Help;
 use super::commands::info::Info;
 use super::commands::list_subscriptions::ListSubscriptions;
+use super::commands::remove_filter::RemoveFilter;
+use super::commands::remove_template::RemoveTemplate;
 use super::commands::set_filter::SetFilter;
 use super::commands::set_global_template::SetGlobalTemplate;
 use super::commands::set_template::SetTemplate;
@@ -93,10 +95,14 @@ impl Handler {
             SetFilter::execute(db_pool, api, message);
         } else if command.starts_with(GetFilter::command()) {
             GetFilter::execute(db_pool, api, message);
+        } else if command.starts_with(RemoveFilter::command()) {
+            RemoveFilter::execute(db_pool, api, message);
         } else if command.starts_with(SetTemplate::command()) {
             SetTemplate::execute(db_pool, api, message);
         } else if command.starts_with(GetTemplate::command()) {
             GetTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(RemoveTemplate::command()) {
+            RemoveTemplate::execute(db_pool, api, message);
         } else if command.starts_with(SetGlobalTemplate::command()) {
             SetGlobalTemplate::execute(db_pool, api, message);
         } else if command.starts_with(GetGlobalTemplate::command()) {
