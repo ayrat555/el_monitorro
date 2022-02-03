@@ -22,7 +22,9 @@ static HELP: &str =
          - bot_date - publication date of the feed\n\
          Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}\n\n\n{{bot_item_name}}\n\n\n{{bot_date}}\n\n\n{{bot_item_link}}\n\n\
          /get_template url - get the template for the subscription\n\n\
+         /remove_template url - remove the template\n\n\
          /set_global_template template - set global template. This template will be used for all subscriptions. If the subscription has its own template, it will be used instead. See /set_template for available fields.\n\n\
+         /remove_global_template - remove global template\n\n\
          /get_global_template - get global template\n\n\
          /get_filter url - get the filter for the subscription\n\n\
          /set_filter url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You'll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`\n\n\

@@ -4,6 +4,11 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.5.0 (2022-02-03)
+
+- Remove custom templates (handlebars can be used directly) ([#196](https://github.com/ayrat555/el_monitorro/pull/196))
+- Add `remove_filter`, `remove_template`, `remove_global_template` ([#197](https://github.com/ayrat555/el_monitorro/pull/197))
+
 ## 0.4.0 (2022-01-22)
 
 - Migrate from html2text to nanohtml2text ([#189](https://github.com/ayrat555/el_monitorro/pull/189))

@@ -50,7 +50,11 @@ Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
 
 /get_template url - get a template for the subscription
 
+/remove_template url - remove the template
+
 /set_global_template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.
+
+/remove_global_template - remove global template
 
 /get_global_template - get global template
 
