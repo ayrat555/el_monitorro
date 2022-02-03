@@ -6,40 +6,28 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
-static COMMAND: &str = "/set_global_template";
+static COMMAND: &str = "/remove_template";
 
-pub struct SetGlobalTemplate {}
+pub struct RemoveTemplate {}
 
-impl SetGlobalTemplate {
+impl RemoveTemplate {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
     }
 
-    fn set_global_template(
+    fn remove_template(
         &self,
         db_connection: &PgConnection,
         message: &Message,
-        template: String,
+        feed_url: String,
     ) -> String {
-        if template.is_empty() {
-            return "Template can not be empty".to_string();
-        }
-
-        let chat = match telegram::find_chat(db_connection, message.chat.id) {
-            Some(chat) => chat,
-            None => return "You don't have any subcriptions".to_string(),
+        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
+            Err(message) => return message,
+            Ok(subscription) => subscription,
         };
 
-        let example = match super::template_example(&template) {
-            Ok(example) => example,
-            Err(_) => return "The template is invalid".to_string(),
-        };
-
-        match telegram::set_global_template(db_connection, &chat, Some(template)) {
-            Ok(_) => format!(
-                "The global template was updated. Your messages will look like:\n\n{}",
-                example
-            ),
+        match telegram::set_template(db_connection, &subscription, None) {
+            Ok(_) => "The template was removed".to_string(),
             Err(_) => "Failed to update the template".to_string(),
         }
     }
@@ -49,7 +37,7 @@ impl SetGlobalTemplate {
     }
 }
 
-impl Command for SetGlobalTemplate {
+impl Command for RemoveTemplate {
     fn response(
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
@@ -59,7 +47,7 @@ impl Command for SetGlobalTemplate {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_global_template(&connection, message, argument)
+                self.remove_template(&connection, message, argument)
             }
             Err(error_message) => error_message,
         }
