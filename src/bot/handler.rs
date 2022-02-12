@@ -16,7 +16,7 @@ use super::commands::start::Start;
 use super::commands::subscribe::Subscribe;
 use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
-use crate::bot::telegram_client::Api;
+use crate::bot::async_telegram_client::Api;
 use crate::config::Config;
 use crate::db;
 use diesel::r2d2;
@@ -36,7 +36,7 @@ impl Handler {
         let mut interval = time::interval(std::time::Duration::from_secs(1));
 
         loop {
-            while let Some(update) = api.next_update() {
+            while let Some(update) = api.next_update().await {
                 tokio::spawn(Self::process_message_or_channel_post(
                     connection_pool.clone(),
                     api.clone(),

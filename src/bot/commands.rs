@@ -1,4 +1,4 @@
-use crate::bot::telegram_client::Api;
+use crate::bot::async_telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -9,11 +9,11 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
+use frankenstein::AsyncTelegramApi;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::Message;
 use frankenstein::SendMessageParamsBuilder;
-use frankenstein::TelegramApi;
 use handlebars::{to_json, Handlebars};
 use serde_json::value::Map;
 
@@ -60,7 +60,12 @@ pub trait Command {
     fn response(&self, db_pool: Pool<ConnectionManager<PgConnection>>, message: &Message)
         -> String;
 
-    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+    async fn execute(
+        &self,
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        api: Api,
+        message: Message,
+    ) {
         info!(
             "{:?} wrote: {}",
             message.chat.id,
@@ -69,10 +74,10 @@ pub trait Command {
 
         let text = self.response(db_pool, &message);
 
-        self.reply_to_message(api, message, text)
+        self.reply_to_message(api, message, text).await
     }
 
-    fn reply_to_message(&self, api: Api, message: Message, text: String) {
+    async fn reply_to_message(&self, api: Api, message: Message, text: String) {
         let send_message_params = SendMessageParamsBuilder::default()
             .chat_id(message.chat.id)
             .text(text)
@@ -80,7 +85,7 @@ pub trait Command {
             .build()
             .unwrap();
 
-        if let Err(err) = api.send_message(&send_message_params) {
+        if let Err(err) = api.send_message(&send_message_params).await {
             error!(
                 "Failed to send a message {:?}: {:?}",
                 err, send_message_params
