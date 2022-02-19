@@ -18,20 +18,21 @@ use serde::{Deserialize, Serialize};
 use serde_json::value::Map;
 use std::time::Duration;
 
-const TELEGRAM_ERRORS: [&str; 13] = [
-    "Forbidden: bot was blocked by the user",
+const TELEGRAM_ERRORS: [&str; 14] = [
+    "Bad Request: CHAT_WRITE_FORBIDDEN",
     "Bad Request: chat not found",
-    "Forbidden: bot was kicked from the supergroup chat",
-    "Forbidden: user is deactivated",
     "Bad Request: group chat was upgraded to a supergroup chat",
-    "Forbidden: bot is not a member of the supergroup chat",
+    "Bad Request: group chat was upgraded to a supergroup chat, migrate to chat id",
+    "Bad Request: have no rights to send a message",
+    "Bad Request: need administrator rights in the channel chat",
     "Forbidden: bot is not a member of the channel chat",
+    "Forbidden: bot is not a member of the supergroup chat",
+    "Forbidden: bot was blocked by the user",
     "Forbidden: bot was kicked from the channel chat",
     "Forbidden: bot was kicked from the group chat",
-    "Bad Request: have no rights to send a message",
-    "Bad Request: group chat was upgraded to a supergroup chat, migrate to chat id",
-    "Bad Request: CHAT_WRITE_FORBIDDEN",
-    "Bad Request: need administrator rights in the channel chat",
+    "Forbidden: bot was kicked from the supergroup chat",
+    "Forbidden: the group chat was deleted",
+    "Forbidden: user is deactivated",
 ];
 
 const DISCRIPTION_LIMIT: usize = 2500;
