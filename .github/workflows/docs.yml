@@ -8,7 +8,7 @@ jobs:
     name: Deploy to gh-pages
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.4.0
+    - uses: actions/checkout@v3
       with:
         ref: 'master'
         submodules: 'recursive'
