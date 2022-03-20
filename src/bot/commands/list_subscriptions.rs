@@ -63,9 +63,9 @@ mod list_subscriptions_tests {
     use crate::db::telegram::NewTelegramChat;
     use crate::db::telegram::NewTelegramSubscription;
     use diesel::connection::Connection;
-    use frankenstein::ChatBuilder;
+    use frankenstein::Chat;
     use frankenstein::ChatType;
-    use frankenstein::MessageBuilder;
+    use frankenstein::Message;
 
     #[test]
     fn fetches_subscriptions() {
@@ -93,17 +93,12 @@ mod list_subscriptions_tests {
                 telegram::create_subscription(&connection, new_subscription).unwrap();
             }
 
-            let chat = ChatBuilder::default()
-                .id(42)
-                .type_field(ChatType::Private)
-                .build()
-                .unwrap();
-            let message = MessageBuilder::default()
+            let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
+            let message = Message::builder()
                 .message_id(1)
                 .date(1_u64)
                 .chat(chat)
-                .build()
-                .unwrap();
+                .build();
 
             let result = ListSubscriptions {}.list_subscriptions(&connection, &message);
 
@@ -127,17 +122,12 @@ mod list_subscriptions_tests {
                 title: None,
             };
             telegram::create_chat(&connection, new_chat).unwrap();
-            let chat = ChatBuilder::default()
-                .id(42)
-                .type_field(ChatType::Private)
-                .build()
-                .unwrap();
-            let message = MessageBuilder::default()
+            let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
+            let message = Message::builder()
                 .message_id(1)
                 .date(1_u64)
                 .chat(chat)
-                .build()
-                .unwrap();
+                .build();
 
             let result = ListSubscriptions {}.list_subscriptions(&connection, &message);
 
@@ -152,17 +142,12 @@ mod list_subscriptions_tests {
         let connection = db::establish_test_connection();
 
         connection.test_transaction::<(), (), _>(|| {
-            let chat = ChatBuilder::default()
-                .id(42)
-                .type_field(ChatType::Private)
-                .build()
-                .unwrap();
-            let message = MessageBuilder::default()
+            let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
+            let message = Message::builder()
                 .message_id(1)
                 .date(1_u64)
                 .chat(chat)
-                .build()
-                .unwrap();
+                .build();
 
             let result = ListSubscriptions {}.list_subscriptions(&connection, &message);
 

@@ -1,7 +1,7 @@
 use crate::config::Config;
 use frankenstein::ErrorResponse;
-use frankenstein::GetUpdatesParamsBuilder;
-use frankenstein::SendMessageParamsBuilder;
+use frankenstein::GetUpdatesParams;
+use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
 use isahc::{prelude::*, Request};
@@ -13,7 +13,7 @@ static BASE_API_URL: &str = "https://api.telegram.org/bot";
 #[derive(Clone)]
 pub struct Api {
     pub api_url: String,
-    pub update_params_builder: GetUpdatesParamsBuilder,
+    pub update_params: GetUpdatesParams,
     pub buffer: VecDeque<Update>,
 }
 
@@ -40,13 +40,13 @@ impl Api {
         let token = Config::telegram_bot_token();
         let api_url = format!("{}{}", BASE_API_URL, token);
 
-        let mut update_params_builder = GetUpdatesParamsBuilder::default();
-        update_params_builder
-            .allowed_updates(vec!["message".to_string(), "channel_post".to_string()]);
+        let update_params = GetUpdatesParams::builder()
+            .allowed_updates(vec!["message".to_string(), "channel_post".to_string()])
+            .build();
 
         Api {
             api_url,
-            update_params_builder,
+            update_params,
             buffer: VecDeque::new(),
         }
     }
@@ -56,16 +56,14 @@ impl Api {
             return Some(update);
         }
 
-        let update_params = self.update_params_builder.build().unwrap();
-
-        match self.get_updates(&update_params) {
+        match self.get_updates(&self.update_params) {
             Ok(updates) => {
                 for update in updates.result {
                     self.buffer.push_back(update);
                 }
 
                 if let Some(last_update) = self.buffer.back() {
-                    self.update_params_builder.offset(last_update.update_id + 1);
+                    self.update_params.offset = Some(last_update.update_id + 1);
                 }
 
                 self.buffer.pop_front()
@@ -79,11 +77,10 @@ impl Api {
     }
 
     pub fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
-        let send_message_params = SendMessageParamsBuilder::default()
+        let send_message_params = SendMessageParams::builder()
             .chat_id(chat_id)
             .text(message)
-            .build()
-            .unwrap();
+            .build();
 
         match self.send_message(&send_message_params) {
             Ok(_) => Ok(()),

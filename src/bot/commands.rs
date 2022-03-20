@@ -12,7 +12,7 @@ use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::Message;
-use frankenstein::SendMessageParamsBuilder;
+use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use handlebars::{to_json, Handlebars};
 use serde_json::value::Map;
@@ -73,12 +73,11 @@ pub trait Command {
     }
 
     fn reply_to_message(&self, api: Api, message: Message, text: String) {
-        let send_message_params = SendMessageParamsBuilder::default()
+        let send_message_params = SendMessageParams::builder()
             .chat_id(message.chat.id)
             .text(text)
             .reply_to_message_id(message.message_id)
-            .build()
-            .unwrap();
+            .build();
 
         if let Err(err) = api.send_message(&send_message_params) {
             error!(

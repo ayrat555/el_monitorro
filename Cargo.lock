@@ -515,13 +515,13 @@ dependencies = [
 
 [[package]]
 name = "frankenstein"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "997a2e629de747f276aef6d9060fc42789e362d3e9a945cec6900cb543d39648"
+checksum = "6a8405c0011d7550be1251c3b671213e6d91a2ea28e98c08aef1fa25aa3fc39e"
 dependencies = [
- "derive_builder",
  "serde",
  "thiserror",
+ "typed-builder",
 ]
 
 [[package]]
@@ -1493,6 +1493,17 @@ checksum = "97d095ae15e245a057c8e8451bab9b3ee1e1f68e9ba2b4fbc18d0ac5237835f2"
 dependencies = [
  "pin-project",
  "tracing",
+]
+
+[[package]]
+name = "typed-builder"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89851716b67b937e393b3daa8423e67ddfc4bbbf1654bcf05488e95e0828db0c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
