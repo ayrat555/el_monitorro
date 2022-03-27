@@ -4,7 +4,8 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramChat;
 use crate::db::telegram::NewTelegramSubscription;
-use crate::models::telegram_subscription::TelegramSubscription;
+use crate::models::Feed;
+use crate::models::TelegramSubscription;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
@@ -27,6 +28,7 @@ pub mod list_subscriptions;
 pub mod remove_filter;
 pub mod remove_global_template;
 pub mod remove_template;
+pub mod set_content_fields;
 pub mod set_filter;
 pub mod set_global_template;
 pub mod set_template;
@@ -125,10 +127,7 @@ pub trait Command {
         feed_url: String,
     ) -> Result<TelegramSubscription, String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
-        let feed = match feeds::find_by_link(db_connection, feed_url) {
-            Some(feed) => feed,
-            None => return not_exists_error,
-        };
+        let feed = self.find_feed(db_connection, feed_url)?;
 
         let chat = match telegram::find_chat(db_connection, chat_id) {
             Some(chat) => chat,
@@ -143,6 +142,13 @@ pub trait Command {
         match telegram::find_subscription(db_connection, telegram_subscription) {
             Some(subscription) => Ok(subscription),
             None => not_exists_error,
+        }
+    }
+
+    fn find_feed(&self, db_connection: &PgConnection, feed_url: String) -> Result<Feed, String> {
+        match feeds::find_by_link(db_connection, feed_url) {
+            Some(feed) => Ok(feed),
+            None => Err("Feed does not exist".to_string()),
         }
     }
 }

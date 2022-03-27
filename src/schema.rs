@@ -26,6 +26,7 @@ table! {
         feed_type -> Text,
         sync_retries -> Int4,
         sync_skips -> Int4,
+        content_fields -> Nullable<Array<Text>>,
     }
 }
 

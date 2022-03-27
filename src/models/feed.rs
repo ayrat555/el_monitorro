@@ -18,4 +18,6 @@ pub struct Feed {
 
     pub sync_retries: i32,
     pub sync_skips: i32,
+
+    pub content_fields: Option<Vec<String>>,
 }

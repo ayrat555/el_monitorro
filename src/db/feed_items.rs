@@ -1,4 +1,5 @@
-use crate::models::feed_item::FeedItem;
+use crate::models::Feed;
+use crate::models::FeedItem;
 use crate::schema::feed_items;
 use crate::sync::FetchedFeedItem;
 use chrono::{DateTime, Utc};
@@ -21,16 +22,16 @@ pub struct NewFeedItem {
 
 pub fn create(
     conn: &PgConnection,
-    feed_id: i64,
+    feed: &Feed,
     fetched_items: Vec<FetchedFeedItem>,
 ) -> Result<Vec<FeedItem>, Error> {
     let new_feed_items = fetched_items
         .into_iter()
         .map(|fetched_feed_item| {
-            let hash = calculate_content_hash(&fetched_feed_item.link, &fetched_feed_item.title);
+            let hash = calculate_content_hash(feed, &fetched_feed_item);
 
             NewFeedItem {
-                feed_id,
+                feed_id: feed.id,
                 title: fetched_feed_item.title,
                 description: fetched_feed_item.description,
                 link: fetched_feed_item.link,
@@ -105,10 +106,35 @@ pub fn get_latest_item(conn: &PgConnection, feed_id: i64) -> Option<FeedItem> {
     }
 }
 
-pub fn calculate_content_hash(link: &str, title: &str) -> String {
+pub fn calculate_content_hash(feed: &Feed, fetched_feed_item: &FetchedFeedItem) -> String {
     let mut content_hash: String = "".to_string();
-    content_hash.push_str(link);
-    content_hash.push_str(title);
+    let content_fields = feed
+        .content_fields
+        .clone()
+        .unwrap_or_else(|| vec!["link".to_string(), "title".to_string()]);
+
+    for field in content_fields {
+        match field.as_str() {
+            "link" => content_hash.push_str(&fetched_feed_item.link),
+            "title" => content_hash.push_str(&fetched_feed_item.title),
+            "publication_date" => {
+                content_hash.push_str(&fetched_feed_item.publication_date.to_string())
+            }
+            "guid" => {
+                content_hash.push_str(fetched_feed_item.guid.as_ref().unwrap_or(&"".to_string()))
+            }
+            "description" => content_hash.push_str(
+                fetched_feed_item
+                    .description
+                    .as_ref()
+                    .unwrap_or(&"".to_string()),
+            ),
+            "author" => {
+                content_hash.push_str(fetched_feed_item.author.as_ref().unwrap_or(&"".to_string()))
+            }
+            &_ => (),
+        }
+    }
 
     let mut hasher = Sha256::new();
     hasher.update(content_hash.as_bytes());
@@ -124,6 +150,7 @@ mod tests {
     use crate::sync::FetchedFeedItem;
     use diesel::connection::Connection;
     use diesel::result::Error;
+    use sha2::{Digest, Sha256};
 
     #[test]
     fn create_creates_new_feed_items() {
@@ -151,7 +178,7 @@ mod tests {
                 },
             ];
 
-            let result = super::create(&connection, feed.id, feed_items.clone()).unwrap();
+            let result = super::create(&connection, &feed, feed_items.clone()).unwrap();
             let inserted_first_item = result
                 .iter()
                 .find(|item| item.guid == Some("Guid1".to_string()))
@@ -177,6 +204,67 @@ mod tests {
     }
 
     #[test]
+    fn generates_content_hash_from_link_and_title_by_default() {
+        let connection = db::establish_test_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let publication_date = db::current_time();
+            let feed_items = vec![FetchedFeedItem {
+                title: "FeedItem1".to_string(),
+                description: Some("Description1".to_string()),
+                link: "Link1".to_string(),
+                author: Some("Author1".to_string()),
+                guid: Some("Guid1".to_string()),
+                publication_date,
+            }];
+
+            let result = super::create(&connection, &feed, feed_items).unwrap();
+            let feed_item = &result[0];
+
+            let mut content: String = "".to_string();
+            content.push_str(&feed_item.link);
+            content.push_str(&feed_item.title);
+
+            let expected_hash = calculate_hash(&content);
+
+            assert_eq!(expected_hash, feed_item.content_hash);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn generates_content_hash_from_custom_field() {
+        let connection = db::establish_test_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let feed = feeds::create(&connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let updated_feed =
+                feeds::set_content_fields(&connection, &feed, vec!["guid".to_string()]).unwrap();
+
+            let publication_date = db::current_time();
+            let feed_items = vec![FetchedFeedItem {
+                title: "FeedItem1".to_string(),
+                description: Some("Description1".to_string()),
+                link: "Link1".to_string(),
+                author: Some("Author1".to_string()),
+                guid: Some("Guid1".to_string()),
+                publication_date,
+            }];
+
+            let result = super::create(&connection, &updated_feed, feed_items).unwrap();
+            let feed_item = &result[0];
+
+            let expected_hash = calculate_hash(feed_item.guid.as_ref().unwrap());
+
+            assert_eq!(expected_hash, feed_item.content_hash);
+
+            Ok(())
+        });
+    }
+
+    #[test]
     fn create_does_not_update_existing_feed_items() {
         let connection = db::establish_test_connection();
 
@@ -192,7 +280,7 @@ mod tests {
                 publication_date,
             }];
 
-            let old_result = super::create(&connection, feed.id, feed_items.clone()).unwrap();
+            let old_result = super::create(&connection, &feed, feed_items.clone()).unwrap();
             let old_item = old_result
                 .iter()
                 .find(|item| item.guid == Some("Guid1".to_string()))
@@ -212,7 +300,7 @@ mod tests {
                 publication_date,
             }];
 
-            let new_result = super::create(&connection, feed.id, updated_feed_items).unwrap();
+            let new_result = super::create(&connection, &feed, updated_feed_items).unwrap();
 
             assert!(new_result.is_empty());
 
@@ -245,7 +333,7 @@ mod tests {
                 },
             ];
 
-            super::create(&connection, feed.id, feed_items).unwrap();
+            super::create(&connection, &feed, feed_items).unwrap();
 
             let result = super::delete_old_feed_items(&connection, feed.id, 1).unwrap();
             assert_eq!(result, 2);
@@ -282,7 +370,7 @@ mod tests {
                 },
             ];
 
-            super::create(&connection, feed.id, feed_items).unwrap();
+            super::create(&connection, &feed, feed_items).unwrap();
 
             let result = super::delete_old_feed_items(&connection, feed.id, 10).unwrap();
             assert_eq!(result, 0);
@@ -305,5 +393,13 @@ mod tests {
 
             Ok(())
         });
+    }
+
+    fn calculate_hash(data: &str) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(data.as_bytes());
+
+        let result = hasher.finalize();
+        hex::encode(result)
     }
 }

@@ -153,7 +153,7 @@ impl SyncFeedJob {
         feed: Feed,
         fetched_feed: FetchedFeed,
     ) -> Result<(), FeedSyncError> {
-        if let Err(err) = feed_items::create(db_connection, feed.id, fetched_feed.items) {
+        if let Err(err) = feed_items::create(db_connection, &feed, fetched_feed.items) {
             self.format_sync_error(err)
         } else {
             if let Some(last_item) = feed_items::get_latest_item(db_connection, self.feed_id) {
