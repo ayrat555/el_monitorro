@@ -8,6 +8,7 @@ use super::commands::list_subscriptions::ListSubscriptions;
 use super::commands::remove_filter::RemoveFilter;
 use super::commands::remove_global_template::RemoveGlobalTemplate;
 use super::commands::remove_template::RemoveTemplate;
+use super::commands::set_content_fields::SetContentFields;
 use super::commands::set_filter::SetFilter;
 use super::commands::set_global_template::SetGlobalTemplate;
 use super::commands::set_template::SetTemplate;
@@ -112,6 +113,8 @@ impl Handler {
             GetGlobalTemplate::execute(db_pool, api, message);
         } else if command.starts_with(Info::command()) {
             Info::execute(db_pool, api, message);
+        } else if command.starts_with(SetContentFields::command()) {
+            SetContentFields::execute(db_pool, api, message);
         } else {
             UnknownCommand::execute(db_pool, api, message);
         }
