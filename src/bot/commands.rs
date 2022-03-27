@@ -127,7 +127,7 @@ pub trait Command {
         feed_url: String,
     ) -> Result<TelegramSubscription, String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
-        let feed = self.find_feed(db_connection, feed_url.clone())?;
+        let feed = self.find_feed(db_connection, feed_url)?;
 
         let chat = match telegram::find_chat(db_connection, chat_id) {
             Some(chat) => chat,

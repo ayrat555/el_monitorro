@@ -47,7 +47,7 @@ impl SetContentFields {
             .filter(|field| ALLOWED_CONTENT_FIELDS.contains(&field.as_str()))
             .collect();
 
-        if content_fields.len() == 0 {
+        if content_fields.is_empty() {
             return "Invalid content fields".to_string();
         }
 
