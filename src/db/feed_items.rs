@@ -219,7 +219,7 @@ mod tests {
                 publication_date,
             }];
 
-            let result = super::create(&connection, &feed, feed_items.clone()).unwrap();
+            let result = super::create(&connection, &feed, feed_items).unwrap();
             let feed_item = &result[0];
 
             let mut content: String = "".to_string();
@@ -253,10 +253,10 @@ mod tests {
                 publication_date,
             }];
 
-            let result = super::create(&connection, &updated_feed, feed_items.clone()).unwrap();
+            let result = super::create(&connection, &updated_feed, feed_items).unwrap();
             let feed_item = &result[0];
 
-            let expected_hash = calculate_hash(&feed_item.guid.as_ref().unwrap());
+            let expected_hash = calculate_hash(feed_item.guid.as_ref().unwrap());
 
             assert_eq!(expected_hash, feed_item.content_hash);
 
