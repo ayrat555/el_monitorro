@@ -121,16 +121,16 @@ pub fn calculate_content_hash(feed: &Feed, fetched_feed_item: &FetchedFeedItem) 
                 content_hash.push_str(&fetched_feed_item.publication_date.to_string())
             }
             "guid" => {
-                content_hash.push_str(&fetched_feed_item.guid.as_ref().unwrap_or(&"".to_string()))
+                content_hash.push_str(fetched_feed_item.guid.as_ref().unwrap_or(&"".to_string()))
             }
             "description" => content_hash.push_str(
-                &fetched_feed_item
+                fetched_feed_item
                     .description
                     .as_ref()
                     .unwrap_or(&"".to_string()),
             ),
             "author" => {
-                content_hash.push_str(&fetched_feed_item.author.as_ref().unwrap_or(&"".to_string()))
+                content_hash.push_str(fetched_feed_item.author.as_ref().unwrap_or(&"".to_string()))
             }
             &_ => (),
         }
