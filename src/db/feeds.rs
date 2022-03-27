@@ -140,6 +140,16 @@ pub fn increment_and_reset_skips(conn: &PgConnection) -> Result<usize, Error> {
     diesel::sql_query(query).execute(conn)
 }
 
+pub fn set_content_fields(
+    conn: &PgConnection,
+    feed: &Feed,
+    content_fields: Vec<String>,
+) -> Result<Feed, Error> {
+    diesel::update(feed)
+        .set(feeds::content_fields.eq(content_fields))
+        .get_result::<Feed>(conn)
+}
+
 pub fn load_feed_ids(conn: &PgConnection, page: i64, count: i64) -> Result<Vec<i64>, Error> {
     let offset = (page - 1) * count;
 
@@ -468,6 +478,32 @@ mod tests {
 
             let result = super::increment_and_reset_skips(&connection).unwrap();
             assert_eq!(0, result);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn set_content_fields() {
+        let connection = db::establish_test_connection();
+
+        connection.test_transaction::<_, Error, _>(|| {
+            let link = "Link".to_string();
+            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+
+            assert_eq!(None, feed.content_fields);
+
+            let updated_feed = super::set_content_fields(
+                &connection,
+                &feed,
+                vec!["guid".to_string(), "description".to_string()],
+            )
+            .unwrap();
+
+            assert_eq!(
+                Some(vec!["guid".to_string(), "description".to_string()]),
+                updated_feed.content_fields
+            );
 
             Ok(())
         })
