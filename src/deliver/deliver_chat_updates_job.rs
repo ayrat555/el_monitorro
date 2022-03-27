@@ -447,9 +447,8 @@ fn delay_period(chat: &TelegramChat) -> Duration {
 #[cfg(test)]
 mod tests {
     use crate::db;
-    use crate::db::feed_items;
-    use crate::models::feed::Feed;
-    use crate::models::feed_item::FeedItem;
+    use crate::models::Feed;
+    use crate::models::FeedItem;
     use chrono::{DateTime, Utc};
 
     #[test]
@@ -466,7 +465,7 @@ mod tests {
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            content_hash: feed_items::calculate_content_hash("dsd", "Title"),
+            content_hash: "".to_string(),
             created_at: publication_date,
             updated_at: db::current_time(),
         }];
@@ -482,6 +481,7 @@ mod tests {
             feed_type: "rss".to_string(),
             sync_retries: 0,
             sync_skips: 0,
+            content_fields: None,
         };
 
         let result = super::format_messages(None, Some(5), feed_items, feed);
@@ -509,7 +509,7 @@ mod tests {
             link: "dsd".to_string(),
             author: None,
             guid: None,
-            content_hash: feed_items::calculate_content_hash("dsd", "Title"),
+            content_hash: "".to_string(),
             created_at: current_time,
             updated_at: current_time,
         }];
@@ -526,6 +526,7 @@ mod tests {
             feed_type: "rss".to_string(),
             sync_retries: 0,
             sync_skips: 0,
+            content_fields: None,
         };
 
         let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_date}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), Some(600), feed_items, feed);
@@ -545,18 +546,6 @@ mod tests {
                 .unwrap()
                 .into();
         let current_time = db::current_time();
-        let feed_items = vec![FeedItem {
-            publication_date,
-            feed_id: 1,
-            title: "".to_string(),
-            description: Some("\u{200b}".to_string()),
-            link: "".to_string(),
-            author: None,
-            guid: None,
-            content_hash: feed_items::calculate_content_hash("", ""),
-            created_at: current_time,
-            updated_at: current_time,
-        }];
 
         let feed = Feed {
             id: 1,
@@ -570,7 +559,21 @@ mod tests {
             feed_type: "".to_string(),
             sync_retries: 0,
             sync_skips: 0,
+            content_fields: None,
         };
+
+        let feed_items = vec![FeedItem {
+            publication_date,
+            feed_id: 1,
+            title: "".to_string(),
+            description: Some("\u{200b}".to_string()),
+            link: "".to_string(),
+            author: None,
+            guid: None,
+            content_hash: "".to_string(),
+            created_at: current_time,
+            updated_at: current_time,
+        }];
 
         let result = super::format_messages(Some("{{bot_feed_name}} {{bot_feed_link}} {{bot_item_link}} {{bot_item_description}} {{bot_item_name}} {{bot_item_name}}".to_string()), Some(60), feed_items, feed);
 

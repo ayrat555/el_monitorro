@@ -177,7 +177,7 @@ mod tests {
                 },
             ];
 
-            let result = super::create(&connection, feed.id, feed_items.clone()).unwrap();
+            let result = super::create(&connection, &feed, feed_items.clone()).unwrap();
             let inserted_first_item = result
                 .iter()
                 .find(|item| item.guid == Some("Guid1".to_string()))
@@ -218,7 +218,7 @@ mod tests {
                 publication_date,
             }];
 
-            let old_result = super::create(&connection, feed.id, feed_items.clone()).unwrap();
+            let old_result = super::create(&connection, &feed, feed_items.clone()).unwrap();
             let old_item = old_result
                 .iter()
                 .find(|item| item.guid == Some("Guid1".to_string()))
@@ -238,7 +238,7 @@ mod tests {
                 publication_date,
             }];
 
-            let new_result = super::create(&connection, feed.id, updated_feed_items).unwrap();
+            let new_result = super::create(&connection, &feed, updated_feed_items).unwrap();
 
             assert!(new_result.is_empty());
 
@@ -271,7 +271,7 @@ mod tests {
                 },
             ];
 
-            super::create(&connection, feed.id, feed_items).unwrap();
+            super::create(&connection, &feed, feed_items).unwrap();
 
             let result = super::delete_old_feed_items(&connection, feed.id, 1).unwrap();
             assert_eq!(result, 2);
@@ -308,7 +308,7 @@ mod tests {
                 },
             ];
 
-            super::create(&connection, feed.id, feed_items).unwrap();
+            super::create(&connection, &feed, feed_items).unwrap();
 
             let result = super::delete_old_feed_items(&connection, feed.id, 10).unwrap();
             assert_eq!(result, 0);
