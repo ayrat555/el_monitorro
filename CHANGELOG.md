@@ -4,6 +4,10 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.6.0 (2022-04-02)
+
+- Add ability to change primary key of feed items table ([#206](https://github.com/ayrat555/el_monitorro/pull/206))
+
 ## 0.5.0 (2022-02-03)
 
 - Remove custom templates (handlebars can be used directly) ([#196](https://github.com/ayrat555/el_monitorro/pull/196))
