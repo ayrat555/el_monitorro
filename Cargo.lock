@@ -515,9 +515,9 @@ dependencies = [
 
 [[package]]
 name = "frankenstein"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8405c0011d7550be1251c3b671213e6d91a2ea28e98c08aef1fa25aa3fc39e"
+checksum = "b9dbc60b200c5396841b10079320f3e5e78888b546fb182e3604ae09ec3e5aca"
 dependencies = [
  "serde",
  "thiserror",
@@ -1190,8 +1190,9 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
 name = "rss"
-version = "2.0.0"
-source = "git+https://github.com/ayrat555/rss#4c0db7eabca96b64cc5ac4ac4668c3399c87d28e"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acaf1331b7fc4edc3c2920819fee1766c27e8d40da593155832db3d6dea64e92"
 dependencies = [
  "atom_syndication",
  "derive_builder",
