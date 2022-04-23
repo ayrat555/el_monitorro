@@ -17,7 +17,7 @@ feed-rs = "1"
 frankenstein = { version = "0.13", default-features = false, features = ["telegram-trait"] }
 handlebars = "4"
 hex = "0.4"
-nanohtml2text = "0.1"
+nanohtml2text = { git = "https://github.com/ayrat555/nanohtml2text/", rev = "4b94f950eefdbf788fc63ecb182a3b2ef9c51692"}
 htmlescape = "0.3"
 isahc = "1"
 log = "0.4"
