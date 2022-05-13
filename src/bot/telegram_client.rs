@@ -1,4 +1,5 @@
 use crate::config::Config;
+use frankenstein::AllowedUpdate;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
 use frankenstein::SendMessageParams;
@@ -41,7 +42,7 @@ impl Api {
         let api_url = format!("{}{}", BASE_API_URL, token);
 
         let update_params = GetUpdatesParams::builder()
-            .allowed_updates(vec!["message".to_string(), "channel_post".to_string()])
+            .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
             .build();
 
         Api {

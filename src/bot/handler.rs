@@ -23,6 +23,7 @@ use crate::db;
 use diesel::r2d2;
 use diesel::PgConnection;
 use frankenstein::Update;
+use frankenstein::UpdateContent;
 use tokio::time;
 
 pub struct Handler {}
@@ -54,9 +55,10 @@ impl Handler {
         api: Api,
         update: Update,
     ) {
-        let message = match update.message {
-            None => update.channel_post.unwrap(),
-            Some(message) => message,
+        let message = match update.content {
+            UpdateContent::Message(message) => message,
+            UpdateContent::ChannelPost(channel_post) => channel_post,
+            _ => return,
         };
 
         if let Some(owner_id) = Self::owner_telegram_id() {
