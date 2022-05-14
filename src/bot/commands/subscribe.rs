@@ -78,7 +78,7 @@ impl Subscribe {
             let subscription =
                 telegram::create_subscription(db_connection, new_telegram_subscription).unwrap();
 
-            SyncFeedJob::new(feed.id).enqueue(&db_connection).unwrap();
+            SyncFeedJob::new(feed.id).enqueue(db_connection).unwrap();
 
             Ok(subscription)
         })
