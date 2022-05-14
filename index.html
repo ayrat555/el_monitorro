@@ -209,6 +209,21 @@ Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
 /set_filter url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You&#39;ll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`
 
 /remove_filter url - remove filter
+
+/info - shows the number of subscriptions and chats. it&#39;s available only for the admin (`ADMIN_TELEGRAM_ID`)
+
+/set_content_fields url fields - changes content hash fields of the specified feed. it&#39;s available only for the admin (`ADMIN_TELEGRAM_ID`).
+Example: /set_content_fields https://www.badykov.com/feed.xml author,title
+
+By default content hash is calculated from title and url.
+
+Available fields:
+    - link
+    - title
+    - publication_date
+    - guid
+    - description
+    - author
 </span></code></pre>
 <h3 id="common-info">Common info</h3>
 <ul>
