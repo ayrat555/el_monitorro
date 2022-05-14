@@ -13,6 +13,7 @@ use diesel::pg::PgConnection;
 use diesel::result::Error;
 use fang::typetag;
 use fang::Error as FangError;
+use fang::Queue;
 use fang::Runnable;
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -55,6 +56,10 @@ impl Runnable for SyncFeedJob {
 impl SyncFeedJob {
     pub fn new(feed_id: i64) -> Self {
         SyncFeedJob { feed_id }
+    }
+
+    pub fn enqueue(&self, connection: &PgConnection) -> Result<fang::Task, diesel::result::Error> {
+        Queue::push_task_query(connection, self)
     }
 
     pub fn sync_feed(&self, db_connection: &PgConnection) {

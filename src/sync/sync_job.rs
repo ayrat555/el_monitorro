@@ -4,7 +4,6 @@ use crate::db::feeds;
 use fang::typetag;
 use fang::Error as FangError;
 use fang::PgConnection;
-use fang::Queue;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 
@@ -58,7 +57,7 @@ impl Runnable for SyncJob {
             page += 1;
 
             for id in &unsynced_feed_ids {
-                Queue::push_task_query(connection, &SyncFeedJob::new(*id)).unwrap();
+                SyncFeedJob::new(*id).enqueue(connection).unwrap();
             }
 
             if unsynced_feed_ids.is_empty() {

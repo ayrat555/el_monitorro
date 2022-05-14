@@ -7,6 +7,7 @@ use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::sync::reader;
+use crate::sync::SyncFeedJob;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::Connection;
@@ -76,6 +77,8 @@ impl Subscribe {
 
             let subscription =
                 telegram::create_subscription(db_connection, new_telegram_subscription).unwrap();
+
+            SyncFeedJob::new(feed.id).enqueue(&db_connection).unwrap();
 
             Ok(subscription)
         })
