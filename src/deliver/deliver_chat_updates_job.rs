@@ -60,6 +60,10 @@ pub struct DeliverChatUpdatesJob {
 }
 
 impl DeliverChatUpdatesJob {
+    pub fn new(chat_id: i64) -> Self {
+        Self { chat_id }
+    }
+
     pub fn deliver(&self, db_connection: &PgConnection) {
         let subscriptions =
             telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
