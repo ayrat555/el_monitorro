@@ -55,7 +55,7 @@ impl Runnable for SyncFeedJob {
 
 impl SyncFeedJob {
     pub fn new(feed_id: i64) -> Self {
-        SyncFeedJob { feed_id }
+        Self { feed_id }
     }
 
     pub fn enqueue(&self, connection: &PgConnection) -> Result<fang::Task, diesel::result::Error> {

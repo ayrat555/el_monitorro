@@ -5,6 +5,7 @@ use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
+use crate::deliver::DeliverChatUpdatesJob;
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::sync::reader;
 use crate::sync::SyncFeedJob;
@@ -12,6 +13,7 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::Connection;
 use diesel::PgConnection;
+use fang::Runnable;
 use url::Url;
 
 static COMMAND: &str = "/subscribe";
@@ -25,6 +27,7 @@ enum SubscriptionError {
     UrlIsNotFeed,
     SubscriptionAlreadyExists,
     SubscriptionCountLimit,
+    SyncError,
 }
 
 impl From<diesel::result::Error> for SubscriptionError {
@@ -52,6 +55,7 @@ impl Subscribe {
             Err(SubscriptionError::SubscriptionCountLimit) => {
                 "You exceeded the number of subscriptions".to_string()
             }
+            Err(SubscriptionError::SyncError) => "Failed to sync your feed".to_string(),
         }
     }
 
@@ -78,7 +82,11 @@ impl Subscribe {
             let subscription =
                 telegram::create_subscription(db_connection, new_telegram_subscription).unwrap();
 
-            SyncFeedJob::new(feed.id).enqueue(db_connection).unwrap();
+            if let Err(_err) = SyncFeedJob::new(feed.id).run(db_connection) {
+                return Err(SubscriptionError::SyncError);
+            }
+
+            DeliverChatUpdatesJob::new(chat.id).deliver(db_connection);
 
             Ok(subscription)
         })
