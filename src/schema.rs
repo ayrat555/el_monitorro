@@ -42,6 +42,7 @@ table! {
         title -> Nullable<Text>,
         utc_offset_minutes -> Nullable<Int4>,
         template -> Nullable<Text>,
+        filter_words -> Nullable<Array<Text>>,
     }
 }
 

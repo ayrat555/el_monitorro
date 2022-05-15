@@ -31,18 +31,16 @@ impl SetFilter {
             return "Filter can not be empty".to_string();
         }
 
+        let filter_words = match self.parse_filter(vec[1]) {
+            Err(message) => return message,
+            Ok(words) => words,
+        };
+
         let subscription =
             match self.find_subscription(db_connection, message.chat.id, vec[0].to_string()) {
                 Err(message) => return message,
                 Ok(subscription) => subscription,
             };
-
-        let filter_words: Vec<String> =
-            vec[1].split(',').map(|s| s.trim().to_lowercase()).collect();
-
-        if filter_words.len() > 7 {
-            return "The number of filter words is limited by 7".to_string();
-        }
 
         match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
             Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")),
