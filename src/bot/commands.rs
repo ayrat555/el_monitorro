@@ -15,8 +15,6 @@ use frankenstein::ChatType;
 use frankenstein::Message;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
-use handlebars::{to_json, Handlebars};
-use serde_json::value::Map;
 
 pub mod get_filter;
 pub mod get_global_template;
@@ -150,25 +148,5 @@ pub trait Command {
             Some(feed) => Ok(feed),
             None => Err("Feed does not exist".to_string()),
         }
-    }
-}
-
-fn template_example(template: &str) -> Result<String, String> {
-    let mut data = Map::new();
-    data.insert("bot_feed_name".to_string(), to_json("feed_name"));
-    data.insert("bot_item_name".to_string(), to_json("item_name"));
-    data.insert("bot_date".to_string(), to_json("date"));
-    data.insert("bot_feed_link".to_string(), to_json("feed_link"));
-    data.insert("bot_item_link".to_string(), to_json("item_link"));
-    data.insert(
-        "bot_item_description".to_string(),
-        to_json("item_description"),
-    );
-
-    let reg = Handlebars::new();
-
-    match reg.render_template(template, &data) {
-        Err(_) => Err("Failed to update the template".to_string()),
-        Ok(result) => Ok(result),
     }
 }
