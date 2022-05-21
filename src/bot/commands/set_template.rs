@@ -2,6 +2,7 @@ use super::Command;
 use super::Message;
 use crate::bot::telegram_client::Api;
 use crate::db::telegram;
+use crate::deliver::render_template_example;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
@@ -39,7 +40,7 @@ impl SetTemplate {
             Ok(subscription) => subscription,
         };
 
-        let example = match super::template_example(template) {
+        let example = match render_template_example(template) {
             Ok(example) => example,
             Err(_) => return "The template is invalid".to_string(),
         };

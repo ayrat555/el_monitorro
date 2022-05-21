@@ -17,15 +17,16 @@ feed-rs = "1"
 frankenstein = { version = "0.15", default-features = false, features = ["telegram-trait"] }
 handlebars = "4"
 hex = "0.4"
-nanohtml2text = "0.1"
 htmlescape = "0.3"
 isahc = "1"
 log = "0.4"
+nanohtml2text = "0.1"
 rss = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 tokio = { version = "1", features = ["full"] }
+typed-builder = "0.10"
 url = "2"
 
 [dev-dependencies]
