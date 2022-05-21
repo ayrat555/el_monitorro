@@ -6,6 +6,7 @@ use handlebars::handlebars_helper;
 use handlebars::to_json;
 use handlebars::Handlebars;
 use handlebars::JsonValue;
+use htmlescape::decode_html;
 use serde_json::value::Map;
 use typed_builder::TypedBuilder as Builder;
 
@@ -146,7 +147,12 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
 }
 
 fn truncate_and_check(s: &str) -> String {
-    let truncated_result = truncate(s, MAX_CHARS);
+    let escaped_data = match decode_html(s) {
+        Ok(escaped_html) => escaped_html,
+        Err(_) => return RENDER_ERROR.to_string(),
+    };
+
+    let truncated_result = truncate(&escaped_data, MAX_CHARS);
     let message_without_empty_chars = remove_empty_characters(&truncated_result);
 
     if message_without_empty_chars.is_empty() {
