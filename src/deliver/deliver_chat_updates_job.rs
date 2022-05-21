@@ -1,3 +1,4 @@
+use super::MessageRenderer;
 use crate::bot::telegram_client::Api;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -5,17 +6,13 @@ use crate::models::feed::Feed;
 use crate::models::feed_item::FeedItem;
 use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
-use chrono::offset::FixedOffset;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use fang::typetag;
 use fang::Error as FangError;
 use fang::PgConnection;
 use fang::Runnable;
-use handlebars::{to_json, Handlebars};
-use htmlescape::decode_html;
 use serde::{Deserialize, Serialize};
-use serde_json::value::Map;
 use std::time::Duration;
 
 const TELEGRAM_ERRORS: [&str; 14] = [
@@ -35,9 +32,6 @@ const TELEGRAM_ERRORS: [&str; 14] = [
     "Forbidden: user is deactivated",
 ];
 
-const DISCRIPTION_LIMIT: usize = 2500;
-const UNICODE_EMPTY_CHARS: [char; 5] = ['\u{200B}', '\u{200C}', '\u{200D}', '\u{2060}', '\u{FEFF}'];
-const HTML_SPACE: &str = "&#32;";
 const MESSAGES_LIMIT: i64 = 10;
 const JOB_TYPE: &str = "deliver";
 
@@ -319,71 +313,26 @@ fn format_messages(
     feed_items: Vec<FeedItem>,
     feed: Feed,
 ) -> Vec<(String, DateTime<Utc>)> {
-    let time_offset = match offset {
-        None => FixedOffset::west(0),
-        Some(value) => {
-            if value > 0 {
-                FixedOffset::east(value * 60)
-            } else {
-                FixedOffset::west(-value * 60)
-            }
-        }
-    };
-
-    let mut data = Map::new();
-
-    let templ = match template {
-        Some(t) => t,
-        None => "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n"
-            .to_string(),
-    };
-
-    let reg = Handlebars::new();
-
-    let feed_title = match feed.title {
-        Some(title) => truncate(&title, 50),
-        None => "".to_string(),
-    };
-
-    data.insert(
-        "bot_feed_name".to_string(),
-        to_json(remove_html(feed_title)),
-    );
-    data.insert("bot_feed_link".to_string(), to_json(feed.link));
+    let message_renderer_builder = MessageRenderer::builder()
+        .offset(offset)
+        .template(template)
+        .bot_feed_name(feed.title)
+        .bot_feed_link(Some(feed.link));
 
     let mut formatted_messages = feed_items
         .iter()
         .map(|item| {
-            let date = item.publication_date.with_timezone(&time_offset);
+            let message_renderer = message_renderer_builder
+                .clone()
+                .bot_date(Some(item.publication_date))
+                .bot_item_name(Some(item.title.clone()))
+                .bot_item_link(Some(item.link.clone()))
+                .bot_item_description(item.description.clone())
+                .build();
 
-            data.insert("bot_date".to_string(), to_json(format!("{}", date)));
-            data.insert(
-                "bot_item_name".to_string(),
-                to_json(remove_html(item.title.clone())),
-            );
-
-            data.insert("bot_item_link".to_string(), to_json(item.link.clone()));
-
-            data.insert(
-                "bot_item_description".to_string(),
-                to_json(remove_html(item.description.clone().map_or_else(
-                    || "".to_string(),
-                    |s| truncate(&s, DISCRIPTION_LIMIT),
-                ))),
-            );
-
-            match reg.render_template(&templ, &data) {
-                Err(error) => {
-                    log::error!("Failed to render template {:?}", error);
-                    ("Failed to render a message".to_string(), item.created_at)
-                }
-                Ok(result) => match decode_html(&result) {
-                    Err(error) => {
-                        log::error!("Failed to render template {:?}", error);
-                        ("Failed to render a message".to_string(), item.created_at)
-                    }
-                    Ok(string) => (truncate_and_check(&string, 4000), item.created_at),
-                },
+            match message_renderer.render() {
+                Ok(message) => (message, item.created_at),
+                Err(error_message) => (error_message, item.created_at),
             }
         })
         .collect::<Vec<(String, DateTime<Utc>)>>();
@@ -391,48 +340,6 @@ fn format_messages(
     formatted_messages.reverse();
 
     formatted_messages
-}
-
-fn remove_html(string_with_maybe_html: String) -> String {
-    let text = nanohtml2text::html2text(&string_with_maybe_html);
-
-    truncate(&text, 2000).trim().to_string()
-}
-
-fn truncate(s: &str, max_chars: usize) -> String {
-    let result = match s.char_indices().nth(max_chars) {
-        None => String::from(s),
-        Some((idx, _)) => {
-            let mut string = String::from(&s[..idx]);
-
-            string.push_str("...");
-
-            string
-        }
-    };
-
-    let trimmed_result = result.trim();
-
-    remove_empty_characters(trimmed_result)
-}
-
-fn truncate_and_check(s: &str, max_chars: usize) -> String {
-    let truncated_result = truncate(s, max_chars);
-
-    if truncated_result.is_empty() {
-        "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.".to_string()
-    } else {
-        truncated_result
-    }
-}
-
-fn remove_empty_characters(string: &str) -> String {
-    let mut result = string.to_string();
-    for character in UNICODE_EMPTY_CHARS {
-        result = result.replace(character, "");
-    }
-
-    result.replace(HTML_SPACE, "")
 }
 
 fn bot_blocked(error_message: &str) -> bool {

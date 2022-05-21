@@ -1,3 +1,7 @@
+use chrono::offset::FixedOffset;
+use chrono::prelude::*;
+use chrono::DateTime;
+use chrono::Utc;
 use handlebars::handlebars_helper;
 use handlebars::to_json;
 use handlebars::Handlebars;
@@ -26,20 +30,22 @@ handlebars_helper!(substring: |string: String, length: usize| truncate(&string, 
 
 #[derive(Builder)]
 pub struct MessageRenderer {
-    #[builder(setter(into, strip_option), default)]
+    #[builder(setter(into), default)]
     bot_feed_name: Option<String>,
-    #[builder(setter(into, strip_option), default)]
+    #[builder(setter(into), default)]
     bot_item_name: Option<String>,
-    #[builder(setter(into, strip_option), default)]
-    bot_date: Option<String>,
-    #[builder(setter(into, strip_option), default)]
+    #[builder(setter(into), default)]
+    bot_date: Option<DateTime<Utc>>,
+    #[builder(setter(into), default)]
     bot_feed_link: Option<String>,
-    #[builder(setter(into, strip_option), default)]
+    #[builder(setter(into), default)]
     bot_item_link: Option<String>,
-    #[builder(setter(into, strip_option), default)]
+    #[builder(setter(into), default)]
     bot_item_description: Option<String>,
-    #[builder(setter(into, strip_option), default)]
+    #[builder(setter(into), default)]
     template: Option<String>,
+    #[builder(setter(into), default)]
+    offset: Option<i32>,
 }
 
 impl MessageRenderer {
@@ -61,7 +67,7 @@ impl MessageRenderer {
             BOT_ITEM_NAME,
             &self.maybe_remove_html(&self.bot_item_name),
         );
-        self.maybe_set_value(&mut data, BOT_DATE, &self.bot_date);
+        self.maybe_set_value(&mut data, BOT_DATE, &self.date());
         self.maybe_set_value(&mut data, BOT_FEED_LINK, &self.bot_feed_link);
         self.maybe_set_value(&mut data, BOT_ITEM_LINK, &self.bot_item_link);
         self.maybe_set_value(
@@ -80,6 +86,27 @@ impl MessageRenderer {
             }
             Ok(result) => Ok(truncate_and_check(&result)),
         }
+    }
+
+    fn date(&self) -> Option<String> {
+        if let Some(date) = &self.bot_date {
+            let time_offset = match self.offset {
+                None => FixedOffset::west(0),
+                Some(value) => {
+                    if value > 0 {
+                        FixedOffset::east(value * 60)
+                    } else {
+                        FixedOffset::west(-value * 60)
+                    }
+                }
+            };
+
+            let date_with_timezone = date.with_timezone(&time_offset);
+
+            return Some(format!("{}", date_with_timezone));
+        }
+
+        None
     }
 
     fn maybe_remove_html(&self, value_option: &Option<String>) -> Option<String> {
@@ -106,13 +133,13 @@ impl MessageRenderer {
 
 pub fn render_template_example(template: &str) -> Result<String, String> {
     let message_renderer = MessageRenderer::builder()
-        .bot_feed_name("feed_name")
-        .bot_item_name("item_name")
-        .bot_date("date")
-        .bot_feed_link("feed_link")
-        .bot_item_link("item_link")
-        .bot_item_description("item_description")
-        .template(template)
+        .bot_feed_name(Some("feed_name".to_string()))
+        .bot_item_name(Some("item_name".to_string()))
+        .bot_date(Some(Utc::now().round_subsecs(0)))
+        .bot_feed_link(Some("feed_link".to_string()))
+        .bot_item_link(Some("item_link".to_string()))
+        .bot_item_description(Some("item_description".to_string()))
+        .template(Some(template.to_string()))
         .build();
 
     message_renderer.render()
@@ -120,11 +147,12 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
 
 fn truncate_and_check(s: &str) -> String {
     let truncated_result = truncate(s, MAX_CHARS);
+    let message_without_empty_chars = remove_empty_characters(&truncated_result);
 
-    if truncated_result.is_empty() {
+    if message_without_empty_chars.is_empty() {
         EMPTY_MESSAGE_ERROR.to_string()
     } else {
-        truncated_result
+        message_without_empty_chars
     }
 }
 
@@ -140,9 +168,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
         }
     };
 
-    let trimmed_result = result.trim();
-
-    remove_empty_characters(trimmed_result)
+    result.trim().to_string()
 }
 
 fn remove_empty_characters(string: &str) -> String {
