@@ -23,7 +23,7 @@ pub struct NewTelegramChat {
     pub last_name: Option<String>,
 }
 
-#[derive(Insertable, Clone, Copy)]
+#[derive(Insertable, Clone, Copy, Debug)]
 #[table_name = "telegram_subscriptions"]
 pub struct NewTelegramSubscription {
     pub chat_id: i64,
