@@ -53,7 +53,7 @@ impl MessageRenderer {
         let template = self
             .template
             .clone()
-            .unwrap_or(DEFAULT_TEMPLATE.to_string());
+            .unwrap_or_else(|| DEFAULT_TEMPLATE.to_string());
 
         let mut data = Map::new();
 
