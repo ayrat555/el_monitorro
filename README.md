@@ -37,6 +37,7 @@ It's available at [@el_monitorro_bot](https://t.me/el_monitorro_bot).
 - bot_item_link - url of the item
 - bot_item_description - description of the item
 - bot_date - publication date of the feed
+
 Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
 
 
@@ -47,6 +48,8 @@ Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
 
 
     {{bot_item_link}}
+
+Also, there is `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}
 
 /get_template url - get a template for the subscription
 
