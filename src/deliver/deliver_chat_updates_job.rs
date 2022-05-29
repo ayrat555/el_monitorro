@@ -111,7 +111,7 @@ impl DeliverChatUpdatesJob {
             };
 
             let messages = format_messages(template, chat.utc_offset_minutes, feed_items, feed);
-            let filter_words = fetch_filter_words(&chat, &subscription);
+            let filter_words = fetch_filter_words(&chat, subscription);
 
             match filter_words {
                 None => {
