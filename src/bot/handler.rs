@@ -7,6 +7,7 @@ use super::commands::help::Help;
 use super::commands::info::Info;
 use super::commands::list_subscriptions::ListSubscriptions;
 use super::commands::remove_filter::RemoveFilter;
+use super::commands::remove_global_filter::RemoveGlobalFilter;
 use super::commands::remove_global_template::RemoveGlobalTemplate;
 use super::commands::remove_template::RemoveTemplate;
 use super::commands::set_content_fields::SetContentFields;
@@ -119,6 +120,8 @@ impl Handler {
             SetGlobalFilter::execute(db_pool, api, message);
         } else if command.starts_with(GetGlobalFilter::command()) {
             GetGlobalFilter::execute(db_pool, api, message);
+        } else if command.starts_with(RemoveGlobalFilter::command()) {
+            RemoveGlobalFilter::execute(db_pool, api, message);
         } else if command.starts_with(Info::command()) {
             Info::execute(db_pool, api, message);
         } else if command.starts_with(SetContentFields::command()) {

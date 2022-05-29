@@ -94,15 +94,18 @@ impl DeliverChatUpdatesJob {
         let feed = feeds::find(connection, subscription.feed_id).unwrap();
 
         let chat = telegram::find_chat(connection, chat_id).unwrap();
+        let filter_words = fetch_filter_words(&chat, subscription);
 
-        self.maybe_send_unread_messages_count(
-            subscription,
-            connection,
-            feed_items.len() as i64,
-            feed.link.clone(),
-            api,
-            &chat,
-        )?;
+        if filter_words.is_none() {
+            self.maybe_send_unread_messages_count(
+                subscription,
+                connection,
+                feed_items.len() as i64,
+                feed.link.clone(),
+                api,
+                &chat,
+            )?;
+        }
 
         if !feed_items.is_empty() {
             let template = match subscription.template.clone() {
@@ -111,7 +114,6 @@ impl DeliverChatUpdatesJob {
             };
 
             let messages = format_messages(template, chat.utc_offset_minutes, feed_items, feed);
-            let filter_words = fetch_filter_words(&chat, subscription);
 
             match filter_words {
                 None => {

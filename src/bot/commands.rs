@@ -25,6 +25,7 @@ pub mod help;
 pub mod info;
 pub mod list_subscriptions;
 pub mod remove_filter;
+pub mod remove_global_filter;
 pub mod remove_global_template;
 pub mod remove_template;
 pub mod set_content_fields;
