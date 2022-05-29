@@ -111,8 +111,9 @@ impl DeliverChatUpdatesJob {
             };
 
             let messages = format_messages(template, chat.utc_offset_minutes, feed_items, feed);
+            let filter_words = fetch_filter_words(&chat, &subscription);
 
-            match subscription.filter_words.clone() {
+            match filter_words {
                 None => {
                     for (message, publication_date) in messages {
                         self.send_text_message_and_updated_subscription(
@@ -305,6 +306,17 @@ fn handle_error(error: String, connection: &PgConnection, chat_id: i64) -> Deliv
     DeliverJobError {
         msg: format!("Failed to send updates : {}", error),
     }
+}
+
+fn fetch_filter_words(
+    chat: &TelegramChat,
+    subscription: &TelegramSubscription,
+) -> Option<Vec<String>> {
+    if let Some(_) = chat.filter_words {
+        return chat.filter_words.clone();
+    }
+
+    subscription.filter_words.clone()
 }
 
 fn format_messages(

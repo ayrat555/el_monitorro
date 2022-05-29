@@ -1,4 +1,5 @@
 use super::commands::get_filter::GetFilter;
+use super::commands::get_global_filter::GetGlobalFilter;
 use super::commands::get_global_template::GetGlobalTemplate;
 use super::commands::get_template::GetTemplate;
 use super::commands::get_timezone::GetTimezone;
@@ -10,6 +11,7 @@ use super::commands::remove_global_template::RemoveGlobalTemplate;
 use super::commands::remove_template::RemoveTemplate;
 use super::commands::set_content_fields::SetContentFields;
 use super::commands::set_filter::SetFilter;
+use super::commands::set_global_filter::SetGlobalFilter;
 use super::commands::set_global_template::SetGlobalTemplate;
 use super::commands::set_template::SetTemplate;
 use super::commands::set_timezone::SetTimezone;
@@ -113,6 +115,10 @@ impl Handler {
             RemoveGlobalTemplate::execute(db_pool, api, message);
         } else if command.starts_with(GetGlobalTemplate::command()) {
             GetGlobalTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(SetGlobalFilter::command()) {
+            SetGlobalFilter::execute(db_pool, api, message);
+        } else if command.starts_with(GetGlobalFilter::command()) {
+            GetGlobalFilter::execute(db_pool, api, message);
         } else if command.starts_with(Info::command()) {
             Info::execute(db_pool, api, message);
         } else if command.starts_with(SetContentFields::command()) {

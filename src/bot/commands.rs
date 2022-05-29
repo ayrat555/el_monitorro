@@ -17,6 +17,7 @@ use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 
 pub mod get_filter;
+pub mod get_global_filter;
 pub mod get_global_template;
 pub mod get_template;
 pub mod get_timezone;
@@ -28,6 +29,7 @@ pub mod remove_global_template;
 pub mod remove_template;
 pub mod set_content_fields;
 pub mod set_filter;
+pub mod set_global_filter;
 pub mod set_global_template;
 pub mod set_template;
 pub mod set_timezone;
