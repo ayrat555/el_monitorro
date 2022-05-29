@@ -17,6 +17,7 @@ use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 
 pub mod get_filter;
+pub mod get_global_filter;
 pub mod get_global_template;
 pub mod get_template;
 pub mod get_timezone;
@@ -24,10 +25,12 @@ pub mod help;
 pub mod info;
 pub mod list_subscriptions;
 pub mod remove_filter;
+pub mod remove_global_filter;
 pub mod remove_global_template;
 pub mod remove_template;
 pub mod set_content_fields;
 pub mod set_filter;
+pub mod set_global_filter;
 pub mod set_global_template;
 pub mod set_template;
 pub mod set_timezone;
@@ -148,5 +151,16 @@ pub trait Command {
             Some(feed) => Ok(feed),
             None => Err("Feed does not exist".to_string()),
         }
+    }
+
+    fn parse_filter(&self, params: &str) -> Result<Vec<String>, String> {
+        let filter_words: Vec<String> =
+            params.split(',').map(|s| s.trim().to_lowercase()).collect();
+
+        if filter_words.len() > 7 {
+            return Err("The number of filter words is limited by 7".to_string());
+        }
+
+        Ok(filter_words)
     }
 }

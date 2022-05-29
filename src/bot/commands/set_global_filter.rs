@@ -6,44 +6,40 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
-static COMMAND: &str = "/set_filter";
+static COMMAND: &str = "/set_global_filter";
 
-pub struct SetFilter {}
+pub struct SetGlobalFilter {}
 
-impl SetFilter {
+impl SetGlobalFilter {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
     }
 
-    pub fn set_filter(
+    fn set_global_template(
         &self,
         db_connection: &PgConnection,
         message: &Message,
-        params: String,
+        filter: String,
     ) -> String {
-        let vec: Vec<&str> = params.split(' ').collect();
+        let chat = match telegram::find_chat(db_connection, message.chat.id) {
+            Some(chat) => chat,
+            None => return "You don't have any subcriptions".to_string(),
+        };
 
-        if vec.len() != 2 {
-            return "Wrong number of parameters".to_string();
-        }
-
-        if vec[1].is_empty() {
+        if filter.is_empty() {
             return "Filter can not be empty".to_string();
         }
 
-        let filter_words = match self.parse_filter(vec[1]) {
+        let filter_words = match self.parse_filter(&filter) {
             Err(message) => return message,
             Ok(words) => words,
         };
 
-        let subscription =
-            match self.find_subscription(db_connection, message.chat.id, vec[0].to_string()) {
-                Err(message) => return message,
-                Ok(subscription) => subscription,
-            };
-
-        match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
-            Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")),
+        match telegram::set_global_filter(db_connection, &chat, Some(filter_words.clone())) {
+            Ok(_) => format!(
+                "The global filter was updated:\n\n{}",
+                filter_words.join(", ")
+            ),
             Err(_) => "Failed to update the filter".to_string(),
         }
     }
@@ -53,7 +49,7 @@ impl SetFilter {
     }
 }
 
-impl Command for SetFilter {
+impl Command for SetGlobalFilter {
     fn response(
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
@@ -63,7 +59,7 @@ impl Command for SetFilter {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_filter(&connection, message, argument)
+                self.set_global_template(&connection, message, argument)
             }
             Err(error_message) => error_message,
         }

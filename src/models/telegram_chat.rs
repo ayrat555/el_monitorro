@@ -15,4 +15,5 @@ pub struct TelegramChat {
     pub title: Option<String>,
     pub utc_offset_minutes: Option<i32>,
     pub template: Option<String>,
+    pub filter_words: Option<Vec<String>>,
 }

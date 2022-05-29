@@ -76,6 +76,16 @@ pub fn set_global_template(
         .get_result::<TelegramChat>(conn)
 }
 
+pub fn set_global_filter(
+    conn: &PgConnection,
+    chat: &TelegramChat,
+    filter_words: Option<Vec<String>>,
+) -> Result<TelegramChat, Error> {
+    diesel::update(chat)
+        .set(telegram_chats::filter_words.eq(filter_words))
+        .get_result::<TelegramChat>(conn)
+}
+
 pub fn set_template(
     conn: &PgConnection,
     chat: &TelegramSubscription,
@@ -857,6 +867,25 @@ mod tests {
                     .unwrap();
 
             assert_eq!(result.template.unwrap(), "template".to_string());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn set_global_filter_sets_filter() {
+        let connection = db::establish_test_connection();
+
+        let new_chat = build_new_chat_with_id(200);
+
+        connection.test_transaction::<(), Error, _>(|| {
+            let chat = super::create_chat(&connection, new_chat).unwrap();
+            let filter = vec!["filter1".to_string(), "filter2".to_string()];
+
+            let result =
+                super::set_global_filter(&connection, &chat, Some(filter.clone())).unwrap();
+
+            assert_eq!(result.filter_words.unwrap(), filter);
 
             Ok(())
         });
