@@ -312,7 +312,7 @@ fn fetch_filter_words(
     chat: &TelegramChat,
     subscription: &TelegramSubscription,
 ) -> Option<Vec<String>> {
-    if let Some(_) = chat.filter_words {
+    if chat.filter_words.is_some() {
         return chat.filter_words.clone();
     }
 
