@@ -63,9 +63,15 @@ Also, there is `substring` helper that can be used to limit the number of charac
 
 /get_filter url - get a filter for the subscription
 
-/set_filter url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You'll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`
+/set_filter url filter - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You'll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`
 
 /remove_filter url - remove filter
+
+/set_global_filter filter - set global filter
+
+/get_global_filter - get a global filter
+
+/remove_global_filter - remove global filter
 
 /info - shows the number of subscriptions and chats. it's available only for the admin (`ADMIN_TELEGRAM_ID`)
 

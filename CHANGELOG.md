@@ -4,10 +4,14 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.8.0 (2022-06-01)
+
+- Add global commands for filters ([#214](https://github.com/ayrat555/el_monitorro/pull/214))
+
 ## 0.7.0 (2022-05-14)
 
-- update frankenstein to 0.15 by @ayrat555 in https://github.com/ayrat555/el_monitorro/pull/212
-- Sync and deliver during subscription by @ayrat555 in https://github.com/ayrat555/el_monitorro/pull/213
+- Update frankenstein to 0.15 by @ayrat555 in [#212](https://github.com/ayrat555/el_monitorro/pull/212)
+- Sync and deliver during subscription by @ayrat555 in [#213](https://github.com/ayrat555/el_monitorro/pull/213)
 
 ## 0.6.0 (2022-04-02)
 
