@@ -29,9 +29,9 @@ static HELP: &str =
          /get_global_template - get global template\n\n\
          /get_filter url - get the filter for the subscription\n\n\
          /set_filter url template - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You'll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`\n\n\
-         /remove_filter url - remove filter\n\n
-         /set_global_filter filter - set global filter\n\n
-         /get_global_filter - get a global filter\n\n
+         /remove_filter url - remove filter\n\n\
+         /set_global_filter filter - set global filter\n\n\
+         /get_global_filter - get a global filter\n\n\
          /remove_global_filter - remove global filter\n\n";
 
 static COMMAND: &str = "/help";
