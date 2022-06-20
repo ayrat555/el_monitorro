@@ -32,7 +32,9 @@ impl Command for UnknownCommand {
         match message.chat.type_field {
             ChatType::Private => UNKNOWN_COMMAND_PRIVATE.to_string(),
             ChatType::Group | ChatType::Supergroup => {
-                if message.text.as_ref().unwrap().starts_with('/') {
+                if message.text.as_ref().unwrap().starts_with('/')
+                    || message.reply_to_message.is_some()
+                {
                     "".to_string()
                 } else {
                     UNKNOWN_COMMAND_GROUP.to_string()
