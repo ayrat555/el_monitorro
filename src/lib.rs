@@ -1,3 +1,5 @@
+#![allow(clippy::extra_unused_lifetimes)]
+
 use crate::cleaner::CleanJob;
 use crate::config::Config;
 use crate::deliver::DeliverJob;
