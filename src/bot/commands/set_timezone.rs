@@ -56,7 +56,7 @@ impl SetTimezone {
             return Err("Offset must be divisible by 30");
         }
 
-        if offset < -720 || offset > 840 {
+        if !(-720..=840).contains(&offset) {
             return Err("Offset must be >= -720 (UTC -12) and <= 840 (UTC +14)");
         }
 

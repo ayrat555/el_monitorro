@@ -25,7 +25,7 @@ pub enum Error {
     ApiError(ErrorResponse),
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct HttpError {
     pub code: u16,
     pub message: String,

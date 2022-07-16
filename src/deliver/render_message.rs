@@ -87,7 +87,8 @@ impl MessageRenderer {
         reg.register_helper(BOLD_HELPER, Box::new(bold));
         reg.register_helper(ITALIC_HELPER, Box::new(italic));
 
-        match reg.render_template(&template, &data) {
+        let template_without_html = self.maybe_remove_html(&Some(template)).unwrap();
+        match reg.render_template(&template_without_html, &data) {
             Err(error) => {
                 log::error!("Failed to render template {:?}", error);
                 Err(RENDER_ERROR.to_string())
