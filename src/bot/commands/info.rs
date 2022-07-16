@@ -5,6 +5,7 @@ use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
+use async_trait::async_trait;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
@@ -61,8 +62,14 @@ impl Info {
     }
 }
 
+#[async_trait]
 impl Command for Info {
-    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+    async fn execute(
+        &self,
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        api: Api,
+        message: Message,
+    ) {
         match Config::admin_telegram_id() {
             None => UnknownCommand::execute(db_pool, api, message),
             Some(id) => {
@@ -75,7 +82,7 @@ impl Command for Info {
 
                     let text = self.response(db_pool, &message);
 
-                    self.reply_to_message(api, message, text)
+                    self.reply_to_message(api, message, text).await
                 } else {
                     UnknownCommand::execute(db_pool, api, message)
                 }

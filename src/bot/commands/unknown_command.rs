@@ -1,6 +1,7 @@
 use super::Command;
 use super::Message;
 use crate::bot::telegram_client::Api;
+use async_trait::async_trait;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
@@ -23,6 +24,7 @@ impl UnknownCommand {
     }
 }
 
+#[async_trait]
 impl Command for UnknownCommand {
     fn response(
         &self,
@@ -44,7 +46,12 @@ impl Command for UnknownCommand {
         }
     }
 
-    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+    async fn execute(
+        &self,
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        api: Api,
+        message: Message,
+    ) {
         if message.chat.type_field != ChatType::Channel {
             info!(
                 "{:?} wrote: {}",
@@ -56,7 +63,7 @@ impl Command for UnknownCommand {
         let text = self.response(db_pool, &message);
 
         if !text.is_empty() {
-            self.reply_to_message(api, message, text);
+            self.reply_to_message(api, message, text).await;
         }
     }
 

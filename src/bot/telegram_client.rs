@@ -1,10 +1,11 @@
 use crate::config::Config;
 use frankenstein::AllowedUpdate;
-use frankenstein::ErrorResponse;
+use frankenstein::AsyncApi;
+use frankenstein::AsyncTelegramApi;
+use frankenstein::Error as ApiErr;
 use frankenstein::GetUpdatesParams;
 use frankenstein::ParseMode;
 use frankenstein::SendMessageParams;
-use frankenstein::TelegramApi;
 use frankenstein::Update;
 use isahc::{prelude::*, Request};
 use std::collections::VecDeque;
@@ -14,7 +15,7 @@ static BASE_API_URL: &str = "https://api.telegram.org/bot";
 
 #[derive(Clone)]
 pub struct Api {
-    pub api_url: String,
+    pub async_api: AsyncApi,
     pub update_params: GetUpdatesParams,
     pub buffer: VecDeque<Update>,
 }
@@ -22,7 +23,7 @@ pub struct Api {
 #[derive(Debug)]
 pub enum Error {
     HttpError(HttpError),
-    ApiError(ErrorResponse),
+    ApiError(ApiErr),
 }
 
 #[derive(PartialEq, Debug)]
@@ -40,25 +41,25 @@ impl Default for Api {
 impl Api {
     pub fn new() -> Api {
         let token = Config::telegram_bot_token();
-        let api_url = format!("{}{}", BASE_API_URL, token);
+        let api = AsyncApi::new(&token);
 
         let update_params = GetUpdatesParams::builder()
             .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
             .build();
 
         Api {
-            api_url,
+            async_api: api,
             update_params,
             buffer: VecDeque::new(),
         }
     }
 
-    pub fn next_update(&mut self) -> Option<Update> {
+    pub async fn next_update(&mut self) -> Option<Update> {
         if let Some(update) = self.buffer.pop_front() {
             return Some(update);
         }
 
-        match self.get_updates(&self.update_params) {
+        match self.async_api.get_updates(&self.update_params).await {
             Ok(updates) => {
                 for update in updates.result {
                     self.buffer.push_back(update);
@@ -78,21 +79,21 @@ impl Api {
         }
     }
 
-    pub fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
+    pub async fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
         let send_message_params = SendMessageParams::builder()
             .chat_id(chat_id)
             .parse_mode(ParseMode::Html)
             .text(message)
             .build();
 
-        match self.send_message(&send_message_params) {
+        match self.async_api.send_message(&send_message_params).await {
             Ok(_) => Ok(()),
             Err(err) => {
                 error!(
                     "Failed to send message {:?}: {:?}",
                     err, send_message_params
                 );
-                Err(err)
+                Err(Error::ApiError(err))
             }
         }
     }
@@ -125,68 +126,5 @@ impl From<isahc::Error> for Error {
         let error = HttpError { code: 500, message };
 
         Error::HttpError(error)
-    }
-}
-
-impl TelegramApi for Api {
-    type Error = Error;
-
-    fn request<T1: serde::ser::Serialize, T2: serde::de::DeserializeOwned>(
-        &self,
-        method: &str,
-        params: Option<T1>,
-    ) -> Result<T2, Error> {
-        let url = format!("{}/{}", self.api_url, method);
-
-        let request_builder = Request::post(url).header("Content-Type", "application/json");
-
-        let mut response = match params {
-            None => request_builder.body(())?.send()?,
-            Some(data) => {
-                let json = serde_json::to_string(&data).unwrap();
-                request_builder.body(json)?.send()?
-            }
-        };
-
-        let mut bytes = Vec::new();
-        response.copy_to(&mut bytes)?;
-
-        let parsed_result: Result<T2, serde_json::Error> = serde_json::from_slice(&bytes);
-
-        match parsed_result {
-            Ok(result) => Ok(result),
-            Err(_) => {
-                let parsed_error: Result<ErrorResponse, serde_json::Error> =
-                    serde_json::from_slice(&bytes);
-
-                match parsed_error {
-                    Ok(result) => Err(Error::ApiError(result)),
-                    Err(error) => {
-                        let message = format!("{:?} {:?}", error, std::str::from_utf8(&bytes));
-
-                        let error = HttpError { code: 500, message };
-
-                        Err(Error::HttpError(error))
-                    }
-                }
-            }
-        }
-    }
-
-    // isahc doesn't support multipart uploads
-    // https://github.com/sagebind/isahc/issues/14
-    // but it's fine because this bot doesn't need this feature
-    fn request_with_form_data<T1: serde::ser::Serialize, T2: serde::de::DeserializeOwned>(
-        &self,
-        _method: &str,
-        _params: T1,
-        _files: Vec<(&str, PathBuf)>,
-    ) -> Result<T2, Error> {
-        let error = HttpError {
-            code: 500,
-            message: "isahc doesn't support form data requests".to_string(),
-        };
-
-        Err(Error::HttpError(error))
     }
 }

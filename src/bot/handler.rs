@@ -41,7 +41,7 @@ impl Handler {
         let mut interval = time::interval(std::time::Duration::from_secs(1));
 
         loop {
-            while let Some(update) = api.next_update() {
+            while let Some(update) = api.next_update().await {
                 tokio::spawn(Self::process_message_or_channel_post(
                     connection_pool.clone(),
                     api.clone(),

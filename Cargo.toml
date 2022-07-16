@@ -16,6 +16,7 @@ env_logger = "0.9"
 fang = "0.6"
 feed-rs = "1"
 frankenstein = { version = "0.19", default-features = false, features = ["async-http-client" , "async-telegram-trait"] }
+async-trait = "0.1.56"
 handlebars = "4"
 hex = "0.4"
 htmlescape = "0.3"

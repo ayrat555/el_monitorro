@@ -14,7 +14,6 @@ use fang::PgConnection;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-
 const TELEGRAM_ERRORS: [&str; 14] = [
     "Bad Request: CHAT_WRITE_FORBIDDEN",
     "Bad Request: chat not found",
@@ -58,13 +57,16 @@ impl DeliverChatUpdatesJob {
         Self { chat_id }
     }
 
-    pub fn deliver(&self, db_connection: &PgConnection) {
+    pub async fn deliver(&self, db_connection: &PgConnection) {
         let subscriptions =
             telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
         let api = Api::default();
 
         for subscription in subscriptions {
-            match self.deliver_subscription_updates(&subscription, db_connection, &api) {
+            match self
+                .deliver_subscription_updates(&subscription, db_connection, &api)
+                .await
+            {
                 Ok(()) => {
                     telegram::mark_subscription_delivered(db_connection, &subscription).unwrap();
                 }
@@ -81,7 +83,7 @@ impl DeliverChatUpdatesJob {
         }
     }
 
-    fn deliver_subscription_updates(
+    async fn deliver_subscription_updates(
         &self,
         subscription: &TelegramSubscription,
         connection: &PgConnection,
@@ -104,7 +106,8 @@ impl DeliverChatUpdatesJob {
                 feed.link.clone(),
                 api,
                 &chat,
-            )?;
+            )
+            .await?;
         }
 
         if !feed_items.is_empty() {
@@ -125,24 +128,28 @@ impl DeliverChatUpdatesJob {
                             &chat,
                             api,
                             publication_date,
-                        )?
+                        )
+                        .await?
                     }
                 }
-                Some(words) => self.send_messages_with_filter(
-                    words,
-                    messages,
-                    connection,
-                    subscription,
-                    api,
-                    &chat,
-                )?,
+                Some(words) => {
+                    self.send_messages_with_filter(
+                        words,
+                        messages,
+                        connection,
+                        subscription,
+                        api,
+                        &chat,
+                    )
+                    .await?
+                }
             }
         }
 
         Ok(())
     }
 
-    fn send_messages_with_filter(
+    async fn send_messages_with_filter(
         &self,
         words: Vec<String>,
         messages: Vec<(String, DateTime<Utc>)>,
@@ -184,7 +191,8 @@ impl DeliverChatUpdatesJob {
                     chat,
                     api,
                     publication_date,
-                )?;
+                )
+                .await?;
             } else {
                 self.update_last_deivered_at(connection, subscription, publication_date)?;
             }
@@ -193,7 +201,7 @@ impl DeliverChatUpdatesJob {
         Ok(())
     }
 
-    fn maybe_send_unread_messages_count(
+    async fn maybe_send_unread_messages_count(
         &self,
         subscription: &TelegramSubscription,
         connection: &PgConnection,
@@ -218,13 +226,14 @@ impl DeliverChatUpdatesJob {
                 undelivered_count, feed_items_count, feed_link
             );
 
-            self.send_text_message(chat, message, connection, api)?;
+            self.send_text_message(chat, message, connection, api)
+                .await?;
         }
 
         Ok(())
     }
 
-    fn send_text_message(
+    async fn send_text_message(
         &self,
         chat: &TelegramChat,
         message: String,
@@ -233,7 +242,7 @@ impl DeliverChatUpdatesJob {
     ) -> Result<(), DeliverJobError> {
         let delay = delay_period(chat);
 
-        match api.send_text_message(chat.id, message) {
+        match api.send_text_message(chat.id, message).await {
             Ok(_) => {
                 std::thread::sleep(delay);
                 Ok(())
@@ -247,7 +256,7 @@ impl DeliverChatUpdatesJob {
         }
     }
 
-    fn send_text_message_and_updated_subscription(
+    async fn send_text_message_and_updated_subscription(
         &self,
         subscription: &TelegramSubscription,
         message: String,
@@ -256,7 +265,8 @@ impl DeliverChatUpdatesJob {
         api: &Api,
         publication_date: DateTime<Utc>,
     ) -> Result<(), DeliverJobError> {
-        self.send_text_message(chat, message, connection, api)?;
+        self.send_text_message(chat, message, connection, api)
+            .await?;
 
         self.update_last_deivered_at(connection, subscription, publication_date)
     }
@@ -287,7 +297,6 @@ impl DeliverChatUpdatesJob {
 impl Runnable for DeliverChatUpdatesJob {
     fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
         self.deliver(connection);
-
         Ok(())
     }
 

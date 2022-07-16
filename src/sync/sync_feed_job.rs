@@ -76,7 +76,7 @@ impl SyncFeedJob {
         }
     }
 
-    fn remove_feed_and_notify_subscribers(&self, db_connection: &PgConnection) {
+    async fn remove_feed_and_notify_subscribers(&self, db_connection: &PgConnection) {
         let feed = feeds::find(db_connection, self.feed_id).unwrap();
         let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id).unwrap();
 
@@ -85,7 +85,7 @@ impl SyncFeedJob {
         let api = Api::default();
 
         for chat in chats.into_iter() {
-            match api.send_text_message(chat.id, message.clone()) {
+            match api.send_text_message(chat.id, message.clone()).await {
                 Ok(_) => (),
                 Err(error) => {
                     error!("Failed to send a message: {:?}", error);
