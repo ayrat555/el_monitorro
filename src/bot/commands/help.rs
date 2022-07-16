@@ -20,7 +20,7 @@ static HELP: &str =
          - bot_item_link - url of the item\n\
          - bot_item_description - description of the item\n\
          - bot_date - publication date of the feed\n\
-         Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}\n\n\n{{bot_item_name}}\n\n\n{{bot_date}}\n\n\n{{bot_item_link}}\n\n\
+         Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}<br><br><br>{{bot_item_name}}<br><br><br>{{bot_date}}<br><br><br>{{bot_item_link}}\n\n\
          Also, there are some helpers for templates:\n\n\
          - `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}\n\
          - `italic` helper. Usage: {{italic bot_item_description}}\n\
