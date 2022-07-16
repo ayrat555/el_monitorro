@@ -21,18 +21,13 @@ const BOT_ITEM_LINK: &str = "bot_item_link";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 
 const SUBSTRING_HELPER: &str = "substring";
-const BOLD_HELPER: &str = "bold";
-const ITALIC_HELPER: &str = "italic";
-
-const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}<br><br>{{bot_item_name}}<br><br>{{bot_item_description}}<br><br>{{bot_date}}<br><br>{{bot_item_link}}<br><br>";
+const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 const MAX_CHARS: usize = 4000;
 
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
-handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
-handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 
 #[derive(Builder)]
 pub struct MessageRenderer {
@@ -59,7 +54,6 @@ impl MessageRenderer {
         let template = self
             .template
             .clone()
-            .map(|template| self.clean_template(template))
             .unwrap_or_else(|| DEFAULT_TEMPLATE.to_string());
 
         let mut data = Map::new();
@@ -85,21 +79,14 @@ impl MessageRenderer {
 
         let mut reg = Handlebars::new();
         reg.register_helper(SUBSTRING_HELPER, Box::new(substring));
-        reg.register_helper(BOLD_HELPER, Box::new(bold));
-        reg.register_helper(ITALIC_HELPER, Box::new(italic));
 
-        let template_without_html = remove_html(template);
-        match reg.render_template(&template_without_html, &data) {
+        match reg.render_template(&template, &data) {
             Err(error) => {
                 log::error!("Failed to render template {:?}", error);
                 Err(RENDER_ERROR.to_string())
             }
             Ok(result) => Ok(truncate_and_check(&result)),
         }
-    }
-
-    fn clean_template(&self, template: String) -> String {
-        template.replace("\\n", "<br>")
     }
 
     fn date(&self) -> Option<String> {
