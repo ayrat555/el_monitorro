@@ -99,7 +99,7 @@ impl MessageRenderer {
     }
 
     fn clean_template(&self, template: String) -> String {
-        template.replace("\n", "<br>")
+        template.replace("\\n", "<br>")
     }
 
     fn date(&self) -> Option<String> {
