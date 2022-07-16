@@ -59,6 +59,7 @@ impl MessageRenderer {
         let template = self
             .template
             .clone()
+            .map(|template| self.clean_template(template))
             .unwrap_or_else(|| DEFAULT_TEMPLATE.to_string());
 
         let mut data = Map::new();
@@ -87,7 +88,7 @@ impl MessageRenderer {
         reg.register_helper(BOLD_HELPER, Box::new(bold));
         reg.register_helper(ITALIC_HELPER, Box::new(italic));
 
-        let template_without_html = self.maybe_remove_html(&Some(template)).unwrap();
+        let template_without_html = remove_html(template);
         match reg.render_template(&template_without_html, &data) {
             Err(error) => {
                 log::error!("Failed to render template {:?}", error);
@@ -95,6 +96,10 @@ impl MessageRenderer {
             }
             Ok(result) => Ok(truncate_and_check(&result)),
         }
+    }
+
+    fn clean_template(&self, template: String) -> String {
+        template.replace("\n", "<br>")
     }
 
     fn date(&self) -> Option<String> {
