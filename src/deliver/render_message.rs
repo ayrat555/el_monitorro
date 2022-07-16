@@ -24,7 +24,7 @@ const SUBSTRING_HELPER: &str = "substring";
 const BOLD_HELPER: &str = "bold";
 const ITALIC_HELPER: &str = "italic";
 
-const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
+const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}<br><br>{{bot_item_name}}<br><br>{{bot_item_description}}<br><br>{{bot_date}}<br><br>{{bot_item_link}}<br><br>";
 const MAX_CHARS: usize = 4000;
 
 const RENDER_ERROR: &str = "Failed to render template";
@@ -59,6 +59,7 @@ impl MessageRenderer {
         let template = self
             .template
             .clone()
+            .map(|template| self.clean_template(template))
             .unwrap_or_else(|| DEFAULT_TEMPLATE.to_string());
 
         let mut data = Map::new();
@@ -87,13 +88,18 @@ impl MessageRenderer {
         reg.register_helper(BOLD_HELPER, Box::new(bold));
         reg.register_helper(ITALIC_HELPER, Box::new(italic));
 
-        match reg.render_template(&template, &data) {
+        let template_without_html = remove_html(template);
+        match reg.render_template(&template_without_html, &data) {
             Err(error) => {
                 log::error!("Failed to render template {:?}", error);
                 Err(RENDER_ERROR.to_string())
             }
             Ok(result) => Ok(truncate_and_check(&result)),
         }
+    }
+
+    fn clean_template(&self, template: String) -> String {
+        template.replace("\\n", "<br>")
     }
 
     fn date(&self) -> Option<String> {
