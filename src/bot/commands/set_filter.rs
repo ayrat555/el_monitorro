@@ -21,7 +21,7 @@ impl SetFilter {
         message: &Message,
         params: String,
     ) -> String {
-        let vec: Vec<&str> = params.split(' ').collect();
+        let vec: Vec<&str> = params.splitn(3, ' ').collect();
 
         if vec.len() != 2 {
             return "Wrong number of parameters".to_string();

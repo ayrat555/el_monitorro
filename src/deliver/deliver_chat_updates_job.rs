@@ -156,11 +156,12 @@ impl DeliverChatUpdatesJob {
 
         for (message, publication_date) in messages {
             let mut mtch = true;
+            let lowercase_message = message.to_lowercase();
 
             if !regular_words.is_empty() {
                 let regular_mtch = regular_words
                     .iter()
-                    .any(|word| message.to_lowercase().contains(word));
+                    .any(|word| lowercase_message.contains(word));
 
                 mtch = regular_mtch;
             }
@@ -169,7 +170,7 @@ impl DeliverChatUpdatesJob {
                 let negated_mtch = negated_words.iter().all(|neg_word| {
                     let word = neg_word.replace('!', "");
 
-                    !message.to_lowercase().contains(&word)
+                    !lowercase_message.contains(&word)
                 });
 
                 mtch = mtch && negated_mtch;
