@@ -34,7 +34,7 @@ const MAX_CHARS: usize = 4000;
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
-handlebars_helper!(shortener: |string: String | format!("<b>{:?}</b>", url_shortener(&string)));
+handlebars_helper!(shortener: |string: String | format!("<a href={:?}>link</a>", url_shortener(&string)));
 
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
@@ -92,7 +92,11 @@ impl MessageRenderer {
         );
 
         let mut reg = Handlebars::new();
+     
         reg.register_helper(SUBSTRING_HELPER, Box::new(substring));
+        reg.register_helper(URL_SHORTENER, Box::new(shortener));
+
+       
 
         match reg.render_template(&template, &data) {
             Err(error) => {
@@ -101,6 +105,14 @@ impl MessageRenderer {
             }
             Ok(result) => Ok(truncate_and_check(&result)),
         }
+        // match reg.render_template(&template, &data) {
+        //     Err(error) => {
+        //         log::error!("Failed to render template {:?}", error);
+        //         Err(RENDER_ERROR.to_string())
+        //     }
+        //     Ok(result) => Ok(url_shortener(&result)),
+        // }
+       
     }
 
     fn date(&self) -> Option<String> {
@@ -195,7 +207,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
 
     result.trim().to_string()
 }
-pub fn url_shortener(link: &str){
+pub fn url_shortener(link: &str) ->String{
         
     let ext = TldExtractor::new(option());
     let tld = ext.extract(link).unwrap();
@@ -208,7 +220,8 @@ pub fn url_shortener(link: &str){
     subdomain.push_str(".");
     // let subdomain = joinurl(tld);
     subdomain.push_str(&suffix);
-    println!("TLD for 'https://www.badykov.com/emacs/generating-site-from-org-mode-files/' is '{:?}'", subdomain);
+    // println!("TLD for 'https://www.badykov.com/emacs/generating-site-from-org-mode-files/' is '{:?}'", subdomain);
+    subdomain.to_string()
 }
 fn remove_empty_characters(string: &str) -> String {
     let mut result = string.to_string();
