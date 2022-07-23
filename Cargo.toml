@@ -26,9 +26,11 @@ rss = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+tldextract = "0.5.1"
 tokio = { version = "1", features = ["full"] }
 typed-builder = "0.10"
 url = "2"
+
 
 [dev-dependencies]
 mockito = "0.31"

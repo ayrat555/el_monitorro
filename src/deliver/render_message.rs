@@ -1,3 +1,9 @@
+extern crate env_logger;
+extern crate tldextract;
+
+
+use tldextract::{TldExtractor, TldOption};
+
 use chrono::offset::FixedOffset;
 use chrono::prelude::*;
 use chrono::DateTime;
@@ -21,15 +27,21 @@ const BOT_ITEM_LINK: &str = "bot_item_link";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 
 const SUBSTRING_HELPER: &str = "substring";
+const URL_SHORTENER: &str ="shortener";
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 const MAX_CHARS: usize = 4000;
 
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
+handlebars_helper!(shortener: |string: String | format!("<b>{:?}</b>", url_shortener(&string)));
+
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
+
+
 #[derive(Builder)]
+
 pub struct MessageRenderer {
     #[builder(setter(into), default)]
     bot_feed_name: Option<String>,
@@ -50,6 +62,8 @@ pub struct MessageRenderer {
 }
 
 impl MessageRenderer {
+   
+
     pub fn render(&self) -> Result<String, String> {
         let template = self
             .template
@@ -132,6 +146,11 @@ impl MessageRenderer {
     }
 }
 
+fn option() -> TldOption {
+    TldOption::default()
+}
+
+
 pub fn render_template_example(template: &str) -> Result<String, String> {
     let message_renderer = MessageRenderer::builder()
         .bot_feed_name(Some("feed_name".to_string()))
@@ -176,7 +195,21 @@ fn truncate(s: &str, max_chars: usize) -> String {
 
     result.trim().to_string()
 }
-
+pub fn url_shortener(link: &str){
+        
+    let ext = TldExtractor::new(option());
+    let tld = ext.extract(link).unwrap();
+   
+    let mut subdomain = String::from(tld.subdomain.unwrap());
+    let domain = tld.domain.unwrap();
+    let suffix = tld.suffix.unwrap();
+    subdomain.push_str(".");
+    subdomain.push_str(&domain);
+    subdomain.push_str(".");
+    // let subdomain = joinurl(tld);
+    subdomain.push_str(&suffix);
+    println!("TLD for 'https://www.badykov.com/emacs/generating-site-from-org-mode-files/' is '{:?}'", subdomain);
+}
 fn remove_empty_characters(string: &str) -> String {
     let mut result = string.to_string();
     for character in UNICODE_EMPTY_CHARS {
