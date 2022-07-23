@@ -19,6 +19,8 @@ const BOT_FEED_LINK: &str = "bot_feed_link";
 const BOT_ITEM_LINK: &str = "bot_item_link";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 
+const BOT_NAME: &str = "@sasaathulbot ";
+
 const SUBSTRING_HELPER: &str = "substring";
 const CREATE_LINK_HELPER: &str = "create_link";
 const BOLD_HELPER: &str = "bold";
@@ -158,7 +160,9 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
 }
 
 fn render_link(s: &str, l: &str) -> String {
-    let value = if s.is_empty() { "link" } else { s };
+    
+    let value: String= if s.is_empty() { "link".to_string() } else { s.to_string()};
+    println!("BOT NAME removed value = {}",value);
     format!("<a href=\"{}\">{}</a>", l, value)
 }
 
