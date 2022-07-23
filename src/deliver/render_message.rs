@@ -19,6 +19,8 @@ const BOT_FEED_LINK: &str = "bot_feed_link";
 const BOT_ITEM_LINK: &str = "bot_item_link";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 
+const BOT_NAME: &str = "@sasaathulbot ";
+
 const SUBSTRING_HELPER: &str = "substring";
 const CREATE_LINK_HELPER: &str = "create_link";
 const BOLD_HELPER: &str = "bold";
@@ -37,7 +39,7 @@ handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
 handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
-#[derive(TypedBuilder)]
+#[derive(Builder)]
 pub struct MessageRenderer {
     #[builder(setter(into), default)]
     bot_feed_name: Option<String>,
