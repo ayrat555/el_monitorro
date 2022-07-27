@@ -49,9 +49,8 @@ impl Handler {
                 let db_pool = connection_pool.clone();
                 let tg_api = api.clone();
 
-                thread_pool.spawn(move || {
-                    Self::process_message_or_channel_post(db_pool.clone(), tg_api.clone(), update)
-                });
+                thread_pool
+                    .spawn(move || Self::process_message_or_channel_post(db_pool, tg_api, update));
             }
 
             thread::sleep(interval);
