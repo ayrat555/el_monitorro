@@ -4,6 +4,12 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.9.0 (2022-08-01)
+
+- Do not reply to message replies ([#219](https://github.com/ayrat555/el_monitorro/pull/219))
+- Allow spaces in local filters ([#222](https://github.com/ayrat555/el_monitorro/pull/222))
+- Use rayon instead of tokio for processing user commands ([#231](https://github.com/ayrat555/el_monitorro/pull/231))
+
 ## 0.8.0 (2022-06-01)
 
 - Add global commands for filters ([#214](https://github.com/ayrat555/el_monitorro/pull/214))
