@@ -9,6 +9,7 @@ use fang::Queue;
 use fang::RetentionMode;
 use fang::WorkerParams;
 use fang::WorkerPool;
+use std::time::Duration;
 
 #[macro_use]
 extern crate diesel;
@@ -48,21 +49,30 @@ pub fn start_scheduler(queue: &Queue) {
     queue.remove_all_periodic_tasks().unwrap();
 
     queue
-        .push_periodic_task(&SyncJob::default(), Config::sync_interval_in_seconds())
+        .push_periodic_task(
+            &SyncJob::default(),
+            (Config::sync_interval_in_seconds() * 1_000) as i64,
+        )
         .unwrap();
 
     queue
         .push_periodic_task(
             &DeliverJob::default(),
-            Config::deliver_interval_in_seconds(),
+            (Config::deliver_interval_in_seconds() * 1_000) as i64,
         )
         .unwrap();
 
     queue
-        .push_periodic_task(&CleanJob::default(), Config::clean_interval_in_seconds())
+        .push_periodic_task(
+            &CleanJob::default(),
+            (Config::clean_interval_in_seconds() * 1_000) as i64,
+        )
         .unwrap();
 
-    Scheduler::start(SCHEDULER_CHECK_PERIOD, SCHEDULER_ERROR_MARGIN_SECONDS);
+    Scheduler::start(
+        Duration::from_secs(SCHEDULER_CHECK_PERIOD),
+        Duration::from_secs(SCHEDULER_ERROR_MARGIN_SECONDS),
+    );
 }
 
 fn start_workers(queue: &Queue, typ: String, number: u32) {
