@@ -101,7 +101,6 @@ impl MessageRenderer {
             }
             Ok(result) => Ok(truncate_and_check(&result)),
         }
-       
     }
 
     fn date(&self) -> Option<String> {
