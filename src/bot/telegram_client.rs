@@ -1,5 +1,6 @@
 use crate::config::Config;
 use frankenstein::AllowedUpdate;
+use frankenstein::ParseMode;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
 use frankenstein::SendMessageParams;
@@ -24,7 +25,7 @@ pub enum Error {
     ApiError(ErrorResponse),
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct HttpError {
     pub code: u16,
     pub message: String,
@@ -80,6 +81,7 @@ impl Api {
     pub fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
         let send_message_params = SendMessageParams::builder()
             .chat_id(chat_id)
+            .parse_mode(ParseMode::Html)
             .text(message)
             .build();
 

@@ -27,16 +27,20 @@ const BOT_ITEM_LINK: &str = "bot_item_link";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 
 const SUBSTRING_HELPER: &str = "substring";
-const URL_SHORTENER: &str ="shortener";
-const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
+const BOLD_HELPER: &str = "bold";
+const ITALIC_HELPER: &str = "italic";
+
+const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}<br><br>{{bot_item_name}}<br><br>{{bot_item_description}}<br><br>{{bot_date}}<br><br>{{bot_item_link}}<br><br>";
+// const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 const MAX_CHARS: usize = 4000;
 
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
-handlebars_helper!(shortener: |string: String | format!("<a href={:?}>link</a>", url_shortener(&string)));
 
-handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
+handlebars_helper!(substring: |string: String,link: String| format!("<b><a href={}>{}</a></b>",shorteners(&link,&string),&string));
+handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
+// handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
 
 
@@ -68,6 +72,7 @@ impl MessageRenderer {
         let template = self
             .template
             .clone()
+            .map(|template| self.clean_template(template)) 
             .unwrap_or_else(|| DEFAULT_TEMPLATE.to_string());
 
         let mut data = Map::new();
@@ -94,25 +99,21 @@ impl MessageRenderer {
         let mut reg = Handlebars::new();
      
         reg.register_helper(SUBSTRING_HELPER, Box::new(substring));
-        reg.register_helper(URL_SHORTENER, Box::new(shortener));
-
+        reg.register_helper(BOLD_HELPER, Box::new(bold));
        
 
-        match reg.render_template(&template, &data) {
+        // match reg.render_template(&template, &data)
+        let template_without_html = remove_html(template);
+        match reg.render_template(&template_without_html, &data)  {
             Err(error) => {
                 log::error!("Failed to render template {:?}", error);
                 Err(RENDER_ERROR.to_string())
             }
             Ok(result) => Ok(truncate_and_check(&result)),
         }
-        // match reg.render_template(&template, &data) {
-        //     Err(error) => {
-        //         log::error!("Failed to render template {:?}", error);
-        //         Err(RENDER_ERROR.to_string())
-        //     }
-        //     Ok(result) => Ok(url_shortener(&result)),
-        // }
-       
+    }
+    fn clean_template(&self, template: String) -> String {
+        template.replace("\\n", "<br>")
     }
 
     fn date(&self) -> Option<String> {
@@ -207,22 +208,24 @@ fn truncate(s: &str, max_chars: usize) -> String {
 
     result.trim().to_string()
 }
-pub fn url_shortener(link: &str) ->String{
-        
-    let ext = TldExtractor::new(option());
-    let tld = ext.extract(link).unwrap();
-   
-    let mut subdomain = String::from(tld.subdomain.unwrap());
-    let domain = tld.domain.unwrap();
-    let suffix = tld.suffix.unwrap();
-    subdomain.push_str(".");
-    subdomain.push_str(&domain);
-    subdomain.push_str(".");
-    // let subdomain = joinurl(tld);
-    subdomain.push_str(&suffix);
-    // println!("TLD for 'https://www.badykov.com/emacs/generating-site-from-org-mode-files/' is '{:?}'", subdomain);
-    subdomain.to_string()
+
+fn shorteners(urls: &str,_s: &str)->  String {
+    // let ext = TldExtractor::new(option());
+    // let tld = ext.extract(&urls).unwrap();
+    // let mut subdomain = String::from(tld.subdomain.unwrap());
+    // let domain = tld.domain.unwrap();
+    // let suffix = tld.suffix.unwrap();
+    // subdomain.push_str(".");
+    // subdomain.push_str(&domain);
+    // subdomain.push_str(".");
+    // subdomain.push_str(&suffix);
+    // subdomain.to_string();
+       let subdomain =&urls;
+       println!("{:#?}",subdomain);
+       return subdomain.to_string();
 }
+
+
 fn remove_empty_characters(string: &str) -> String {
     let mut result = string.to_string();
     for character in UNICODE_EMPTY_CHARS {
