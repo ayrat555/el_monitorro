@@ -1,8 +1,8 @@
 extern crate env_logger;
-extern crate tldextract;
 
 
-use tldextract::{TldExtractor, TldOption};
+
+
 
 use chrono::offset::FixedOffset;
 use chrono::prelude::*;
@@ -27,20 +27,22 @@ const BOT_ITEM_LINK: &str = "bot_item_link";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 
 const SUBSTRING_HELPER: &str = "substring";
+const URL_SHORTENER_HELPER: &str = "shortenurl";
 const BOLD_HELPER: &str = "bold";
-const ITALIC_HELPER: &str = "italic";
 
-const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}<br><br>{{bot_item_name}}<br><br>{{bot_item_description}}<br><br>{{bot_date}}<br><br>{{bot_item_link}}<br><br>";
-// const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
+
+
+const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 const MAX_CHARS: usize = 4000;
 
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
 
-handlebars_helper!(substring: |string: String,link: String| format!("<b><a href={}>{}</a></b>",shorteners(&link,&string),&string));
+
+handlebars_helper!(shortenurl: |string: String,link: String| format!("<a href ={}>{}</a>",shorteners(&link,&string),&string));
 handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
-// handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
+handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
 
 
@@ -100,6 +102,7 @@ impl MessageRenderer {
      
         reg.register_helper(SUBSTRING_HELPER, Box::new(substring));
         reg.register_helper(BOLD_HELPER, Box::new(bold));
+        reg.register_helper(URL_SHORTENER_HELPER, Box::new(shortenurl));
        
 
         // match reg.render_template(&template, &data)
@@ -159,9 +162,6 @@ impl MessageRenderer {
     }
 }
 
-fn option() -> TldOption {
-    TldOption::default()
-}
 
 
 pub fn render_template_example(template: &str) -> Result<String, String> {
@@ -209,19 +209,10 @@ fn truncate(s: &str, max_chars: usize) -> String {
     result.trim().to_string()
 }
 
-fn shorteners(urls: &str,_s: &str)->  String {
-    // let ext = TldExtractor::new(option());
-    // let tld = ext.extract(&urls).unwrap();
-    // let mut subdomain = String::from(tld.subdomain.unwrap());
-    // let domain = tld.domain.unwrap();
-    // let suffix = tld.suffix.unwrap();
-    // subdomain.push_str(".");
-    // subdomain.push_str(&domain);
-    // subdomain.push_str(".");
-    // subdomain.push_str(&suffix);
-    // subdomain.to_string();
+fn shorteners(urls: &str,s: &str)->  String {
        let subdomain =&urls;
-       println!("{:#?}",subdomain);
+       let news =&s;
+       println!("{:#?}",&news);
        return subdomain.to_string();
 }
 
