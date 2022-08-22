@@ -58,7 +58,6 @@ pub struct MessageRenderer {
 }
 
 impl MessageRenderer {
-   
     pub fn render(&self) -> Result<String, String> {
         let template = self
             .template
@@ -87,15 +86,13 @@ impl MessageRenderer {
         );
 
         let mut reg = Handlebars::new();
-     
+
         reg.register_helper(SUBSTRING_HELPER, Box::new(substring));
         reg.register_helper(BOLD_HELPER, Box::new(bold));
         reg.register_helper(ITALIC_HELPER, Box::new(italic));
         reg.register_helper(CREATE_LINK_HELPER, Box::new(create_link));
-       
 
-        match reg.render_template(&template, &data)
-          {
+        match reg.render_template(&template, &data) {
             Err(error) => {
                 log::error!("Failed to render template {:?}", error);
                 Err(RENDER_ERROR.to_string())
@@ -103,7 +100,7 @@ impl MessageRenderer {
             Ok(result) => Ok(truncate_and_check(&result)),
         }
     }
- 
+
     fn date(&self) -> Option<String> {
         if let Some(date) = &self.bot_date {
             let time_offset = match self.offset {
@@ -176,8 +173,8 @@ fn truncate_and_check(s: &str) -> String {
         message_without_empty_chars
     }
 }
-fn create_hyper_link(url: &str) ->String{
-    let link =format!("{}{}{}",'"',&url,'"');
+fn create_hyper_link(url: &str) -> String {
+    let link = format!("{}{}{}", '"', &url, '"');
     link
 }
 fn truncate(s: &str, max_chars: usize) -> String {

@@ -414,9 +414,7 @@ mod tests {
 
         assert_eq!(
             result[0].0,
-            // "FeedTitle\r\n\r\nTitle\r\n\r\nDescription\r\n\r\n2020-05-13 19:59:02 +00:05\r\n\r\ndsd".to_string()
             "FeedTitle\n\nTitle\n\nDescription\n\n2020-05-13 19:59:02 +00:05\n\ndsd".to_string()
-
         );
 
         assert_eq!(result[0].1, publication_date);
