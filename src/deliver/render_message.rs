@@ -147,8 +147,6 @@ impl MessageRenderer {
     }
 }
 
-
-
 pub fn render_template_example(template: &str) -> Result<String, String> {
     let message_renderer = MessageRenderer::builder()
         .bot_feed_name(Some("feed_name".to_string()))
