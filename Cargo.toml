@@ -28,7 +28,7 @@ serde_json = "1"
 sha2 = "0.10"
 tokio = { version = "1", features = ["full"] }
 typed-builder = "0.10"
-url = "2.2.2"
+url = "2"
 
 
 [dev-dependencies]

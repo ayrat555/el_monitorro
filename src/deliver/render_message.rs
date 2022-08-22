@@ -23,8 +23,7 @@ const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 const SUBSTRING_HELPER: &str = "substring";
 const CREATE_LINK_HELPER: &str = "create_link";
 const BOLD_HELPER: &str = "bold";
-
-
+const ITALIC_HELPER: &str = "italic";
 
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 const MAX_CHARS: usize = 4000;
@@ -32,13 +31,10 @@ const MAX_CHARS: usize = 4000;
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
-
-
-handlebars_helper!(create_link: |string: String,link: String| format!("<a href={}>{}</a>",create_links(&link),&string));
+handlebars_helper!(create_link: |string: String,link: String| format!("<a href={}>{}</a>",format!("{}{}{}",'"',&link,'"'),&string));
 handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
+handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
-
-
 
 #[derive(Builder)]
 
@@ -63,7 +59,6 @@ pub struct MessageRenderer {
 
 impl MessageRenderer {
    
-
     pub fn render(&self) -> Result<String, String> {
         let template = self
             .template
@@ -95,6 +90,7 @@ impl MessageRenderer {
      
         reg.register_helper(SUBSTRING_HELPER, Box::new(substring));
         reg.register_helper(BOLD_HELPER, Box::new(bold));
+        reg.register_helper(ITALIC_HELPER, Box::new(italic));
         reg.register_helper(CREATE_LINK_HELPER, Box::new(create_link));
        
 
@@ -108,7 +104,6 @@ impl MessageRenderer {
         }
     }
  
-
     fn date(&self) -> Option<String> {
         if let Some(date) = &self.bot_date {
             let time_offset = match self.offset {
@@ -198,13 +193,6 @@ fn truncate(s: &str, max_chars: usize) -> String {
 
     result.trim().to_string()
 }
-
-fn create_links(urls: &str)->  String {
-       let  news_link =&urls;
-       let link =format!("{}{}{}",'"',&news_link,'"');
-       return link.to_string();
-}
-
 
 fn remove_empty_characters(string: &str) -> String {
     let mut result = string.to_string();
