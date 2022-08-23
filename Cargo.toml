@@ -30,6 +30,5 @@ tokio = { version = "1", features = ["full"] }
 typed-builder = "0.10"
 url = "2"
 
-
 [dev-dependencies]
 mockito = "0.31"

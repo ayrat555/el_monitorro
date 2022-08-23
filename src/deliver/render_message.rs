@@ -31,13 +31,12 @@ const MAX_CHARS: usize = 4000;
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
-handlebars_helper!(create_link: |string: String,link: String| format!("<a href={}>{}</a>",create_hyper_link(&link),&string));
+handlebars_helper!(create_link: |string: String, link: String| format!("<a href=\"{}\">{}</a>", link, string));
 handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
 handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
 #[derive(Builder)]
-
 pub struct MessageRenderer {
     #[builder(setter(into), default)]
     bot_feed_name: Option<String>,
@@ -173,10 +172,7 @@ fn truncate_and_check(s: &str) -> String {
         message_without_empty_chars
     }
 }
-fn create_hyper_link(url: &str) -> String {
-    let link = format!("{}{}{}", '"', &url, '"');
-    link
-}
+
 fn truncate(s: &str, max_chars: usize) -> String {
     let result = match s.char_indices().nth(max_chars) {
         None => String::from(s),
