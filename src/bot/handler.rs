@@ -27,33 +27,37 @@ use diesel::r2d2;
 use diesel::PgConnection;
 use frankenstein::Update;
 use frankenstein::UpdateContent;
-use tokio::time;
+use std::thread;
 
 pub struct Handler {}
 
 impl Handler {
-    pub async fn start() {
+    pub fn start() {
         let mut api = Api::default();
         let connection_pool = db::create_connection_pool(Config::commands_db_pool_number());
+        let thread_pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(Config::commands_db_pool_number() as usize)
+            .build()
+            .unwrap();
 
         log::info!("Starting the El Monitorro bot");
 
-        let mut interval = time::interval(std::time::Duration::from_secs(1));
+        let interval = std::time::Duration::from_secs(1);
 
         loop {
             while let Some(update) = api.next_update() {
-                tokio::spawn(Self::process_message_or_channel_post(
-                    connection_pool.clone(),
-                    api.clone(),
-                    update,
-                ));
+                let db_pool = connection_pool.clone();
+                let tg_api = api.clone();
+
+                thread_pool
+                    .spawn(move || Self::process_message_or_channel_post(db_pool, tg_api, update));
             }
 
-            interval.tick().await;
+            thread::sleep(interval);
         }
     }
 
-    async fn process_message_or_channel_post(
+    fn process_message_or_channel_post(
         db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
         api: Api,
         update: Update,

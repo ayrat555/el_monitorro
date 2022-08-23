@@ -3,8 +3,7 @@ use el_monitorro::bot;
 use el_monitorro::config::Config;
 use fang::Queue;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -18,5 +17,5 @@ async fn main() {
 
     el_monitorro::start_scheduler(&queue);
 
-    bot::handler::Handler::start().await;
+    bot::handler::Handler::start();
 }

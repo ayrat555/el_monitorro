@@ -1,6 +1,6 @@
 [package]
 name = "el_monitorro"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Ayrat Badykov <ayratin555@gmail.com>"]
 edition = "2018"
 rust-version = "1.62"
@@ -13,9 +13,9 @@ chrono = "0.4"
 diesel = { version = "1", features = ["postgres", "chrono", "r2d2"] }
 dotenv = "0.15"
 env_logger = "0.9"
-fang = "0.6"
+fang = { version = "0.8", features = ["blocking"], default-features = false }
 feed-rs = "1"
-frankenstein = { version = "0.19", default-features = false, features = ["telegram-trait"] }
+frankenstein = { version = "0.20", default-features = false, features = ["telegram-trait"] }
 handlebars = "4"
 hex = "0.4"
 htmlescape = "0.3"
@@ -26,9 +26,9 @@ rss = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
-tokio = { version = "1", features = ["full"] }
 typed-builder = "0.10"
 url = "2"
+rayon = "1.5"
 
 [dev-dependencies]
 mockito = "0.31"
