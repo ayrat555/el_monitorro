@@ -13,6 +13,7 @@ use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::Message;
+use frankenstein::ParseMode;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 
@@ -80,6 +81,7 @@ pub trait Command {
             .chat_id(message.chat.id)
             .text(text)
             .reply_to_message_id(message.message_id)
+            .parse_mode(ParseMode::Html)
             .build();
 
         if let Err(err) = api.send_message(&send_message_params) {
