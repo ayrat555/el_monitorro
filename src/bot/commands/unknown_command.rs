@@ -28,6 +28,7 @@ impl Command for UnknownCommand {
         &self,
         _db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
+        _api: &Api,
     ) -> String {
         match message.chat.type_field {
             ChatType::Private => UNKNOWN_COMMAND_PRIVATE.to_string(),
@@ -53,7 +54,7 @@ impl Command for UnknownCommand {
             );
         }
 
-        let text = self.response(db_pool, &message);
+        let text = self.response(db_pool, &message, &api);
 
         if !text.is_empty() {
             self.reply_to_message(api, message, text);

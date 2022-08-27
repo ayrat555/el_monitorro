@@ -18,6 +18,7 @@ impl SetGlobalTemplate {
 
     fn set_global_template(
         &self,
+        api: &Api,
         db_connection: &PgConnection,
         message: &Message,
         template: String,
@@ -32,15 +33,16 @@ impl SetGlobalTemplate {
         };
 
         let example = match render_template_example(&template) {
-            Ok(example) => example,
+            Ok(example) => format!("Your messages will look like:\n\n{}", example),
             Err(_) => return "The template is invalid".to_string(),
         };
 
+        if api.send_text_message(message.chat.id, example).is_err() {
+            return "The template is invalid".to_string();
+        }
+
         match telegram::set_global_template(db_connection, &chat, Some(template)) {
-            Ok(_) => format!(
-                "The global template was updated. Your messages will look like:\n\n{}",
-                example
-            ),
+            Ok(_) => "The global template was updated".to_string(),
             Err(_) => "Failed to update the template".to_string(),
         }
     }
@@ -55,12 +57,13 @@ impl Command for SetGlobalTemplate {
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
+        api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_global_template(&connection, message, argument)
+                self.set_global_template(api, &connection, message, argument)
             }
             Err(error_message) => error_message,
         }

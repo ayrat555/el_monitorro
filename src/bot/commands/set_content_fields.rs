@@ -77,7 +77,7 @@ impl Command for SetContentFields {
                         message.text.as_ref().unwrap()
                     );
 
-                    let text = self.response(db_pool, &message);
+                    let text = self.response(db_pool, &message, &api);
 
                     self.reply_to_message(api, message, text)
                 } else {
@@ -91,6 +91,7 @@ impl Command for SetContentFields {
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
+        _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
