@@ -37,7 +37,7 @@ impl SetGlobalTemplate {
             Err(_) => return "The template is invalid".to_string(),
         };
 
-        if let Err(_) = api.send_text_message(message.chat.id, example) {
+        if api.send_text_message(message.chat.id, example).is_err() {
             return "The template is invalid".to_string();
         }
 
