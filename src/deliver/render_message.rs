@@ -148,8 +148,8 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
         .bot_feed_name(Some("feed_name".to_string()))
         .bot_item_name(Some("item_name".to_string()))
         .bot_date(Some(Utc::now().round_subsecs(0)))
-        .bot_feed_link(Some("feed_link".to_string()))
-        .bot_item_link(Some("item_link".to_string()))
+        .bot_feed_link(Some("https://www.badykov.com/feed.xml".to_string()))
+        .bot_item_link(Some("https://www.badykov.com/".to_string()))
         .bot_item_description(Some("item_description".to_string()))
         .template(Some(template.to_string()))
         .build();

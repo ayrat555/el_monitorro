@@ -13,9 +13,6 @@ use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::Message;
-use frankenstein::ParseMode;
-use frankenstein::SendMessageParams;
-use frankenstein::TelegramApi;
 
 pub mod get_filter;
 pub mod get_global_filter;
@@ -61,8 +58,12 @@ impl From<Chat> for NewTelegramChat {
 }
 
 pub trait Command {
-    fn response(&self, db_pool: Pool<ConnectionManager<PgConnection>>, message: &Message)
-        -> String;
+    fn response(
+        &self,
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        message: &Message,
+        api: &Api,
+    ) -> String;
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         info!(
@@ -71,24 +72,16 @@ pub trait Command {
             message.text.as_ref().unwrap()
         );
 
-        let text = self.response(db_pool, &message);
+        let text = self.response(db_pool, &message, &api);
 
         self.reply_to_message(api, message, text)
     }
 
     fn reply_to_message(&self, api: Api, message: Message, text: String) {
-        let send_message_params = SendMessageParams::builder()
-            .chat_id(message.chat.id)
-            .text(text)
-            .reply_to_message_id(message.message_id)
-            .parse_mode(ParseMode::Html)
-            .build();
-
-        if let Err(err) = api.send_message(&send_message_params) {
-            error!(
-                "Failed to send a message {:?}: {:?}",
-                err, send_message_params
-            );
+        if let Err(error) =
+            api.reply_with_text_message(message.chat.id, text, Some(message.message_id))
+        {
+            error!("Failed to reply to update {:?} {:?}", error, message);
         }
     }
 
