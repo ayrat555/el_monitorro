@@ -256,9 +256,7 @@ impl DeliverChatUpdatesJob {
         api: &Api,
         publication_date: DateTime<Utc>,
     ) -> Result<(), DeliverJobError> {
-        let parsed_message = message.replace("<3","❤️");
-        
-        self.send_text_message(chat, parsed_message, connection, api)?;
+        self.send_text_message(chat, message.replace("<3","❤️"), connection, api)?;
 
         self.update_last_deivered_at(connection, subscription, publication_date)
     }
