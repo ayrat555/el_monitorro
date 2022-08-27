@@ -73,7 +73,7 @@ impl Command for Info {
                         message.text.as_ref().unwrap()
                     );
 
-                    let text = self.response(db_pool, &message, &api);
+                    let text = self.response(db_pool, &message);
 
                     self.reply_to_message(api, message, text)
                 } else {
@@ -87,7 +87,6 @@ impl Command for Info {
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
-        _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => self.info(&connection, message),

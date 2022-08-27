@@ -42,7 +42,6 @@ impl Command for ListSubscriptions {
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
-        _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => self.list_subscriptions(&connection, message),

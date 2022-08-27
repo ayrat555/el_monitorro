@@ -18,7 +18,6 @@ impl SetTemplate {
 
     fn set_template(
         &self,
-        api: &Api,
         db_connection: &PgConnection,
         message: &Message,
         params: String,
@@ -42,16 +41,15 @@ impl SetTemplate {
         };
 
         let example = match render_template_example(template) {
-            Ok(example) => format!("Your messages will look like:\n\n{}", example),
+            Ok(example) => example,
             Err(_) => return "The template is invalid".to_string(),
         };
 
-        if api.send_text_message(message.chat.id, example).is_err() {
-            return "The template is invalid".to_string();
-        }
-
         match telegram::set_template(db_connection, &subscription, Some(template.to_string())) {
-            Ok(_) => "The template was updated".to_string(),
+            Ok(_) => format!(
+                "The template was updated. Your messages will look like:\n\n{}",
+                example
+            ),
             Err(_) => "Failed to update the template".to_string(),
         }
     }
@@ -66,13 +64,12 @@ impl Command for SetTemplate {
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
-        api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_template(api, &connection, message, argument)
+                self.set_template(&connection, message, argument)
             }
             Err(error_message) => error_message,
         }

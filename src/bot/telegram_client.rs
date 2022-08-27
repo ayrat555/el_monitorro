@@ -2,7 +2,6 @@ use crate::config::Config;
 use frankenstein::AllowedUpdate;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
-use frankenstein::ParseMode;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
@@ -79,29 +78,10 @@ impl Api {
     }
 
     pub fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
-        self.reply_with_text_message(chat_id, message, None)
-    }
-
-    pub fn reply_with_text_message(
-        &self,
-        chat_id: i64,
-        message: String,
-        message_id: Option<i32>,
-    ) -> Result<(), Error> {
-        let send_message_params = match message_id {
-            None => SendMessageParams::builder()
-                .chat_id(chat_id)
-                .text(message)
-                .parse_mode(ParseMode::Html)
-                .build(),
-
-            Some(message_id_value) => SendMessageParams::builder()
-                .chat_id(chat_id)
-                .text(message)
-                .parse_mode(ParseMode::Html)
-                .reply_to_message_id(message_id_value)
-                .build(),
-        };
+        let send_message_params = SendMessageParams::builder()
+            .chat_id(chat_id)
+            .text(message)
+            .build();
 
         match self.send_message(&send_message_params) {
             Ok(_) => Ok(()),
