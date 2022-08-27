@@ -49,7 +49,11 @@ Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
 
     {{bot_item_link}}
 
-Also, there is `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}
+Also, there are some helpers for templates:
+- `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}
+- `create_link` helper. This helper creates an html link. For example, {{create_link bot_item_name bot_item_link}} or {{create_link "custom_name" bot_item_link}}
+- `italic` helper. Usage: {{italic bot_item_description}}
+- `bold` helper. Usage:  {{bold bot_item_name}}
 
 /get_template url - get a template for the subscription
 

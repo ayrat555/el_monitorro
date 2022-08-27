@@ -21,7 +21,11 @@ static HELP: &str =
          - bot_item_description - description of the item\n\
          - bot_date - publication date of the feed\n\
          Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}\n\n\n{{bot_item_name}}\n\n\n{{bot_date}}\n\n\n{{bot_item_link}}\n\n\
-         Also, there is the `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}\n\n\
+         Also, there are some helpers for templates:\n\n\
+         - `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}\n\
+         - `create_link` helper. This helper creates an html link. For example, {{create_link bot_item_name bot_item_link}} or {{create_link \"custom_name\" bot_item_link}}\n\
+         - `italic` helper. Usage: {{italic bot_item_description}}\n\
+         - `bold` helper. Usage:  {{bold bot_item_name}}\n\n\
          /get_template url - get the template for the subscription\n\n\
          /remove_template url - remove the template\n\n\
          /set_global_template template - set global template. This template will be used for all subscriptions. If the subscription has its own template, it will be used instead. See /set_template for available fields.\n\n\
