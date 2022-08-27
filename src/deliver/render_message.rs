@@ -21,12 +21,19 @@ const BOT_ITEM_LINK: &str = "bot_item_link";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 
 const SUBSTRING_HELPER: &str = "substring";
+const CREATE_LINK_HELPER: &str = "create_link";
+const BOLD_HELPER: &str = "bold";
+const ITALIC_HELPER: &str = "italic";
+
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 const MAX_CHARS: usize = 4000;
 
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
+handlebars_helper!(create_link: |string: String, link: String| format!("<a href=\"{}\">{}</a>", link, string));
+handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
+handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
 #[derive(Builder)]
@@ -78,7 +85,11 @@ impl MessageRenderer {
         );
 
         let mut reg = Handlebars::new();
+
         reg.register_helper(SUBSTRING_HELPER, Box::new(substring));
+        reg.register_helper(BOLD_HELPER, Box::new(bold));
+        reg.register_helper(ITALIC_HELPER, Box::new(italic));
+        reg.register_helper(CREATE_LINK_HELPER, Box::new(create_link));
 
         match reg.render_template(&template, &data) {
             Err(error) => {
@@ -137,8 +148,8 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
         .bot_feed_name(Some("feed_name".to_string()))
         .bot_item_name(Some("item_name".to_string()))
         .bot_date(Some(Utc::now().round_subsecs(0)))
-        .bot_feed_link(Some("feed_link".to_string()))
-        .bot_item_link(Some("item_link".to_string()))
+        .bot_feed_link(Some("https://www.badykov.com/feed.xml".to_string()))
+        .bot_item_link(Some("https://www.badykov.com/".to_string()))
         .bot_item_description(Some("item_description".to_string()))
         .template(Some(template.to_string()))
         .build();

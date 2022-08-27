@@ -57,6 +57,7 @@ impl Command for Help {
         &self,
         _db_pool: Pool<ConnectionManager<PgConnection>>,
         _message: &Message,
+        _api: &Api,
     ) -> String {
         HELP.to_string()
     }
