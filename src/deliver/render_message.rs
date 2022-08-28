@@ -1,3 +1,4 @@
+use aho_corasick::AhoCorasick;
 use chrono::offset::FixedOffset;
 use chrono::prelude::*;
 use chrono::DateTime;
@@ -9,9 +10,6 @@ use handlebars::JsonValue;
 use htmlescape::decode_html;
 use serde_json::value::Map;
 use typed_builder::TypedBuilder as Builder;
-
-const UNICODE_EMPTY_CHARS: [char; 5] = ['\u{200B}', '\u{200C}', '\u{200D}', '\u{2060}', '\u{FEFF}'];
-const HTML_SPACE: &str = "&#32;";
 
 const BOT_FEED_NAME: &str = "bot_feed_name";
 const BOT_ITEM_NAME: &str = "bot_item_name";
@@ -164,12 +162,11 @@ fn truncate_and_check(s: &str) -> String {
     };
 
     let truncated_result = truncate(&escaped_data, MAX_CHARS);
-    let message_without_empty_chars = remove_empty_characters(&truncated_result);
 
-    if message_without_empty_chars.is_empty() {
+    if truncated_result.is_empty() {
         EMPTY_MESSAGE_ERROR.to_string()
     } else {
-        message_without_empty_chars
+        truncated_result
     }
 }
 
@@ -188,16 +185,15 @@ fn truncate(s: &str, max_chars: usize) -> String {
     result.trim().to_string()
 }
 
-fn remove_empty_characters(string: &str) -> String {
-    let mut result = string.to_string();
-    for character in UNICODE_EMPTY_CHARS {
-        result = result.replace(character, "");
-    }
-
-    result.replace(HTML_SPACE, "")
-}
-
 fn remove_html(string_with_maybe_html: &str) -> String {
-    let message_without_heart = string_with_maybe_html.replace("<3", "❤️");
-    nanohtml2text::html2text(&message_without_heart)
+    let string_without_html = nanohtml2text::html2text(string_with_maybe_html);
+
+    let ac = AhoCorasick::new(&[
+        "&", "<", ">", "&#32;", "\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}",
+    ]);
+
+    ac.replace_all(
+        &string_without_html,
+        &["&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " ", " "],
+    )
 }
