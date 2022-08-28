@@ -123,7 +123,7 @@ impl MessageRenderer {
 
     fn maybe_remove_html(&self, value_option: &Option<String>) -> Option<String> {
         if let Some(value) = value_option {
-            let without_html = remove_html(value.clone());
+            let without_html = remove_html(&value);
 
             return Some(without_html);
         }
@@ -197,6 +197,7 @@ fn remove_empty_characters(string: &str) -> String {
     result.replace(HTML_SPACE, "")
 }
 
-fn remove_html(string_with_maybe_html: String) -> String {
-    nanohtml2text::html2text(&string_with_maybe_html)
+fn remove_html(string_with_maybe_html: &str) -> String {
+    let message_without_heart = string_with_maybe_html.replace("<3", "❤️");
+    nanohtml2text::html2text(&message_without_heart)
 }
