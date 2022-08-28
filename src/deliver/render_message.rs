@@ -188,7 +188,12 @@ fn truncate(s: &str, max_chars: usize) -> String {
 fn remove_html(string_with_maybe_html: &str) -> String {
     let string_without_html = nanohtml2text::html2text(string_with_maybe_html);
 
-    let ac = AhoCorasick::new(&["&", "<", ">", "&#32;"]);
+    let ac = AhoCorasick::new(&[
+        "&", "<", ">", "&#32;", "\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}",
+    ]);
 
-    ac.replace_all(&string_without_html, &["&amp;", "&lt;", "&gt;", " "])
+    ac.replace_all(
+        &string_without_html,
+        &["&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " ", " "],
+    )
 }
