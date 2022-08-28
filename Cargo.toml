@@ -8,6 +8,7 @@ rust-version = "1.62"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+aho-corasick = "0.7"
 atom_syndication = "0.11"
 chrono = "0.4"
 diesel = { version = "1", features = ["postgres", "chrono", "r2d2"] }
@@ -22,13 +23,13 @@ htmlescape = "0.3"
 isahc = "1"
 log = "0.4"
 nanohtml2text = "0.1"
+rayon = "1.5"
 rss = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 typed-builder = "0.10"
 url = "2"
-rayon = "1.5"
 
 [dev-dependencies]
 mockito = "0.31"
