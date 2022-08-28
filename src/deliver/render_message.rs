@@ -186,7 +186,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
 }
 
 fn remove_html(string_with_maybe_html: &str) -> String {
-    let string_without_html = nanohtml2text::html2text(&string_with_maybe_html);
+    let string_without_html = nanohtml2text::html2text(string_with_maybe_html);
 
     let ac = AhoCorasick::new(&["&", "<", ">", "&#32;"]);
 
