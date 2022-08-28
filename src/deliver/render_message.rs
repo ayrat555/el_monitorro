@@ -123,7 +123,7 @@ impl MessageRenderer {
 
     fn maybe_remove_html(&self, value_option: &Option<String>) -> Option<String> {
         if let Some(value) = value_option {
-            let without_html = remove_html(&value);
+            let without_html = remove_html(value);
 
             return Some(without_html);
         }
