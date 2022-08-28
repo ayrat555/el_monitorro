@@ -35,6 +35,7 @@ impl Command for GetTimezone {
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
         message: &Message,
+        _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
             Ok(connection) => self.get_timezone(&connection, message),

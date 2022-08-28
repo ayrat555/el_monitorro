@@ -35,6 +35,7 @@ impl Command for Start {
         &self,
         _db_pool: Pool<ConnectionManager<PgConnection>>,
         _message: &Message,
+        _api: &Api,
     ) -> String {
         START.to_string()
     }
