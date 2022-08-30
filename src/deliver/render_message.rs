@@ -1,4 +1,5 @@
-use aho_corasick::AhoCorasick;
+use aho_corasick::AhoCorasickBuilder;
+use aho_corasick::MatchKind;
 use chrono::offset::FixedOffset;
 use chrono::prelude::*;
 use chrono::DateTime;
@@ -188,12 +189,14 @@ fn truncate(s: &str, max_chars: usize) -> String {
 fn remove_html(string_with_maybe_html: &str) -> String {
     let string_without_html = nanohtml2text::html2text(string_with_maybe_html);
 
-    let ac = AhoCorasick::new(&[
-        "&", "<", ">", "&#32;", "\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}",
-    ]);
+    let ac = AhoCorasickBuilder::new()
+        .match_kind(MatchKind::LeftmostFirst)
+        .build(&[
+            "&#32;", "&", "<", ">", "\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}",
+        ]);
 
     ac.replace_all(
         &string_without_html,
-        &["&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " ", " "],
+        &[" ", "&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " "],
     )
 }
