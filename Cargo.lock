@@ -179,6 +179,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cron"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d76219e9243e100d5a37676005f08379297f8addfebc247613299600625c734d"
+dependencies = [
+ "chrono",
+ "nom",
+ "once_cell",
+]
+
+[[package]]
 name = "crossbeam-channel"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -430,11 +441,13 @@ dependencies = [
  "log",
  "mockito",
  "nanohtml2text",
+ "once_cell",
  "rayon",
  "rss",
  "serde",
  "serde_json",
  "sha2",
+ "thiserror",
  "typed-builder",
  "url",
 ]
@@ -479,18 +492,21 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "fang"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c48b6ff20ba9e47722882116d3b4cf35abd8e6375273fce8725184b5fafac99"
+source = "git+https://github.com/ayrat555/fang?branch=ayrat555/change-schema#b975e893e2e5a2b248acd105f582f0386523d413"
 dependencies = [
  "chrono",
+ "cron",
  "diesel",
  "diesel-derive-enum",
  "dotenv",
+ "hex",
  "log",
  "serde",
  "serde_derive",
  "serde_json",
+ "sha2",
  "thiserror",
+ "typed-builder",
  "typetag",
  "uuid 0.8.2",
 ]
@@ -845,6 +861,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
 
 [[package]]
+name = "minimal-lexical"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
 name = "mockito"
 version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -873,6 +895,16 @@ name = "never"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c96aba5aa877601bb3f6dd6a63a969e1f82e60646e81e71b14496995e9853c91"
+
+[[package]]
+name = "nom"
+version = "7.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8903e5a29a317527874d0402f867152a3d21c908bb0b933e416c65e301d4c36"
+dependencies = [
+ "memchr",
+ "minimal-lexical",
+]
 
 [[package]]
 name = "num-integer"

@@ -12,8 +12,8 @@ use chrono::Duration;
 use diesel::pg::PgConnection;
 use diesel::result::Error;
 use fang::typetag;
-use fang::Error as FangError;
-use fang::Queue;
+use fang::FangError;
+use fang::Queueable;
 use fang::Runnable;
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -42,10 +42,12 @@ impl From<Error> for FeedSyncError {
 
 #[typetag::serde]
 impl Runnable for SyncFeedJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        self.sync_feed(connection);
+    fn run(&self, connection: &dyn Queueable) -> Result<(), FangError> {
+        self.sync_feed()
+    }
 
-        Ok(())
+    fn uniq(&self) -> bool {
+        true
     }
 
     fn task_type(&self) -> String {
@@ -58,11 +60,9 @@ impl SyncFeedJob {
         Self { feed_id }
     }
 
-    pub fn enqueue(&self, connection: &PgConnection) -> Result<fang::Task, diesel::result::Error> {
-        Queue::push_task_query(connection, self)
-    }
+    pub fn sync_feed(&self) -> Result<(), FangError> {
+        let db_connection = &crate::db::pool().get()?;
 
-    pub fn sync_feed(&self, db_connection: &PgConnection) {
         let feed_sync_result = self.execute(db_connection);
 
         match feed_sync_result {
@@ -73,7 +73,9 @@ impl SyncFeedJob {
             }
             Err(error) => error!("Failed to process feed {}: {:?}", self.feed_id, error),
             Ok(_) => (),
-        }
+        };
+
+        Ok(())
     }
 
     fn remove_feed_and_notify_subscribers(&self, db_connection: &PgConnection) {

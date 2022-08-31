@@ -22,7 +22,6 @@ use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
-use crate::db;
 use diesel::r2d2;
 use diesel::PgConnection;
 use frankenstein::Update;
@@ -33,8 +32,8 @@ pub struct Handler {}
 
 impl Handler {
     pub fn start() {
+        // maybe Api can be share also
         let mut api = Api::default();
-        let connection_pool = db::create_connection_pool(Config::commands_db_pool_number());
         let thread_pool = rayon::ThreadPoolBuilder::new()
             .num_threads(Config::commands_db_pool_number() as usize)
             .build()
@@ -46,7 +45,7 @@ impl Handler {
 
         loop {
             while let Some(update) = api.next_update() {
-                let db_pool = connection_pool.clone();
+                let db_pool = crate::db::pool().clone();
                 let tg_api = api.clone();
 
                 thread_pool

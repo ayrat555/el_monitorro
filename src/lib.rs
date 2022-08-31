@@ -4,12 +4,10 @@ use crate::cleaner::CleanJob;
 use crate::config::Config;
 use crate::deliver::DeliverJob;
 use crate::sync::SyncJob;
-use fang::scheduler::Scheduler;
 use fang::Queue;
+use fang::Queueable;
 use fang::RetentionMode;
-use fang::WorkerParams;
 use fang::WorkerPool;
-use std::time::Duration;
 
 #[macro_use]
 extern crate diesel;
@@ -29,6 +27,28 @@ pub mod sync;
 const SCHEDULER_CHECK_PERIOD: u64 = 10;
 const SCHEDULER_ERROR_MARGIN_SECONDS: u64 = 10;
 
+pub fn fix_units_for_cron(seconds_amount: u64) -> Vec<u64> {
+    let (seconds, minutes): (u64, u64) = if seconds_amount > 59 {
+        (seconds_amount % 60, seconds_amount / 60)
+    } else {
+        return vec![seconds_amount];
+    };
+
+    let (minutes, hours): (u64, u64) = if minutes > 59 {
+        (minutes % 60, minutes / 60)
+    } else {
+        return vec![seconds, minutes];
+    };
+
+    let (hours, days): (u64, u64) = if hours > 23 {
+        (hours % 24, hours / 24)
+    } else {
+        return vec![seconds, minutes, hours];
+    };
+
+    vec![seconds, minutes, hours, days]
+}
+
 pub fn start_delivery_workers(queue: &Queue) {
     start_workers(
         queue,
@@ -46,42 +66,41 @@ pub fn start_clean_workers(queue: &Queue) {
 }
 
 pub fn start_scheduler(queue: &Queue) {
-    queue.remove_all_periodic_tasks().unwrap();
+    queue.remove_all_scheduled_tasks().unwrap();
+
+    // DO CRON METHODS AND FINISH THIS.
 
     queue
-        .push_periodic_task(
+        .schedule_task(
             &SyncJob::default(),
             (Config::sync_interval_in_seconds() * 1_000) as i64,
         )
         .unwrap();
 
     queue
-        .push_periodic_task(
+        .schedule_task(
             &DeliverJob::default(),
             (Config::deliver_interval_in_seconds() * 1_000) as i64,
         )
         .unwrap();
 
     queue
-        .push_periodic_task(
+        .schedule_task(
             &CleanJob::default(),
             (Config::clean_interval_in_seconds() * 1_000) as i64,
         )
         .unwrap();
-
-    Scheduler::start(
-        Duration::from_secs(SCHEDULER_CHECK_PERIOD),
-        Duration::from_secs(SCHEDULER_ERROR_MARGIN_SECONDS),
-    );
 }
 
 fn start_workers(queue: &Queue, typ: String, number: u32) {
     queue.remove_tasks_of_type(&typ).unwrap();
 
-    let mut worker_params = WorkerParams::new();
-    worker_params.set_task_type(typ);
-    worker_params.set_retention_mode(RetentionMode::RemoveAll);
-    WorkerPool::new_with_params(number, worker_params)
-        .start()
-        .unwrap();
+    let mut worker_pool = WorkerPool::<Queue>::builder()
+        .queue(queue.clone())
+        .retention_mode(RetentionMode::RemoveAll)
+        .number_of_workers(number)
+        .task_type(typ)
+        .build();
+
+    worker_pool.start().unwrap()
 }
