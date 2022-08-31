@@ -9,8 +9,9 @@ use crate::models::telegram_subscription::TelegramSubscription;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use fang::typetag;
-use fang::Error as FangError;
+use fang::FangError;
 use fang::PgConnection;
+use fang::Queueable;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -58,7 +59,8 @@ impl DeliverChatUpdatesJob {
         Self { chat_id }
     }
 
-    pub fn deliver(&self, db_connection: &PgConnection) {
+    pub fn deliver(&self) -> Result<(), FangError> {
+        let db_connection = &crate::db::pool().get()?;
         let subscriptions =
             telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
         let api = Api::default();
@@ -79,6 +81,7 @@ impl DeliverChatUpdatesJob {
                 }
             }
         }
+        Ok(())
     }
 
     fn deliver_subscription_updates(
@@ -285,10 +288,8 @@ impl DeliverChatUpdatesJob {
 
 #[typetag::serde]
 impl Runnable for DeliverChatUpdatesJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        self.deliver(connection);
-
-        Ok(())
+    fn run(&self, connection: &dyn Queueable) -> Result<(), FangError> {
+        self.deliver()
     }
 
     fn task_type(&self) -> String {

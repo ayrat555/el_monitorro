@@ -1,9 +1,9 @@
 use super::RemoveOldItemsJob;
 use crate::db::feeds;
 use fang::typetag;
-use fang::Error as FangError;
+use fang::FangError;
 use fang::PgConnection;
-use fang::Queue;
+use fang::Queueable;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 
@@ -23,15 +23,17 @@ impl CleanJob {
         CleanJob {}
     }
 
-    pub fn execute(&self, connection: &PgConnection) -> Result<(), FangError> {
-        self.delete_feeds_without_subscriptions(connection);
+    pub fn execute(&self, queue: &dyn Queueable) -> Result<(), FangError> {
+        let conn = crate::db::pool().get()?;
+
+        self.delete_feeds_without_subscriptions(&conn);
 
         let mut current_feed_ids: Vec<i64>;
         let mut page = 1;
         let mut total_number = 0;
 
         loop {
-            current_feed_ids = match feeds::load_feed_ids(connection, page, FEEDS_PER_PAGE) {
+            current_feed_ids = match feeds::load_feed_ids(&conn, page, FEEDS_PER_PAGE) {
                 Err(err) => {
                     let description = format!("{:?}", err);
                     return Err(FangError { description });
@@ -48,7 +50,7 @@ impl CleanJob {
             total_number += current_feed_ids.len();
 
             for feed_id in current_feed_ids {
-                Queue::push_task_query(connection, &RemoveOldItemsJob::new(feed_id)).unwrap();
+                queue.insert_task(&RemoveOldItemsJob::new(feed_id))?;
             }
         }
 
@@ -72,8 +74,8 @@ impl CleanJob {
 
 #[typetag::serde]
 impl Runnable for CleanJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        self.execute(connection)
+    fn run(&self, queue: &dyn Queueable) -> Result<(), FangError> {
+        self.execute(queue)
     }
 
     fn task_type(&self) -> String {

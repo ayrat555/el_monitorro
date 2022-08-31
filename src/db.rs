@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use chrono::{DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::r2d2;
+use once_cell::sync::OnceCell;
 
 #[cfg(test)]
 use diesel::connection::Connection;
@@ -13,6 +14,8 @@ use dotenv::dotenv;
 pub mod feed_items;
 pub mod feeds;
 pub mod telegram;
+
+static POOL: OnceCell<r2d2::Pool<r2d2::ConnectionManager<PgConnection>>> = OnceCell::new();
 
 #[cfg(test)]
 pub fn establish_test_connection() -> PgConnection {
@@ -27,12 +30,19 @@ pub fn current_time() -> DateTime<Utc> {
     Utc::now().round_subsecs(0)
 }
 
-pub fn create_connection_pool(size: u32) -> r2d2::Pool<r2d2::ConnectionManager<PgConnection>> {
+pub fn pool() -> &'static r2d2::Pool<r2d2::ConnectionManager<PgConnection>> {
+    POOL.get_or_init(create_connection_pool)
+}
+
+pub fn create_connection_pool() -> r2d2::Pool<r2d2::ConnectionManager<PgConnection>> {
     let url = database_url();
 
     let manager = r2d2::ConnectionManager::<PgConnection>::new(url);
 
-    r2d2::Pool::builder().max_size(size).build(manager).unwrap()
+    r2d2::Pool::builder()
+        .max_size(Config::commands_db_pool_number())
+        .build(manager)
+        .unwrap()
 }
 
 pub fn database_url() -> String {

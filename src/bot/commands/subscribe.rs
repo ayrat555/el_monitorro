@@ -13,6 +13,7 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::Connection;
 use diesel::PgConnection;
+use fang::Queue;
 use fang::Runnable;
 use url::Url;
 
@@ -83,11 +84,15 @@ impl Subscribe {
             let subscription =
                 telegram::create_subscription(db_connection, new_telegram_subscription).unwrap();
 
-            if let Err(_err) = SyncFeedJob::new(feed.id).run(db_connection) {
+            let pool = crate::db::pool().clone();
+
+            let queue = Queue::builder().connection_pool(pool).build();
+
+            if let Err(_err) = SyncFeedJob::new(feed.id).run(&queue) {
                 return Err(SubscriptionError::SyncError);
             }
 
-            DeliverChatUpdatesJob::new(chat.id).deliver(db_connection);
+            DeliverChatUpdatesJob::new(chat.id).deliver();
 
             Ok(subscription)
         })

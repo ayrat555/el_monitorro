@@ -1,9 +1,8 @@
 use super::DeliverChatUpdatesJob;
 use crate::db::telegram;
 use fang::typetag;
-use fang::Error as FangError;
-use fang::PgConnection;
-use fang::Queue;
+use fang::FangError;
+use fang::Queueable;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +25,9 @@ impl DeliverJob {
 
 #[typetag::serde]
 impl Runnable for DeliverJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+    fn run(&self, queue: &dyn Queueable) -> Result<(), FangError> {
+        let connection = &crate::db::pool().get()?;
+
         let mut current_chats: Vec<i64>;
         let mut page = 1;
         let mut total_chat_number = 0;
@@ -53,13 +54,19 @@ impl Runnable for DeliverJob {
             total_chat_number += current_chats.len();
 
             for chat_id in current_chats {
-                Queue::push_task_query(connection, &DeliverChatUpdatesJob { chat_id }).unwrap();
+                queue
+                    .insert_task(&DeliverChatUpdatesJob { chat_id })
+                    .unwrap();
             }
         }
 
         log::info!("Started checking delivery for {} chats", total_chat_number,);
 
         Ok(())
+    }
+
+    fn uniq(&self) -> bool {
+        true
     }
 
     fn task_type(&self) -> String {

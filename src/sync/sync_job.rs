@@ -2,8 +2,8 @@ use super::SyncFeedJob;
 use crate::db;
 use crate::db::feeds;
 use fang::typetag;
-use fang::Error as FangError;
-use fang::PgConnection;
+use fang::FangError;
+use fang::Queueable;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +30,9 @@ impl SyncJob {
 
 #[typetag::serde]
 impl Runnable for SyncJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+    fn run(&self, queue: &dyn Queueable) -> Result<(), FangError> {
+        let connection = &crate::db::pool().get()?;
+
         let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;
 
@@ -57,7 +59,7 @@ impl Runnable for SyncJob {
             page += 1;
 
             for id in &unsynced_feed_ids {
-                SyncFeedJob::new(*id).enqueue(connection).unwrap();
+                queue.insert_task(&SyncFeedJob::new(*id));
             }
 
             if unsynced_feed_ids.is_empty() {
@@ -75,6 +77,10 @@ impl Runnable for SyncJob {
         feeds::increment_and_reset_skips(connection).unwrap();
 
         Ok(())
+    }
+
+    fn uniq(&self) -> bool {
+        true
     }
 
     fn task_type(&self) -> String {

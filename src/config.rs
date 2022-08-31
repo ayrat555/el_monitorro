@@ -48,15 +48,15 @@ impl Config {
         Self::read_var_with_default("DATABASE_POOL_SIZE", "5")
     }
 
-    pub fn deliver_interval_in_seconds() -> i32 {
+    pub fn deliver_interval_in_seconds() -> u64 {
         Self::read_var_with_default("DELIVER_INTERVAL_SECONDS", "60")
     }
 
-    pub fn sync_interval_in_seconds() -> i32 {
+    pub fn sync_interval_in_seconds() -> u64 {
         Self::read_var_with_default("SYNC_INTERVAL_SECONDS", "60")
     }
 
-    pub fn clean_interval_in_seconds() -> i32 {
+    pub fn clean_interval_in_seconds() -> u64 {
         Self::read_var_with_default("CLEAN_INTERVAL_SECONDS", "3600")
     }
 

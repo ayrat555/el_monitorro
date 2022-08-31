@@ -26,12 +26,13 @@ pub fn create(conn: &PgConnection, link: String, feed_type: String) -> Result<Fe
         feed_type,
     };
 
-    diesel::insert_into(feeds::table)
+    let feed = diesel::insert_into(feeds::table)
         .values(new_feed)
         .on_conflict(feeds::link)
         .do_update()
         .set(feeds::updated_at.eq(db::current_time()))
-        .get_result::<Feed>(conn)
+        .get_result::<Feed>(conn)?;
+    Ok(feed)
 }
 
 pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
