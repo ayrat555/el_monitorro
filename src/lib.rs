@@ -24,29 +24,38 @@ mod models;
 mod schema;
 pub mod sync;
 
-const SCHEDULER_CHECK_PERIOD: u64 = 10;
-const SCHEDULER_ERROR_MARGIN_SECONDS: u64 = 10;
+const SCHEDULER_CHECK_PERIOD: u32 = 10;
+const SCHEDULER_ERROR_MARGIN_SECONDS: u32 = 10;
 
-pub fn fix_units_for_cron(seconds_amount: u64) -> Vec<u64> {
-    let (seconds, minutes): (u64, u64) = if seconds_amount > 59 {
-        (seconds_amount % 60, seconds_amount / 60)
-    } else {
-        return vec![seconds_amount];
-    };
+pub fn fix_units_for_cron(seconds_amount: u32) -> Vec<u32> {
+    let mut vec = vec![];
+    let mut unit = seconds_amount;
+    for div in [60, 60, 24] {
+        if unit < div {
+            vec.push(unit);
+            break;
+        } else {
+            vec.push(unit % div);
 
-    let (minutes, hours): (u64, u64) = if minutes > 59 {
-        (minutes % 60, minutes / 60)
-    } else {
-        return vec![seconds, minutes];
-    };
+            unit = unit / div;
+        }
+    }
+    if vec.len() == 3 {
+        vec.push(unit);
+    }
+    vec
+}
 
-    let (hours, days): (u64, u64) = if hours > 23 {
-        (hours % 24, hours / 24)
-    } else {
-        return vec![seconds, minutes, hours];
-    };
+pub fn seconds_to_pattern(seconds_amount: u32) -> String {
+    let vec = fix_units_for_cron(seconds_amount);
 
-    vec![seconds, minutes, hours, days]
+    match vec.len() {
+        1 => format!("*/{} * * * * * *", vec[0]),
+        2 => format!("*/{} */{} * * * * *", vec[0], vec[1]),
+        3 => format!("*/{} */{} */{} * * * *", vec[0], vec[1], vec[2]),
+        4 => format!("*/{} */{} */{} */{} * * *", vec[0], vec[1], vec[2], vec[3]),
+        _ => panic!("Error fix units for cron"),
+    }
 }
 
 pub fn start_delivery_workers(queue: &Queue) {

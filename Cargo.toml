@@ -13,7 +13,7 @@ once_cell = "1.13"
 aho-corasick = "0.7"
 atom_syndication = "0.11"
 chrono = "0.4"
-diesel = { version = "1", features = ["postgres", "chrono", "r2d2"] }
+diesel = { version = "2", features = ["postgres", "chrono", "r2d2", "uuid", "serde_json"] }
 dotenv = "0.15"
 env_logger = "0.9"
 fang = { git = "https://github.com/ayrat555/fang", features = ["blocking"], default-features = false, branch="ayrat555/change-schema" }

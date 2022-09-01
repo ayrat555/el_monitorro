@@ -1,10 +1,12 @@
 use super::RemoveOldItemsJob;
 use crate::db::feeds;
+use crate::Config;
 use fang::typetag;
 use fang::FangError;
 use fang::PgConnection;
 use fang::Queueable;
 use fang::Runnable;
+use fang::Scheduled;
 use serde::{Deserialize, Serialize};
 
 const FEEDS_PER_PAGE: i64 = 500;
@@ -78,7 +80,18 @@ impl Runnable for CleanJob {
         self.execute(queue)
     }
 
+    fn uniq(&self) -> bool {
+        true
+    }
+
     fn task_type(&self) -> String {
         super::JOB_TYPE.to_string()
+    }
+
+    fn cron(&self) -> Option<Scheduled> {
+        let interval = Config::clean_interval_in_seconds();
+        let pattern = crate::seconds_to_pattern(interval);
+
+        Some(Scheduled::CronPattern(pattern))
     }
 }
