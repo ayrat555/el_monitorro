@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 use std::{env, str::FromStr};
 
+// 3 days as much
+const MAX_SECONDS: u32 = 259_200;
+
 pub struct Config {}
 
 impl Config {
@@ -48,16 +51,33 @@ impl Config {
         Self::read_var_with_default("DATABASE_POOL_SIZE", "5")
     }
 
-    pub fn deliver_interval_in_seconds() -> u64 {
-        Self::read_var_with_default("DELIVER_INTERVAL_SECONDS", "60")
+    fn check_interval(interval: &u32) {
+        if !(1..=MAX_SECONDS).contains(interval) {
+            panic!("Config::clean_interval_in_seconds() value is not in the interval [1 second , MAX_SECONDS]")
+        }
     }
 
-    pub fn sync_interval_in_seconds() -> u64 {
-        Self::read_var_with_default("SYNC_INTERVAL_SECONDS", "60")
+    pub fn deliver_interval_in_seconds() -> u32 {
+        let interval: u32 = Self::read_var_with_default("DELIVER_INTERVAL_SECONDS", "60");
+
+        Self::check_interval(&interval);
+        interval
     }
 
-    pub fn clean_interval_in_seconds() -> u64 {
-        Self::read_var_with_default("CLEAN_INTERVAL_SECONDS", "3600")
+    pub fn sync_interval_in_seconds() -> u32 {
+        let interval = Self::read_var_with_default("SYNC_INTERVAL_SECONDS", "60");
+
+        Self::check_interval(&interval);
+
+        interval
+    }
+
+    pub fn clean_interval_in_seconds() -> u32 {
+        let interval = Self::read_var_with_default("CLEAN_INTERVAL_SECONDS", "3600");
+
+        Self::check_interval(&interval);
+
+        interval
     }
 
     pub fn all_binaries() -> bool {
