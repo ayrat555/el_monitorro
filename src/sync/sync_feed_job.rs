@@ -63,13 +63,13 @@ impl SyncFeedJob {
     pub fn sync_feed(&self) -> Result<(), FangError> {
         let db_connection = &crate::db::pool().get()?;
 
-        let feed_sync_result = self.execute(db_connection);
+        let feed_sync_result = self.execute(&mut db_connection);
 
         match feed_sync_result {
             Err(FeedSyncError::StaleError) => {
                 error!("Feed can not be processed for a long time {}", self.feed_id);
 
-                self.remove_feed_and_notify_subscribers(db_connection);
+                self.remove_feed_and_notify_subscribers(&mut db_connection);
             }
             Err(error) => error!("Failed to process feed {}: {:?}", self.feed_id, error),
             Ok(_) => (),
@@ -78,9 +78,9 @@ impl SyncFeedJob {
         Ok(())
     }
 
-    fn remove_feed_and_notify_subscribers(&self, db_connection: &PgConnection) {
-        let feed = feeds::find(db_connection, self.feed_id).unwrap();
-        let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id).unwrap();
+    fn remove_feed_and_notify_subscribers(&self, db_connection: &mut PgConnection) {
+        let feed = feeds::find(&mut db_connection, self.feed_id).unwrap();
+        let chats = telegram::find_chats_by_feed_id(&mut db_connection, self.feed_id).unwrap();
 
         let message = format!("{} can not be processed. It was removed.", feed.link);
 
@@ -95,14 +95,14 @@ impl SyncFeedJob {
             }
         }
 
-        match feeds::remove_feed(db_connection, self.feed_id) {
+        match feeds::remove_feed(&mut db_connection, self.feed_id) {
             Ok(_) => info!("Feed was removed: {}", self.feed_id),
             Err(err) => error!("Failed to remove feed: {} {}", self.feed_id, err),
         }
     }
 
-    fn execute(&self, db_connection: &PgConnection) -> Result<(), FeedSyncError> {
-        let feed = match feeds::find(db_connection, self.feed_id) {
+    fn execute(&self, db_connection: &mut PgConnection) -> Result<(), FeedSyncError> {
+        let feed = match feeds::find(&mut db_connection, self.feed_id) {
             None => {
                 let error = FeedSyncError::FeedError {
                     msg: format!("Error: feed not found {:?}", self.feed_id),
@@ -113,14 +113,16 @@ impl SyncFeedJob {
         };
 
         match self.read_feed(&feed) {
-            Ok(fetched_feed) => self.maybe_upsert_feed_items(db_connection, feed, fetched_feed),
+            Ok(fetched_feed) => {
+                self.maybe_upsert_feed_items(&mut db_connection, feed, fetched_feed)
+            }
             Err(err) => self.check_staleness(err, db_connection, feed),
         }
     }
 
     fn maybe_upsert_feed_items(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: Feed,
         fetched_feed: FetchedFeed,
     ) -> Result<(), FeedSyncError> {
@@ -128,18 +130,18 @@ impl SyncFeedJob {
             return Ok(());
         }
 
-        let last_item_in_db_option = feed_items::get_latest_item(db_connection, self.feed_id);
+        let last_item_in_db_option = feed_items::get_latest_item(&mut db_connection, self.feed_id);
         let last_fetched_item = fetched_feed.items[0].clone();
 
         match last_item_in_db_option {
             None => {
-                self.create_feed_items(db_connection, feed, fetched_feed)?;
+                self.create_feed_items(&mut db_connection, feed, fetched_feed)?;
             }
             Some(last_item_in_db) => {
                 if last_fetched_item.publication_date >= last_item_in_db.publication_date
                     && last_fetched_item.link != last_item_in_db.link
                 {
-                    self.create_feed_items(db_connection, feed, fetched_feed)?;
+                    self.create_feed_items(&mut db_connection, feed, fetched_feed)?;
                 } else {
                     self.set_synced_at(
                         db_connection,
@@ -156,14 +158,14 @@ impl SyncFeedJob {
 
     fn create_feed_items(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: Feed,
         fetched_feed: FetchedFeed,
     ) -> Result<(), FeedSyncError> {
-        if let Err(err) = feed_items::create(db_connection, &feed, fetched_feed.items) {
+        if let Err(err) = feed_items::create(&mut db_connection, &feed, fetched_feed.items) {
             self.format_sync_error(err)
         } else {
-            if let Some(last_item) = feed_items::get_latest_item(db_connection, self.feed_id) {
+            if let Some(last_item) = feed_items::get_latest_item(&mut db_connection, self.feed_id) {
                 telegram::set_subscriptions_has_updates(
                     db_connection,
                     feed.id,
@@ -194,12 +196,12 @@ impl SyncFeedJob {
 
     fn set_synced_at(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: Feed,
         title: String,
         description: String,
     ) -> Result<(), FeedSyncError> {
-        match feeds::set_synced_at(db_connection, &feed, Some(title), Some(description)) {
+        match feeds::set_synced_at(&mut db_connection, &feed, Some(title), Some(description)) {
             Err(err) => {
                 error!(
                     "Error: failed to update synced_at for feed with id {}: {:?}",
@@ -219,7 +221,7 @@ impl SyncFeedJob {
     fn check_staleness(
         &self,
         err: FeedReaderError,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: Feed,
     ) -> Result<(), FeedSyncError> {
         let created_at_or_last_synced_at = if feed.synced_at.is_some() {
@@ -231,7 +233,7 @@ impl SyncFeedJob {
         if db::current_time() - Duration::hours(SYNC_FAILURE_LIMIT_IN_HOURS)
             < created_at_or_last_synced_at
         {
-            let error = self.set_error(db_connection, &feed, err);
+            let error = self.set_error(&mut db_connection, &feed, err);
 
             Err(error)
         } else {
@@ -241,11 +243,11 @@ impl SyncFeedJob {
 
     fn set_error(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: &Feed,
         sync_error: FeedReaderError,
     ) -> FeedSyncError {
-        match feeds::set_error(db_connection, feed, &format!("{:?}", sync_error)) {
+        match feeds::set_error(&mut db_connection, feed, &format!("{:?}", sync_error)) {
             Err(err) => {
                 error!(
                     "Error: failed to set a sync error to feed with id {} {:?}",

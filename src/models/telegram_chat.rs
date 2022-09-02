@@ -2,8 +2,8 @@ use crate::schema::telegram_chats;
 use chrono::{DateTime, Utc};
 
 #[derive(Queryable, Identifiable, Debug)]
-#[table_name = "telegram_chats"]
-#[primary_key(id)]
+#[diesel(table_name = telegram_chats)]
+#[diesel(primary_key(id))]
 pub struct TelegramChat {
     pub id: i64,
     pub kind: String,

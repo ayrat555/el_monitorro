@@ -35,15 +35,18 @@ impl Runnable for DeliverJob {
         log::info!("Started delivering feed items");
 
         loop {
-            current_chats =
-                match telegram::fetch_chats_with_subscriptions(connection, page, CHATS_PER_PAGE) {
-                    Ok(chats) => chats,
-                    Err(error) => {
-                        let description = format!("{:?}", error);
+            current_chats = match telegram::fetch_chats_with_subscriptions(
+                &mut connection,
+                page,
+                CHATS_PER_PAGE,
+            ) {
+                Ok(chats) => chats,
+                Err(error) => {
+                    let description = format!("{:?}", error);
 
-                        return Err(FangError { description });
-                    }
-                };
+                    return Err(FangError { description });
+                }
+            };
 
             page += 1;
 

@@ -25,7 +25,7 @@ impl SetContentFields {
         Self {}.execute(db_pool, api, message);
     }
 
-    pub fn set_content_fields(&self, db_connection: &PgConnection, params: String) -> String {
+    pub fn set_content_fields(&self, db_connection: &mut PgConnection, params: String) -> String {
         let vec: Vec<&str> = params.split(' ').collect();
 
         if vec.len() != 2 {
@@ -98,7 +98,7 @@ impl Command for SetContentFields {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
 
-                self.set_content_fields(&connection, argument)
+                self.set_content_fields(&mut connection, argument)
             }
             Err(error_message) => error_message,
         }

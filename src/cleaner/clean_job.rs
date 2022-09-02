@@ -28,14 +28,14 @@ impl CleanJob {
     pub fn execute(&self, queue: &dyn Queueable) -> Result<(), FangError> {
         let conn = crate::db::pool().get()?;
 
-        self.delete_feeds_without_subscriptions(&conn);
+        self.delete_feeds_without_subscriptions(&mut conn);
 
         let mut current_feed_ids: Vec<i64>;
         let mut page = 1;
         let mut total_number = 0;
 
         loop {
-            current_feed_ids = match feeds::load_feed_ids(&conn, page, FEEDS_PER_PAGE) {
+            current_feed_ids = match feeds::load_feed_ids(&mut conn, page, FEEDS_PER_PAGE) {
                 Err(err) => {
                     let description = format!("{:?}", err);
                     return Err(FangError { description });
@@ -64,7 +64,7 @@ impl CleanJob {
         Ok(())
     }
 
-    fn delete_feeds_without_subscriptions(&self, conn: &PgConnection) {
+    fn delete_feeds_without_subscriptions(&self, conn: &mut PgConnection) {
         log::info!("Started removing feeds without subscriptions");
 
         match feeds::delete_feeds_without_subscriptions(conn) {

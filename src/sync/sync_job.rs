@@ -31,7 +31,7 @@ impl SyncJob {
 #[typetag::serde]
 impl Runnable for SyncJob {
     fn run(&self, queue: &dyn Queueable) -> Result<(), FangError> {
-        let connection = &crate::db::pool().get()?;
+        let connection = &mut crate::db::pool().get()?;
 
         let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;
@@ -74,7 +74,7 @@ impl Runnable for SyncJob {
             total_number
         );
 
-        feeds::increment_and_reset_skips(connection).unwrap();
+        feeds::increment_and_reset_skips(&mut connection).unwrap();
 
         Ok(())
     }

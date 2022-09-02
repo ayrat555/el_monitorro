@@ -21,12 +21,13 @@ impl RemoveFilter {
         message: &Message,
         feed_url: String,
     ) -> String {
-        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
-            Err(message) => return message,
-            Ok(subscription) => subscription,
-        };
+        let subscription =
+            match self.find_subscription(&mut db_connection, message.chat.id, feed_url) {
+                Err(message) => return message,
+                Ok(subscription) => subscription,
+            };
 
-        match telegram::set_filter(db_connection, &subscription, None) {
+        match telegram::set_filter(&mut db_connection, &subscription, None) {
             Ok(_) => "The filter was removed".to_string(),
             Err(_) => "Failed to update the filter".to_string(),
         }
