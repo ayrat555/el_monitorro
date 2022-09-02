@@ -21,11 +21,10 @@ impl RemoveTemplate {
         message: &Message,
         feed_url: String,
     ) -> String {
-        let subscription =
-            match self.find_subscription(&mut db_connection, message.chat.id, feed_url) {
-                Err(message) => return message,
-                Ok(subscription) => subscription,
-            };
+        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
+            Err(message) => return message,
+            Ok(subscription) => subscription,
+        };
 
         match telegram::set_template(db_connection, &subscription, None) {
             Ok(_) => "The template was removed".to_string(),
@@ -46,7 +45,7 @@ impl Command for RemoveTemplate {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => {
+            Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
                 self.remove_template(&mut connection, message, argument)

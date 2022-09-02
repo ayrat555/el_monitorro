@@ -45,7 +45,7 @@ impl Command for ListSubscriptions {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.list_subscriptions(&mut connection, message),
+            Ok(mut connection) => self.list_subscriptions(&mut connection, message),
             Err(error_message) => error_message,
         }
     }

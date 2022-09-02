@@ -60,7 +60,7 @@ impl DeliverChatUpdatesJob {
     }
 
     pub fn deliver(&self) -> Result<(), FangError> {
-        let db_connection = &crate::db::pool().get()?;
+        let mut db_connection = crate::db::pool().get()?;
         let subscriptions =
             telegram::find_unread_subscriptions_for_chat(&mut db_connection, self.chat_id).unwrap();
         let api = Api::default();
@@ -92,12 +92,12 @@ impl DeliverChatUpdatesJob {
         api: &Api,
     ) -> Result<(), DeliverJobError> {
         let feed_items =
-            telegram::find_undelivered_feed_items(&mut connection, subscription, MESSAGES_LIMIT)?;
+            telegram::find_undelivered_feed_items(connection, subscription, MESSAGES_LIMIT)?;
 
         let chat_id = subscription.chat_id;
-        let feed = feeds::find(&mut connection, subscription.feed_id).unwrap();
+        let feed = feeds::find(connection, subscription.feed_id).unwrap();
 
-        let chat = telegram::find_chat(&mut connection, chat_id).unwrap();
+        let chat = telegram::find_chat(connection, chat_id).unwrap();
         let filter_words = fetch_filter_words(&chat, subscription);
 
         if filter_words.is_none() {
@@ -190,7 +190,7 @@ impl DeliverChatUpdatesJob {
                     publication_date,
                 )?;
             } else {
-                self.update_last_deivered_at(&mut connection, subscription, publication_date)?;
+                self.update_last_deivered_at(connection, subscription, publication_date)?;
             }
         }
 
@@ -206,8 +206,7 @@ impl DeliverChatUpdatesJob {
         api: &Api,
         chat: &TelegramChat,
     ) -> Result<(), DeliverJobError> {
-        let undelivered_count =
-            telegram::count_undelivered_feed_items(&mut connection, subscription);
+        let undelivered_count = telegram::count_undelivered_feed_items(connection, subscription);
 
         if chat.kind == "channel" {
             return Ok(());
@@ -263,7 +262,7 @@ impl DeliverChatUpdatesJob {
     ) -> Result<(), DeliverJobError> {
         self.send_text_message(chat, message, connection, api)?;
 
-        self.update_last_deivered_at(&mut connection, subscription, publication_date)
+        self.update_last_deivered_at(connection, subscription, publication_date)
     }
 
     fn update_last_deivered_at(
@@ -290,8 +289,12 @@ impl DeliverChatUpdatesJob {
 
 #[typetag::serde]
 impl Runnable for DeliverChatUpdatesJob {
-    fn run(&self, connection: &dyn Queueable) -> Result<(), FangError> {
+    fn run(&self, _queue: &dyn Queueable) -> Result<(), FangError> {
         self.deliver()
+    }
+
+    fn uniq(&self) -> bool {
+        true
     }
 
     fn task_type(&self) -> String {
@@ -303,7 +306,7 @@ fn handle_error(error: String, connection: &mut PgConnection, chat_id: i64) -> D
     log::error!("Failed to deliver updates: {}", error);
 
     if bot_blocked(&error) {
-        match telegram::remove_chat(&mut connection, chat_id) {
+        match telegram::remove_chat(connection, chat_id) {
             Ok(_) => log::info!("Successfully removed chat {}", chat_id),
             Err(error) => log::error!("Failed to remove a chat {}", error),
         }

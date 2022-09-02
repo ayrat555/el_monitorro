@@ -38,7 +38,7 @@ impl Command for GetTimezone {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.get_timezone(&mut connection, message),
+            Ok(mut connection) => self.get_timezone(&mut connection, message),
             Err(error_message) => error_message,
         }
     }

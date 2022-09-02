@@ -64,6 +64,11 @@ impl Config {
         interval
     }
 
+    pub fn deliver_cron_pattern() -> String {
+        let interval = Config::deliver_interval_in_seconds();
+        crate::seconds_to_pattern(interval)
+    }
+
     pub fn sync_interval_in_seconds() -> u32 {
         let interval = Self::read_var_with_default("SYNC_INTERVAL_SECONDS", "60");
 
@@ -72,12 +77,22 @@ impl Config {
         interval
     }
 
+    pub fn sync_cron_pattern() -> String {
+        let interval = Config::sync_interval_in_seconds();
+        crate::seconds_to_pattern(interval)
+    }
+
     pub fn clean_interval_in_seconds() -> u32 {
         let interval = Self::read_var_with_default("CLEAN_INTERVAL_SECONDS", "3600");
 
         Self::check_interval(&interval);
 
         interval
+    }
+
+    pub fn clean_cron_pattern() -> String {
+        let interval = Config::clean_interval_in_seconds();
+        crate::seconds_to_pattern(interval)
     }
 
     pub fn all_binaries() -> bool {

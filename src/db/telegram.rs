@@ -7,10 +7,10 @@ use crate::schema::feed_items;
 use crate::schema::{feeds, telegram_chats, telegram_subscriptions};
 use chrono::{DateTime, Duration, Utc};
 use diesel::dsl::*;
-use diesel::helper_types::Select;
 use diesel::pg::upsert::excluded;
 use diesel::prelude::*;
 use diesel::result::Error;
+use diesel::sql_types::BigInt;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 #[derive(Insertable, Clone, Debug)]
@@ -235,7 +235,7 @@ pub fn fetch_chats_with_subscriptions(
 pub fn count_chats_with_subscriptions(conn: &mut PgConnection) -> Result<i64, Error> {
     let result = telegram_chats::table
         .inner_join(telegram_subscriptions::table)
-        .select::<Select>(sql("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
+        .select(sql::<BigInt>("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
         .first::<i64>(conn);
 
     if let Err(Error::NotFound) = result {
@@ -249,7 +249,7 @@ pub fn count_chats_of_type(conn: &mut PgConnection, kind: &str) -> Result<i64, E
     let result = telegram_chats::table
         .inner_join(telegram_subscriptions::table)
         .filter(telegram_chats::kind.eq(kind))
-        .select::<Select>(sql("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
+        .select(sql::<BigInt>("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
         .first::<i64>(conn);
 
     if let Err(Error::NotFound) = result {

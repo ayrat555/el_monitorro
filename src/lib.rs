@@ -24,9 +24,6 @@ mod models;
 mod schema;
 pub mod sync;
 
-const SCHEDULER_CHECK_PERIOD: u32 = 10;
-const SCHEDULER_ERROR_MARGIN_SECONDS: u32 = 10;
-
 pub fn fix_units_for_cron(seconds_amount: u32) -> Vec<u32> {
     let mut vec = vec![];
     let mut unit = seconds_amount;
@@ -77,28 +74,11 @@ pub fn start_clean_workers(queue: &Queue) {
 pub fn start_scheduler(queue: &Queue) {
     queue.remove_all_scheduled_tasks().unwrap();
 
-    // DO CRON METHODS AND FINISH THIS.
+    queue.schedule_task(&SyncJob::default()).unwrap();
 
-    queue
-        .schedule_task(
-            &SyncJob::default(),
-            (Config::sync_interval_in_seconds() * 1_000) as i64,
-        )
-        .unwrap();
+    queue.schedule_task(&DeliverJob::default()).unwrap();
 
-    queue
-        .schedule_task(
-            &DeliverJob::default(),
-            (Config::deliver_interval_in_seconds() * 1_000) as i64,
-        )
-        .unwrap();
-
-    queue
-        .schedule_task(
-            &CleanJob::default(),
-            (Config::clean_interval_in_seconds() * 1_000) as i64,
-        )
-        .unwrap();
+    queue.schedule_task(&CleanJob::default()).unwrap();
 }
 
 fn start_workers(queue: &Queue, typ: String, number: u32) {

@@ -90,7 +90,7 @@ impl Command for Info {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.info(&mut connection, message),
+            Ok(mut connection) => self.info(&mut connection, message),
             Err(error_message) => error_message,
         }
     }
