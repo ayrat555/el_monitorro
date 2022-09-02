@@ -157,13 +157,9 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
     message_renderer.render()
 }
 
-fn render_link(s: &str,l: &str) -> String {
-    let value = if s.is_empty(){
-        "link"
-    }else{
-        s
-    };
-    format!("<a href=\"{}\">{}</a>",l,value)
+fn render_link(s: &str, l: &str) -> String {
+    let value = if s.is_empty() { "link" } else { s };
+    format!("<a href=\"{}\">{}</a>", l, value)
 }
 
 fn truncate_and_check(s: &str) -> String {
