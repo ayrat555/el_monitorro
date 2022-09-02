@@ -30,7 +30,10 @@ const MAX_CHARS: usize = 4000;
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
 
-handlebars_helper!(create_link: |string: String, link: String| format!("<a href=\"{}\">{}</a>", link, string));
+handlebars_helper!(create_link: |string: String, link: String| format!("<a href=\"{}\">{}</a>", link, if string.is_empty(){
+    "link"
+} else{
+    &string}));
 handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
 handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
@@ -136,9 +139,10 @@ impl MessageRenderer {
         key: &str,
         value_option: &Option<String>,
     ) {
-        if let Some(value) = value_option {
-            map.insert(key.to_string(), to_json(value));
-        }
+        match value_option {
+            Some(value) => map.insert(key.to_string(), to_json(value)),
+            None => map.insert(key.to_string(), to_json("".to_string())),
+        };
     }
 }
 
