@@ -2,7 +2,7 @@ use crate::schema::feeds;
 use chrono::{DateTime, Utc};
 
 #[derive(Queryable, Identifiable, Debug, Eq, PartialEq)]
-#[table_name = "feeds"]
+#[diesel(table_name = feeds)]
 pub struct Feed {
     pub id: i64,
     pub title: Option<String>,

@@ -19,7 +19,7 @@ impl SetTemplate {
     fn set_template(
         &self,
         api: &Api,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         params: String,
     ) -> String {
@@ -36,10 +36,11 @@ impl SetTemplate {
         let feed_url = vec[0].to_string();
         let template = vec[1];
 
-        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
-            Err(message) => return message,
-            Ok(subscription) => subscription,
-        };
+        let subscription =
+            match self.find_subscription(&mut db_connection, message.chat.id, feed_url) {
+                Err(message) => return message,
+                Ok(subscription) => subscription,
+            };
 
         let example = match render_template_example(template) {
             Ok(example) => format!("Your messages will look like:\n\n{}", example),
@@ -72,7 +73,7 @@ impl Command for SetTemplate {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_template(api, &connection, message, argument)
+                self.set_template(api, &mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }

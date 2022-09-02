@@ -118,7 +118,7 @@ pub trait Command {
 
     fn find_subscription(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         chat_id: i64,
         feed_url: String,
     ) -> Result<TelegramSubscription, String> {
@@ -141,7 +141,11 @@ pub trait Command {
         }
     }
 
-    fn find_feed(&self, db_connection: &PgConnection, feed_url: String) -> Result<Feed, String> {
+    fn find_feed(
+        &self,
+        db_connection: &mut PgConnection,
+        feed_url: String,
+    ) -> Result<Feed, String> {
         match feeds::find_by_link(db_connection, feed_url) {
             Some(feed) => Ok(feed),
             None => Err("Feed does not exist".to_string()),

@@ -17,7 +17,7 @@ impl SetGlobalFilter {
 
     fn set_global_template(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         filter: String,
     ) -> String {
@@ -60,7 +60,7 @@ impl Command for SetGlobalFilter {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_global_template(&connection, message, argument)
+                self.set_global_template(&mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }

@@ -15,7 +15,7 @@ impl ListSubscriptions {
         Self {}.execute(db_pool, api, message);
     }
 
-    fn list_subscriptions(&self, db_connection: &PgConnection, message: &Message) -> String {
+    fn list_subscriptions(&self, db_connection: &mut PgConnection, message: &Message) -> String {
         match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
             Err(_) => "Couldn't fetch your subscriptions".to_string(),
             Ok(feeds) => {
@@ -45,7 +45,7 @@ impl Command for ListSubscriptions {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.list_subscriptions(&connection, message),
+            Ok(connection) => self.list_subscriptions(&mut connection, message),
             Err(error_message) => error_message,
         }
     }
@@ -81,17 +81,18 @@ mod list_subscriptions_tests {
                 last_name: Some("Last".to_string()),
                 title: None,
             };
-            let chat = telegram::create_chat(&connection, new_chat).unwrap();
+            let chat = telegram::create_chat(&mut connection, new_chat).unwrap();
 
             for link in ["link1", "link2"] {
-                let feed = feeds::create(&connection, link.to_string(), "rss".to_string()).unwrap();
+                let feed =
+                    feeds::create(&mut connection, link.to_string(), "rss".to_string()).unwrap();
 
                 let new_subscription = NewTelegramSubscription {
                     feed_id: feed.id,
                     chat_id: chat.id,
                 };
 
-                telegram::create_subscription(&connection, new_subscription).unwrap();
+                telegram::create_subscription(&mut connection, new_subscription).unwrap();
             }
 
             let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
@@ -101,7 +102,7 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(&connection, &message);
+            let result = ListSubscriptions {}.list_subscriptions(&mut connection, &message);
 
             assert_eq!("link1\nlink2", result);
 
@@ -122,7 +123,7 @@ mod list_subscriptions_tests {
                 last_name: Some("Last".to_string()),
                 title: None,
             };
-            telegram::create_chat(&connection, new_chat).unwrap();
+            telegram::create_chat(&mut connection, new_chat).unwrap();
             let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
             let message = Message::builder()
                 .message_id(1)
@@ -130,7 +131,7 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(&connection, &message);
+            let result = ListSubscriptions {}.list_subscriptions(&mut connection, &message);
 
             assert_eq!("You don't have any subscriptions", result);
 
@@ -150,7 +151,7 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(&connection, &message);
+            let result = ListSubscriptions {}.list_subscriptions(&mut connection, &message);
 
             assert_eq!("You don't have any subscriptions", result);
 

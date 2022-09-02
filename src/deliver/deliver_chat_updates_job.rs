@@ -62,13 +62,14 @@ impl DeliverChatUpdatesJob {
     pub fn deliver(&self) -> Result<(), FangError> {
         let db_connection = &crate::db::pool().get()?;
         let subscriptions =
-            telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
+            telegram::find_unread_subscriptions_for_chat(&mut db_connection, self.chat_id).unwrap();
         let api = Api::default();
 
         for subscription in subscriptions {
-            match self.deliver_subscription_updates(&subscription, db_connection, &api) {
+            match self.deliver_subscription_updates(&subscription, &mut db_connection, &api) {
                 Ok(()) => {
-                    telegram::mark_subscription_delivered(db_connection, &subscription).unwrap();
+                    telegram::mark_subscription_delivered(&mut db_connection, &subscription)
+                        .unwrap();
                 }
 
                 Err(error) => {
@@ -87,16 +88,16 @@ impl DeliverChatUpdatesJob {
     fn deliver_subscription_updates(
         &self,
         subscription: &TelegramSubscription,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         api: &Api,
     ) -> Result<(), DeliverJobError> {
         let feed_items =
-            telegram::find_undelivered_feed_items(connection, subscription, MESSAGES_LIMIT)?;
+            telegram::find_undelivered_feed_items(&mut connection, subscription, MESSAGES_LIMIT)?;
 
         let chat_id = subscription.chat_id;
-        let feed = feeds::find(connection, subscription.feed_id).unwrap();
+        let feed = feeds::find(&mut connection, subscription.feed_id).unwrap();
 
-        let chat = telegram::find_chat(connection, chat_id).unwrap();
+        let chat = telegram::find_chat(&mut connection, chat_id).unwrap();
         let filter_words = fetch_filter_words(&chat, subscription);
 
         if filter_words.is_none() {
@@ -149,7 +150,7 @@ impl DeliverChatUpdatesJob {
         &self,
         words: Vec<String>,
         messages: Vec<(String, DateTime<Utc>)>,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         subscription: &TelegramSubscription,
         api: &Api,
         chat: &TelegramChat,
@@ -189,7 +190,7 @@ impl DeliverChatUpdatesJob {
                     publication_date,
                 )?;
             } else {
-                self.update_last_deivered_at(connection, subscription, publication_date)?;
+                self.update_last_deivered_at(&mut connection, subscription, publication_date)?;
             }
         }
 
@@ -199,13 +200,14 @@ impl DeliverChatUpdatesJob {
     fn maybe_send_unread_messages_count(
         &self,
         subscription: &TelegramSubscription,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         feed_items_count: i64,
         feed_link: String,
         api: &Api,
         chat: &TelegramChat,
     ) -> Result<(), DeliverJobError> {
-        let undelivered_count = telegram::count_undelivered_feed_items(connection, subscription);
+        let undelivered_count =
+            telegram::count_undelivered_feed_items(&mut connection, subscription);
 
         if chat.kind == "channel" {
             return Ok(());
@@ -231,7 +233,7 @@ impl DeliverChatUpdatesJob {
         &self,
         chat: &TelegramChat,
         message: String,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         api: &Api,
     ) -> Result<(), DeliverJobError> {
         let delay = delay_period(chat);
@@ -254,19 +256,19 @@ impl DeliverChatUpdatesJob {
         &self,
         subscription: &TelegramSubscription,
         message: String,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         chat: &TelegramChat,
         api: &Api,
         publication_date: DateTime<Utc>,
     ) -> Result<(), DeliverJobError> {
         self.send_text_message(chat, message, connection, api)?;
 
-        self.update_last_deivered_at(connection, subscription, publication_date)
+        self.update_last_deivered_at(&mut connection, subscription, publication_date)
     }
 
     fn update_last_deivered_at(
         &self,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         subscription: &TelegramSubscription,
         publication_date: DateTime<Utc>,
     ) -> Result<(), DeliverJobError> {
@@ -297,11 +299,11 @@ impl Runnable for DeliverChatUpdatesJob {
     }
 }
 
-fn handle_error(error: String, connection: &PgConnection, chat_id: i64) -> DeliverJobError {
+fn handle_error(error: String, connection: &mut PgConnection, chat_id: i64) -> DeliverJobError {
     log::error!("Failed to deliver updates: {}", error);
 
     if bot_blocked(&error) {
-        match telegram::remove_chat(connection, chat_id) {
+        match telegram::remove_chat(&mut connection, chat_id) {
             Ok(_) => log::info!("Successfully removed chat {}", chat_id),
             Err(error) => log::error!("Failed to remove a chat {}", error),
         }

@@ -17,7 +17,7 @@ impl SetFilter {
 
     pub fn set_filter(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         params: String,
     ) -> String {
@@ -37,7 +37,7 @@ impl SetFilter {
         };
 
         let subscription =
-            match self.find_subscription(db_connection, message.chat.id, vec[0].to_string()) {
+            match self.find_subscription(&mut db_connection, message.chat.id, vec[0].to_string()) {
                 Err(message) => return message,
                 Ok(subscription) => subscription,
             };
@@ -64,7 +64,7 @@ impl Command for SetFilter {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_filter(&connection, message, argument)
+                self.set_filter(&mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }

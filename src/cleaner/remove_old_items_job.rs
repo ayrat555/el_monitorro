@@ -18,7 +18,7 @@ impl RemoveOldItemsJob {
     }
 
     pub fn run(&self) -> Result<(), FangError> {
-        let conn = &crate::db::pool().get()?;
+        let conn = &mut crate::db::pool().get()?;
 
         if let Err(error) =
             feed_items::delete_old_feed_items(conn, self.feed_id, MESSAGES_LIMIT_PER_FEED)

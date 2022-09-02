@@ -7,13 +7,14 @@ use crate::schema::feed_items;
 use crate::schema::{feeds, telegram_chats, telegram_subscriptions};
 use chrono::{DateTime, Duration, Utc};
 use diesel::dsl::*;
+use diesel::helper_types::Select;
 use diesel::pg::upsert::excluded;
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 #[derive(Insertable, Clone, Debug)]
-#[table_name = "telegram_chats"]
+#[diesel(table_name = telegram_chats)]
 pub struct NewTelegramChat {
     pub id: i64,
     pub kind: String,
@@ -24,13 +25,16 @@ pub struct NewTelegramChat {
 }
 
 #[derive(Insertable, Clone, Copy, Debug)]
-#[table_name = "telegram_subscriptions"]
+#[diesel(table_name = telegram_subscriptions)]
 pub struct NewTelegramSubscription {
     pub chat_id: i64,
     pub feed_id: i64,
 }
 
-pub fn create_chat(conn: &PgConnection, new_chat: NewTelegramChat) -> Result<TelegramChat, Error> {
+pub fn create_chat(
+    conn: &mut PgConnection,
+    new_chat: NewTelegramChat,
+) -> Result<TelegramChat, Error> {
     diesel::insert_into(telegram_chats::table)
         .values(new_chat)
         .on_conflict(telegram_chats::id)
@@ -46,7 +50,7 @@ pub fn create_chat(conn: &PgConnection, new_chat: NewTelegramChat) -> Result<Tel
         .get_result::<TelegramChat>(conn)
 }
 
-pub fn find_chat(conn: &PgConnection, chat_id: i64) -> Option<TelegramChat> {
+pub fn find_chat(conn: &mut PgConnection, chat_id: i64) -> Option<TelegramChat> {
     match telegram_chats::table
         .filter(telegram_chats::id.eq(chat_id))
         .first::<TelegramChat>(conn)
@@ -57,7 +61,7 @@ pub fn find_chat(conn: &PgConnection, chat_id: i64) -> Option<TelegramChat> {
 }
 
 pub fn set_utc_offset_minutes(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     chat: &TelegramChat,
     offset: i32,
 ) -> Result<TelegramChat, Error> {
@@ -67,7 +71,7 @@ pub fn set_utc_offset_minutes(
 }
 
 pub fn set_global_template(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     chat: &TelegramChat,
     template: Option<String>,
 ) -> Result<TelegramChat, Error> {
@@ -77,7 +81,7 @@ pub fn set_global_template(
 }
 
 pub fn set_global_filter(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     chat: &TelegramChat,
     filter_words: Option<Vec<String>>,
 ) -> Result<TelegramChat, Error> {
@@ -87,7 +91,7 @@ pub fn set_global_filter(
 }
 
 pub fn set_template(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     chat: &TelegramSubscription,
     template: Option<String>,
 ) -> Result<TelegramSubscription, Error> {
@@ -97,7 +101,7 @@ pub fn set_template(
 }
 
 pub fn set_filter(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     chat: &TelegramSubscription,
     filter_words: Option<Vec<String>>,
 ) -> Result<TelegramSubscription, Error> {
@@ -107,7 +111,7 @@ pub fn set_filter(
 }
 
 pub fn create_subscription(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     subscription: NewTelegramSubscription,
 ) -> Result<TelegramSubscription, Error> {
     diesel::insert_into(telegram_subscriptions::table)
@@ -116,7 +120,7 @@ pub fn create_subscription(
 }
 
 pub fn find_subscription(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     subscription: NewTelegramSubscription,
 ) -> Option<TelegramSubscription> {
     match telegram_subscriptions::table
@@ -130,7 +134,7 @@ pub fn find_subscription(
 }
 
 pub fn remove_subscription(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     subscription: NewTelegramSubscription,
 ) -> Result<usize, Error> {
     let record_query = telegram_subscriptions::table
@@ -140,13 +144,13 @@ pub fn remove_subscription(
     diesel::delete(record_query).execute(conn)
 }
 
-pub fn remove_chat(conn: &PgConnection, chat_id: i64) -> Result<usize, Error> {
+pub fn remove_chat(conn: &mut PgConnection, chat_id: i64) -> Result<usize, Error> {
     let record_query = telegram_chats::table.filter(telegram_chats::id.eq(chat_id));
 
     diesel::delete(record_query).execute(conn)
 }
 
-pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
+pub fn count_subscriptions_for_chat(conn: &mut PgConnection, chat_id: i64) -> i64 {
     telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(chat_id))
         .count()
@@ -155,7 +159,7 @@ pub fn count_subscriptions_for_chat(conn: &PgConnection, chat_id: i64) -> i64 {
 }
 
 pub fn find_unread_subscriptions_for_chat(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     chat_id: i64,
 ) -> Result<Vec<TelegramSubscription>, Error> {
     telegram_subscriptions::table
@@ -165,7 +169,7 @@ pub fn find_unread_subscriptions_for_chat(
 }
 
 pub fn find_subscriptions_for_feed(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed_id: i64,
 ) -> Result<Vec<TelegramSubscription>, Error> {
     telegram_subscriptions::table
@@ -173,18 +177,18 @@ pub fn find_subscriptions_for_feed(
         .get_results::<TelegramSubscription>(conn)
 }
 
-pub fn find_feeds_by_chat_id(conn: &PgConnection, chat_id: i64) -> Result<Vec<Feed>, Error> {
+pub fn find_feeds_by_chat_id(conn: &mut PgConnection, chat_id: i64) -> Result<Vec<Feed>, Error> {
     let feed_ids = telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(chat_id))
         .select(telegram_subscriptions::feed_id);
 
     feeds::table
-        .filter(feeds::id.eq(any(feed_ids)))
+        .filter(feeds::id.eq_any(feed_ids))
         .get_results::<Feed>(conn)
 }
 
 pub fn find_chats_by_feed_id(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed_id: i64,
 ) -> Result<Vec<TelegramChat>, Error> {
     let chat_ids = telegram_subscriptions::table
@@ -192,12 +196,12 @@ pub fn find_chats_by_feed_id(
         .select(telegram_subscriptions::chat_id);
 
     telegram_chats::table
-        .filter(telegram_chats::id.eq(any(chat_ids)))
+        .filter(telegram_chats::id.eq_any(chat_ids))
         .get_results::<TelegramChat>(conn)
 }
 
 pub fn fetch_subscriptions(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     page: i64,
     count: i64,
 ) -> Result<Vec<TelegramSubscription>, Error> {
@@ -211,7 +215,7 @@ pub fn fetch_subscriptions(
 }
 
 pub fn fetch_chats_with_subscriptions(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     page: i64,
     count: i64,
 ) -> Result<Vec<i64>, Error> {
@@ -228,10 +232,10 @@ pub fn fetch_chats_with_subscriptions(
         .get_results(conn)
 }
 
-pub fn count_chats_with_subscriptions(conn: &PgConnection) -> Result<i64, Error> {
+pub fn count_chats_with_subscriptions(conn: &mut PgConnection) -> Result<i64, Error> {
     let result = telegram_chats::table
         .inner_join(telegram_subscriptions::table)
-        .select(sql("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
+        .select::<Select>(sql("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
         .first::<i64>(conn);
 
     if let Err(Error::NotFound) = result {
@@ -241,11 +245,11 @@ pub fn count_chats_with_subscriptions(conn: &PgConnection) -> Result<i64, Error>
     result
 }
 
-pub fn count_chats_of_type(conn: &PgConnection, kind: &str) -> Result<i64, Error> {
+pub fn count_chats_of_type(conn: &mut PgConnection, kind: &str) -> Result<i64, Error> {
     let result = telegram_chats::table
         .inner_join(telegram_subscriptions::table)
         .filter(telegram_chats::kind.eq(kind))
-        .select(sql("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
+        .select::<Select>(sql("COUNT (DISTINCT \"telegram_chats\".\"id\")"))
         .first::<i64>(conn);
 
     if let Err(Error::NotFound) = result {
@@ -256,7 +260,7 @@ pub fn count_chats_of_type(conn: &PgConnection, kind: &str) -> Result<i64, Error
 }
 
 pub fn find_undelivered_feed_items(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     subscription: &TelegramSubscription,
     count: i64,
 ) -> Result<Vec<FeedItem>, Error> {
@@ -277,7 +281,7 @@ pub fn find_undelivered_feed_items(
 }
 
 pub fn count_undelivered_feed_items(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     subscription: &TelegramSubscription,
 ) -> i64 {
     let last_delivered_at = match subscription.last_delivered_at {
@@ -294,7 +298,7 @@ pub fn count_undelivered_feed_items(
 }
 
 pub fn set_subscription_last_delivered_at(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     subscription: &TelegramSubscription,
     last_delivered_at: DateTime<Utc>,
 ) -> Result<TelegramSubscription, Error> {
@@ -304,7 +308,7 @@ pub fn set_subscription_last_delivered_at(
 }
 
 pub fn mark_subscription_delivered(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     subscription: &TelegramSubscription,
 ) -> Result<TelegramSubscription, Error> {
     diesel::update(subscription)
@@ -313,7 +317,7 @@ pub fn mark_subscription_delivered(
 }
 
 pub fn set_subscriptions_has_updates(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed_id: i64,
     last_item_created_at: DateTime<Utc>,
 ) -> Result<usize, Error> {

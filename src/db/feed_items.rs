@@ -8,7 +8,7 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 use sha2::{Digest, Sha256};
 
 #[derive(Insertable, AsChangeset)]
-#[table_name = "feed_items"]
+#[diesel(table_name = feed_items)]
 pub struct NewFeedItem {
     pub feed_id: i64,
     pub title: String,
@@ -21,7 +21,7 @@ pub struct NewFeedItem {
 }
 
 pub fn create(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed: &Feed,
     fetched_items: Vec<FetchedFeedItem>,
 ) -> Result<Vec<FeedItem>, Error> {
@@ -50,7 +50,7 @@ pub fn create(
         .get_results(conn)
 }
 
-pub fn find(conn: &PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
+pub fn find(conn: &mut PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
     match feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
         .get_results::<FeedItem>(conn)
@@ -61,7 +61,7 @@ pub fn find(conn: &PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
 }
 
 pub fn delete_old_feed_items(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed_id: i64,
     offset: i64,
 ) -> Result<usize, Error> {
@@ -94,7 +94,7 @@ pub fn delete_old_feed_items(
     }
 }
 
-pub fn get_latest_item(conn: &PgConnection, feed_id: i64) -> Option<FeedItem> {
+pub fn get_latest_item(conn: &mut PgConnection, feed_id: i64) -> Option<FeedItem> {
     match feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
         .order(feed_items::created_at.desc())

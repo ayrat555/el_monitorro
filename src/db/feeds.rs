@@ -3,6 +3,7 @@ use crate::models::feed::Feed;
 use crate::schema::{feeds, telegram_subscriptions};
 use chrono::{DateTime, Utc};
 use diesel::dsl::sql;
+use diesel::helper_types::Select;
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
@@ -10,13 +11,13 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 const MAX_RETRIES: i32 = 5;
 
 #[derive(Insertable, AsChangeset)]
-#[table_name = "feeds"]
+#[diesel(table_name = feeds)]
 struct NewFeed {
     link: String,
     feed_type: String,
 }
 
-pub fn create(conn: &PgConnection, link: String, feed_type: String) -> Result<Feed, Error> {
+pub fn create(conn: &mut PgConnection, link: String, feed_type: String) -> Result<Feed, Error> {
     if feed_type != *"atom" && feed_type != *"rss" && feed_type != *"json" {
         unimplemented!()
     }
@@ -35,7 +36,7 @@ pub fn create(conn: &PgConnection, link: String, feed_type: String) -> Result<Fe
     Ok(feed)
 }
 
-pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
+pub fn set_error(conn: &mut PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
     let next_retry_number = if feed.sync_retries == MAX_RETRIES {
         MAX_RETRIES
     } else {
@@ -52,7 +53,7 @@ pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, 
 }
 
 pub fn set_synced_at(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed: &Feed,
     title: Option<String>,
     description: Option<String>,
@@ -72,14 +73,14 @@ pub fn set_synced_at(
         .get_result::<Feed>(conn)
 }
 
-pub fn find(conn: &PgConnection, id: i64) -> Option<Feed> {
+pub fn find(conn: &mut PgConnection, id: i64) -> Option<Feed> {
     match feeds::table.filter(feeds::id.eq(id)).first::<Feed>(conn) {
         Ok(record) => Some(record),
         _ => None,
     }
 }
 
-pub fn find_by_link(conn: &PgConnection, link: String) -> Option<Feed> {
+pub fn find_by_link(conn: &mut PgConnection, link: String) -> Option<Feed> {
     match feeds::table
         .filter(feeds::link.eq(link))
         .first::<Feed>(conn)
@@ -89,14 +90,14 @@ pub fn find_by_link(conn: &PgConnection, link: String) -> Option<Feed> {
     }
 }
 
-pub fn remove_feed(conn: &PgConnection, feed_id: i64) -> Result<usize, Error> {
+pub fn remove_feed(conn: &mut PgConnection, feed_id: i64) -> Result<usize, Error> {
     let record_query = feeds::table.filter(feeds::id.eq(feed_id));
 
     diesel::delete(record_query).execute(conn)
 }
 
 pub fn find_unsynced_feeds(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     last_updated_at: DateTime<Utc>,
     page: i64,
     count: i64,
@@ -121,7 +122,7 @@ pub fn find_unsynced_feeds(
         .load::<i64>(conn)
 }
 
-pub fn increment_and_reset_skips(conn: &PgConnection) -> Result<usize, Error> {
+pub fn increment_and_reset_skips(conn: &mut PgConnection) -> Result<usize, Error> {
     // diesel doesn't support updates with joins
     // https://github.com/diesel-rs/diesel/issues/1478
     let query = "UPDATE \"feeds\" SET \"sync_skips\" = -1\
@@ -142,7 +143,7 @@ pub fn increment_and_reset_skips(conn: &PgConnection) -> Result<usize, Error> {
 }
 
 pub fn set_content_fields(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed: &Feed,
     content_fields: Vec<String>,
 ) -> Result<Feed, Error> {
@@ -151,7 +152,7 @@ pub fn set_content_fields(
         .get_result::<Feed>(conn)
 }
 
-pub fn load_feed_ids(conn: &PgConnection, page: i64, count: i64) -> Result<Vec<i64>, Error> {
+pub fn load_feed_ids(conn: &mut PgConnection, page: i64, count: i64) -> Result<Vec<i64>, Error> {
     let offset = (page - 1) * count;
 
     feeds::table
@@ -162,7 +163,7 @@ pub fn load_feed_ids(conn: &PgConnection, page: i64, count: i64) -> Result<Vec<i
         .load::<i64>(conn)
 }
 
-pub fn delete_feeds_without_subscriptions(conn: &PgConnection) -> Result<usize, Error> {
+pub fn delete_feeds_without_subscriptions(conn: &mut PgConnection) -> Result<usize, Error> {
     let feeds_without_subscriptions = feeds::table
         .left_join(telegram_subscriptions::table)
         .filter(telegram_subscriptions::feed_id.is_null())
@@ -173,10 +174,10 @@ pub fn delete_feeds_without_subscriptions(conn: &PgConnection) -> Result<usize, 
     diesel::delete(delete_query).execute(conn)
 }
 
-pub fn count_feeds_with_subscriptions(conn: &PgConnection) -> Result<i64, Error> {
+pub fn count_feeds_with_subscriptions(conn: &mut PgConnection) -> Result<i64, Error> {
     let result = feeds::table
         .inner_join(telegram_subscriptions::table)
-        .select(sql("COUNT (DISTINCT \"feeds\".\"id\")"))
+        .select::<Select>(sql("COUNT (DISTINCT \"feeds\".\"id\")"))
         .first::<i64>(conn);
 
     if let Err(Error::NotFound) = result {
@@ -777,7 +778,7 @@ mod tests {
     }
 
     fn create_telegram_subscription(
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         feed: &Feed,
     ) -> TelegramSubscription {
         let new_chat = NewTelegramChat {

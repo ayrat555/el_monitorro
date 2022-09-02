@@ -42,7 +42,12 @@ impl Subscribe {
         Self {}.execute(db_pool, api, message);
     }
 
-    fn subscribe(&self, db_connection: &PgConnection, message: &Message, url: String) -> String {
+    fn subscribe(
+        &self,
+        db_connection: &mut PgConnection,
+        message: &Message,
+        url: String,
+    ) -> String {
         match self.create_subscription(db_connection, message, url.clone()) {
             Ok(_subscription) => format!("Successfully subscribed to {}", url),
             Err(SubscriptionError::DbError(_)) => {
@@ -62,13 +67,13 @@ impl Subscribe {
 
     fn create_subscription(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         url: String,
     ) -> Result<TelegramSubscription, SubscriptionError> {
         let feed_type = self.validate_rss_url(&url)?;
 
-        db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|| {
+        db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|db_connection| {
             let chat =
                 telegram::create_chat(db_connection, (*message.chat.clone()).into()).unwrap();
             let feed = feeds::create(db_connection, url, feed_type).unwrap();
@@ -100,7 +105,7 @@ impl Subscribe {
 
     fn check_if_subscription_exists(
         &self,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         subscription: NewTelegramSubscription,
     ) -> Result<(), SubscriptionError> {
         match telegram::find_subscription(connection, subscription) {
@@ -120,7 +125,7 @@ impl Subscribe {
 
     fn check_number_of_subscriptions(
         &self,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         chat_id: i64,
     ) -> Result<(), SubscriptionError> {
         let result = telegram::count_subscriptions_for_chat(connection, chat_id);
@@ -152,7 +157,7 @@ impl Command for Subscribe {
             Ok(connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.subscribe(&connection, message, argument)
+                self.subscribe(&mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }
@@ -188,7 +193,7 @@ mod subscribe_tests {
             .create();
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
-        db_connection.test_transaction::<(), (), _>(|| {
+        db_connection.test_transaction::<(), (), _>(|db_connection| {
             let result = Subscribe {}.subscribe(&db_connection, &message, feed_url.clone());
 
             assert_eq!(result, format!("Successfully subscribed to {}", feed_url));
@@ -208,7 +213,7 @@ mod subscribe_tests {
         let db_connection = db::establish_test_connection();
         let message = create_message();
 
-        db_connection.test_transaction::<(), (), _>(|| {
+        db_connection.test_transaction::<(), (), _>(|db_connection| {
             let result = Subscribe {}.subscribe(&db_connection, &message, "11".to_string());
 
             assert_eq!(result, "Invalid url".to_string());
@@ -232,7 +237,7 @@ mod subscribe_tests {
             .create();
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
-        db_connection.test_transaction::<(), (), _>(|| {
+        db_connection.test_transaction::<(), (), _>(|db_connection| {
             let result = Subscribe {}.subscribe(&db_connection, &message, feed_url);
 
             assert_eq!(result, "Url is not a feed".to_string());
@@ -257,7 +262,7 @@ mod subscribe_tests {
             .create();
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
-        db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+        db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
             Subscribe {}.subscribe(&db_connection, &message, feed_url.clone());
 
             let result = Subscribe {}.subscribe(&db_connection, &message, feed_url);
@@ -302,7 +307,7 @@ mod subscribe_tests {
 
         std::env::set_var("SUBSCRIPTION_LIMIT", "2");
 
-        db_connection.test_transaction::<(), super::SubscriptionError, _>(|| {
+        db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
             for rss_url in [feed_url1, feed_url2] {
                 let result = Subscribe {}.subscribe(&db_connection, &message, rss_url.clone());
 
