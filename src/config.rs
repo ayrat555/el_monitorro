@@ -71,6 +71,7 @@ impl Config {
 
     pub fn sync_interval_in_seconds() -> u32 {
         let interval = Self::read_var_with_default("SYNC_INTERVAL_SECONDS", "60");
+        log::error!("interval {:?}", interval);
 
         Self::check_interval(&interval);
 
