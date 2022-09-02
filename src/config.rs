@@ -66,7 +66,7 @@ impl Config {
 
     pub fn deliver_cron_pattern() -> String {
         let interval = Config::deliver_interval_in_seconds();
-        crate::seconds_to_pattern(interval)
+        seconds_to_cron(interval)
     }
 
     pub fn sync_interval_in_seconds() -> u32 {
@@ -79,7 +79,7 @@ impl Config {
 
     pub fn sync_cron_pattern() -> String {
         let interval = Config::sync_interval_in_seconds();
-        crate::seconds_to_pattern(interval)
+        seconds_to_cron(interval)
     }
 
     pub fn clean_interval_in_seconds() -> u32 {
@@ -92,7 +92,7 @@ impl Config {
 
     pub fn clean_cron_pattern() -> String {
         let interval = Config::clean_interval_in_seconds();
-        crate::seconds_to_pattern(interval)
+        seconds_to_cron(interval)
     }
 
     pub fn all_binaries() -> bool {
@@ -135,4 +135,37 @@ impl Config {
             Err(_error) => None,
         }
     }
+}
+
+pub fn seconds_to_cron(seconds_amount: u32) -> String {
+    let vec = seconds_to_units(seconds_amount);
+
+    let result = match vec.len() {
+        1 => format!("*/{} * * * * * *", vec[0]),
+        2 => format!("{} */{} * * * * *", vec[0], vec[1]),
+        3 => format!("{} {} */{} * * * *", vec[0], vec[1], vec[2]),
+        4 => format!("{} {} {} */{} * * *", vec[0], vec[1], vec[2], vec[3]),
+        _ => panic!("Error fix units for cron"),
+    };
+
+    result
+}
+
+pub fn seconds_to_units(seconds_amount: u32) -> Vec<u32> {
+    let mut vec = vec![];
+    let mut unit = seconds_amount;
+    for div in [60, 60, 24] {
+        if unit < div {
+            vec.push(unit);
+            break;
+        } else {
+            vec.push(unit % div);
+
+            unit = unit / div;
+        }
+    }
+    if vec.len() == 3 {
+        vec.push(unit);
+    }
+    vec
 }
