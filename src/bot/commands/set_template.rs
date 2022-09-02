@@ -36,11 +36,10 @@ impl SetTemplate {
         let feed_url = vec[0].to_string();
         let template = vec[1];
 
-        let subscription =
-            match self.find_subscription(&mut db_connection, message.chat.id, feed_url) {
-                Err(message) => return message,
-                Ok(subscription) => subscription,
-            };
+        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
+            Err(message) => return message,
+            Ok(subscription) => subscription,
+        };
 
         let example = match render_template_example(template) {
             Ok(example) => format!("Your messages will look like:\n\n{}", example),
@@ -70,7 +69,7 @@ impl Command for SetTemplate {
         api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => {
+            Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
                 self.set_template(api, &mut connection, message, argument)

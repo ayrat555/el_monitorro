@@ -40,7 +40,7 @@ impl Command for RemoveGlobalFilter {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.remove_global_filter(&mut connection, message),
+            Ok(mut connection) => self.remove_global_filter(&mut connection, message),
             Err(error_message) => error_message,
         }
     }

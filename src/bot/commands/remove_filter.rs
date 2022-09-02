@@ -17,17 +17,16 @@ impl RemoveFilter {
 
     pub fn remove_filter(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         feed_url: String,
     ) -> String {
-        let subscription =
-            match self.find_subscription(&mut db_connection, message.chat.id, feed_url) {
-                Err(message) => return message,
-                Ok(subscription) => subscription,
-            };
+        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
+            Err(message) => return message,
+            Ok(subscription) => subscription,
+        };
 
-        match telegram::set_filter(&mut db_connection, &subscription, None) {
+        match telegram::set_filter(db_connection, &subscription, None) {
             Ok(_) => "The filter was removed".to_string(),
             Err(_) => "Failed to update the filter".to_string(),
         }
@@ -46,10 +45,10 @@ impl Command for RemoveFilter {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => {
+            Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.remove_filter(&connection, message, argument)
+                self.remove_filter(&mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }

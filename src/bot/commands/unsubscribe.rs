@@ -83,7 +83,7 @@ impl Command for Unsubscribe {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => {
+            Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
                 self.unsubscribe(&mut connection, message, argument)

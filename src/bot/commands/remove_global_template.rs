@@ -44,7 +44,7 @@ impl Command for RemoveGlobalTemplate {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.remove_global_template(&mut connection, message),
+            Ok(mut connection) => self.remove_global_template(&mut connection, message),
             Err(error_message) => error_message,
         }
     }

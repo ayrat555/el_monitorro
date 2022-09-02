@@ -3,9 +3,10 @@ use crate::models::feed::Feed;
 use crate::schema::{feeds, telegram_subscriptions};
 use chrono::{DateTime, Utc};
 use diesel::dsl::sql;
-use diesel::helper_types::Select;
 use diesel::prelude::*;
 use diesel::result::Error;
+use diesel::sql_types::BigInt;
+use diesel::sql_types::Bool;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 const MAX_RETRIES: i32 = 5;
@@ -111,7 +112,7 @@ pub fn find_unsynced_feeds(
                 .lt(last_updated_at)
                 .or(feeds::synced_at.is_null()),
         )
-        .filter(feeds::sync_retries.eq(0).or(sql(
+        .filter(feeds::sync_retries.eq(0).or(sql::<Bool>(
             "\"feeds\".\"sync_skips\" = pow(2, \"feeds\".\"sync_retries\" - 1)",
         )))
         .select(feeds::id)
@@ -164,20 +165,21 @@ pub fn load_feed_ids(conn: &mut PgConnection, page: i64, count: i64) -> Result<V
 }
 
 pub fn delete_feeds_without_subscriptions(conn: &mut PgConnection) -> Result<usize, Error> {
-    let feeds_without_subscriptions = feeds::table
-        .left_join(telegram_subscriptions::table)
-        .filter(telegram_subscriptions::feed_id.is_null())
-        .select(feeds::id);
-
-    let delete_query = feeds::table.filter(feeds::id.eq_any(feeds_without_subscriptions));
-
-    diesel::delete(delete_query).execute(conn)
+    diesel::delete(feeds::table)
+        .filter(
+            feeds::id.eq_any(
+                telegram_subscriptions::table
+                    .filter(telegram_subscriptions::feed_id.is_null())
+                    .select(telegram_subscriptions::feed_id),
+            ),
+        )
+        .execute(conn)
 }
 
 pub fn count_feeds_with_subscriptions(conn: &mut PgConnection) -> Result<i64, Error> {
     let result = feeds::table
         .inner_join(telegram_subscriptions::table)
-        .select::<Select>(sql("COUNT (DISTINCT \"feeds\".\"id\")"))
+        .select(sql::<BigInt>("COUNT (DISTINCT \"feeds\".\"id\")"))
         .first::<i64>(conn);
 
     if let Err(Error::NotFound) = result {

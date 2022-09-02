@@ -97,7 +97,7 @@ impl Subscribe {
                 return Err(SubscriptionError::SyncError);
             }
 
-            DeliverChatUpdatesJob::new(chat.id).deliver();
+            DeliverChatUpdatesJob::new(chat.id).deliver().unwrap();
 
             Ok(subscription)
         })
@@ -154,7 +154,7 @@ impl Command for Subscribe {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => {
+            Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
                 self.subscribe(&mut connection, message, argument)

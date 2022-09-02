@@ -26,7 +26,7 @@ impl CleanJob {
     }
 
     pub fn execute(&self, queue: &dyn Queueable) -> Result<(), FangError> {
-        let conn = crate::db::pool().get()?;
+        let mut conn = crate::db::pool().get()?;
 
         self.delete_feeds_without_subscriptions(&mut conn);
 
@@ -89,9 +89,6 @@ impl Runnable for CleanJob {
     }
 
     fn cron(&self) -> Option<Scheduled> {
-        let interval = Config::clean_interval_in_seconds();
-        let pattern = crate::seconds_to_pattern(interval);
-
-        Some(Scheduled::CronPattern(pattern))
+        Some(Scheduled::CronPattern(Config::clean_cron_pattern()))
     }
 }
