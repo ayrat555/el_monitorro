@@ -69,7 +69,7 @@ impl SyncFeedJob {
             Err(FeedSyncError::StaleError) => {
                 error!("Feed can not be processed for a long time {}", self.feed_id);
 
-                self.remove_feed_and_notify_subscribers(&mut db_connection);
+                self.remove_feed_and_notify_subscribers(&mut db_connection)?;
             }
             Err(error) => error!("Failed to process feed {}: {:?}", self.feed_id, error),
             Ok(_) => (),
@@ -78,39 +78,26 @@ impl SyncFeedJob {
         Ok(())
     }
 
-    fn remove_feed_and_notify_subscribers(&self, db_connection: &mut PgConnection) {
-        let feed = feeds::find(db_connection, self.feed_id).unwrap();
-        let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id).unwrap();
+    fn remove_feed_and_notify_subscribers(
+        &self,
+        db_connection: &mut PgConnection,
+    ) -> Result<(), FangError> {
+        let feed = feeds::find(db_connection, self.feed_id)?;
+        let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id)?;
 
         let message = format!("{} can not be processed. It was removed.", feed.link);
 
         let api = Api::default();
 
         for chat in chats.into_iter() {
-            match api.send_text_message(chat.id, message.clone()) {
-                Ok(_) => (),
-                Err(error) => {
-                    error!("Failed to send a message: {:?}", error);
-                }
-            }
+            api.send_text_message(chat.id, message.clone())?;
         }
 
-        match feeds::remove_feed(db_connection, self.feed_id) {
-            Ok(_) => info!("Feed was removed: {}", self.feed_id),
-            Err(err) => error!("Failed to remove feed: {} {}", self.feed_id, err),
-        }
+        feeds::remove_feed(db_connection, self.feed_id)
     }
 
     fn execute(&self, db_connection: &mut PgConnection) -> Result<(), FeedSyncError> {
-        let feed = match feeds::find(db_connection, self.feed_id) {
-            None => {
-                let error = FeedSyncError::FeedError {
-                    msg: format!("Error: feed not found {:?}", self.feed_id),
-                };
-                return Err(error);
-            }
-            Some(found_feed) => found_feed,
-        };
+        let feed = feeds::find(db_connection, self.feed_id)?;
 
         match self.read_feed(&feed) {
             Ok(fetched_feed) => self.maybe_upsert_feed_items(db_connection, feed, fetched_feed),

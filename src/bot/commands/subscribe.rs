@@ -89,9 +89,9 @@ impl Subscribe {
             let subscription =
                 telegram::create_subscription(db_connection, new_telegram_subscription).unwrap();
 
-            let pool = crate::db::pool().clone();
-
-            let queue = Queue::builder().connection_pool(pool).build();
+            let queue = Queue::builder()
+                .connection_pool(crate::db::pool().clone())
+                .build();
 
             if let Err(_err) = SyncFeedJob::new(feed.id).run(&queue) {
                 return Err(SubscriptionError::SyncError);
