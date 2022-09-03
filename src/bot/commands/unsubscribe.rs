@@ -112,10 +112,10 @@ mod unsubscribe_tests {
 
     #[test]
     fn removes_subscription() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
         let link = "Link88".to_string();
 
-        connection.test_transaction::<(), (), _>(|| {
+        connection.test_transaction::<(), (), _>(|connection| {
             let new_chat = NewTelegramChat {
                 id: 42,
                 kind: "private".to_string(),
@@ -124,17 +124,17 @@ mod unsubscribe_tests {
                 last_name: Some("Last".to_string()),
                 title: None,
             };
-            let chat = telegram::create_chat(&mut connection, new_chat).unwrap();
-            let feed = feeds::create(&mut connection, link.clone(), "rss".to_string()).unwrap();
+            let chat = telegram::create_chat(connection, new_chat).unwrap();
+            let feed = feeds::create(connection, link.clone(), "rss".to_string()).unwrap();
 
             let new_subscription = NewTelegramSubscription {
                 feed_id: feed.id,
                 chat_id: chat.id,
             };
 
-            telegram::create_subscription(&mut connection, new_subscription).unwrap();
+            telegram::create_subscription(connection, new_subscription).unwrap();
 
-            let result = telegram::fetch_chats_with_subscriptions(&mut connection, 1, 1).unwrap();
+            let result = telegram::fetch_chats_with_subscriptions(connection, 1, 1).unwrap();
 
             assert_eq!(result.len(), 1);
             assert_eq!(result[0], chat.id);
@@ -146,11 +146,11 @@ mod unsubscribe_tests {
                 .chat(chat)
                 .build();
 
-            let result = Unsubscribe {}.unsubscribe(&mut connection, &message, link.clone());
+            let result = Unsubscribe {}.unsubscribe(connection, &message, link.clone());
 
             assert_eq!(format!("Successfully unsubscribed from {}", link), result);
 
-            let result = telegram::fetch_chats_with_subscriptions(&mut connection, 1, 1).unwrap();
+            let result = telegram::fetch_chats_with_subscriptions(connection, 1, 1).unwrap();
 
             assert_eq!(result.len(), 0);
 
@@ -160,10 +160,10 @@ mod unsubscribe_tests {
 
     #[test]
     fn returns_error_if_subscription_does_not_exist() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
         let link = "Link88".to_string();
 
-        connection.test_transaction::<(), (), _>(|| {
+        connection.test_transaction::<(), (), _>(|connection| {
             let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
             let message = Message::builder()
                 .message_id(1)
@@ -171,11 +171,11 @@ mod unsubscribe_tests {
                 .chat(chat)
                 .build();
 
-            let result = Unsubscribe {}.unsubscribe(&mut connection, &message, link.clone());
+            let result = Unsubscribe {}.unsubscribe(connection, &message, link.clone());
 
             assert_eq!("The subscription does not exist", result);
 
-            let result = telegram::fetch_chats_with_subscriptions(&mut connection, 1, 1).unwrap();
+            let result = telegram::fetch_chats_with_subscriptions(connection, 1, 1).unwrap();
 
             assert_eq!(result.len(), 0);
 
