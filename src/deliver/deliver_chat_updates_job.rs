@@ -94,9 +94,13 @@ impl DeliverChatUpdatesJob {
             telegram::find_undelivered_feed_items(connection, subscription, MESSAGES_LIMIT)?;
 
         let chat_id = subscription.chat_id;
-        let feed = feeds::find(connection, subscription.feed_id)?;
+        let feed = feeds::find(connection, subscription.feed_id).ok_or(DeliverJobError {
+            msg: "Sub not found :(".to_string(),
+        })?;
 
-        let chat = telegram::find_chat(connection, chat_id)?;
+        let chat = telegram::find_chat(connection, chat_id).ok_or(DeliverJobError {
+            msg: "Chat not found :(".to_string(),
+        })?;
         let filter_words = fetch_filter_words(&chat, subscription);
 
         if filter_words.is_none() {
