@@ -493,8 +493,9 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "fang"
-version = "0.8.0"
-source = "git+https://github.com/ayrat555/fang?branch=ayrat555/change-schema#ac45f368190d36ed083a716a0eb84d248f181c98"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce8f91276e489083d0fb9b279c90731d26d4bf2e4b344c7c78e01e10f3053d1b"
 dependencies = [
  "chrono",
  "cron",
