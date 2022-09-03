@@ -161,7 +161,7 @@ pub fn seconds_to_units(seconds_amount: u32) -> Vec<u32> {
         } else {
             vec.push(unit % div);
 
-            unit = unit / div;
+            unit /= div;
         }
     }
     if vec.len() == 3 {
