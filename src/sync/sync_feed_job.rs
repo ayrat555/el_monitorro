@@ -40,6 +40,13 @@ impl From<Error> for FeedSyncError {
     }
 }
 
+impl From<FeedSyncError> for FangError {
+    fn from(error: FeedSyncError) -> Self {
+        let msg = format!("{:?}", error);
+        FangError { description: msg }
+    }
+}
+
 #[typetag::serde]
 impl Runnable for SyncFeedJob {
     fn run(&self, _queue: &dyn Queueable) -> Result<(), FangError> {
@@ -82,7 +89,9 @@ impl SyncFeedJob {
         &self,
         db_connection: &mut PgConnection,
     ) -> Result<(), FangError> {
-        let feed = feeds::find(db_connection, self.feed_id)?;
+        let feed = feeds::find(db_connection, self.feed_id).ok_or(FeedSyncError::DbError {
+            msg: "Feed not found :(".to_string(),
+        })?;
         let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id)?;
 
         let message = format!("{} can not be processed. It was removed.", feed.link);
@@ -93,11 +102,14 @@ impl SyncFeedJob {
             api.send_text_message(chat.id, message.clone())?;
         }
 
-        feeds::remove_feed(db_connection, self.feed_id)
+        feeds::remove_feed(db_connection, self.feed_id)?;
+        Ok(())
     }
 
     fn execute(&self, db_connection: &mut PgConnection) -> Result<(), FeedSyncError> {
-        let feed = feeds::find(db_connection, self.feed_id)?;
+        let feed = feeds::find(db_connection, self.feed_id).ok_or(FeedSyncError::DbError {
+            msg: "Feed not found :(".to_string(),
+        })?;
 
         match self.read_feed(&feed) {
             Ok(fetched_feed) => self.maybe_upsert_feed_items(db_connection, feed, fetched_feed),
