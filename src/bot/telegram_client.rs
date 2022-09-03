@@ -1,4 +1,5 @@
 use crate::config::Config;
+use fang::FangError;
 use frankenstein::AllowedUpdate;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
@@ -34,6 +35,14 @@ pub struct HttpError {
 impl Default for Api {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<Error> for FangError {
+    fn from(error: Error) -> Self {
+        let description = format!("telegram error: {:?}", error);
+
+        Self { description }
     }
 }
 
