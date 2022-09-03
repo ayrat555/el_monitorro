@@ -62,14 +62,13 @@ impl DeliverChatUpdatesJob {
     pub fn deliver(&self) -> Result<(), FangError> {
         let mut db_connection = crate::db::pool().get()?;
         let subscriptions =
-            telegram::find_unread_subscriptions_for_chat(&mut db_connection, self.chat_id).unwrap();
+            telegram::find_unread_subscriptions_for_chat(&mut db_connection, self.chat_id)?;
         let api = Api::default();
 
         for subscription in subscriptions {
             match self.deliver_subscription_updates(&subscription, &mut db_connection, &api) {
                 Ok(()) => {
-                    telegram::mark_subscription_delivered(&mut db_connection, &subscription)
-                        .unwrap();
+                    telegram::mark_subscription_delivered(&mut db_connection, &subscription)?;
                 }
 
                 Err(error) => {
@@ -95,9 +94,9 @@ impl DeliverChatUpdatesJob {
             telegram::find_undelivered_feed_items(connection, subscription, MESSAGES_LIMIT)?;
 
         let chat_id = subscription.chat_id;
-        let feed = feeds::find(connection, subscription.feed_id).unwrap();
+        let feed = feeds::find(connection, subscription.feed_id)?;
 
-        let chat = telegram::find_chat(connection, chat_id).unwrap();
+        let chat = telegram::find_chat(connection, chat_id)?;
         let filter_words = fetch_filter_words(&chat, subscription);
 
         if filter_words.is_none() {
