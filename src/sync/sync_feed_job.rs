@@ -286,7 +286,7 @@ impl SyncFeedJob {
 
 #[cfg(test)]
 mod tests {
-    use super::FeedSyncError::FeedError;
+    use super::FeedSyncError;
     use super::SyncFeedJob;
     use crate::db;
     use crate::db::{feed_items, feeds};
@@ -331,8 +331,8 @@ mod tests {
         let result = sync_job.execute(&mut connection);
 
         assert_eq!(
-            Err(FeedError {
-                msg: "Error: feed not found 5".to_string()
+            Err(FeedSyncError::DbError {
+                msg: "Feed not found :(".to_string()
             }),
             result
         );
