@@ -182,7 +182,7 @@ mod subscribe_tests {
 
     #[test]
     fn creates_new_subscription() {
-        let db_connection = db::establish_test_connection();
+        let mut db_connection = db::establish_test_connection();
         let message = create_message();
 
         let path = "/feed";
@@ -194,15 +194,15 @@ mod subscribe_tests {
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url.clone());
+            let result = Subscribe {}.subscribe(db_connection, &message, feed_url.clone());
 
             assert_eq!(result, format!("Successfully subscribed to {}", feed_url));
 
-            let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
+            let subscriptions = telegram::fetch_subscriptions(db_connection, 1, 1000).unwrap();
 
             assert_eq!(1, subscriptions.len());
             assert_eq!(message.chat.id, subscriptions[0].chat_id);
-            assert!(feeds::find_by_link(&db_connection, feed_url).is_some());
+            assert!(feeds::find_by_link(db_connection, feed_url).is_some());
 
             Ok(())
         });
@@ -210,15 +210,15 @@ mod subscribe_tests {
 
     #[test]
     fn create_subscription_fails_to_create_chat_when_rss_url_is_invalid() {
-        let db_connection = db::establish_test_connection();
+        let mut db_connection = db::establish_test_connection();
         let message = create_message();
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(&db_connection, &message, "11".to_string());
+            let result = Subscribe {}.subscribe(db_connection, &message, "11".to_string());
 
             assert_eq!(result, "Invalid url".to_string());
 
-            let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
+            let subscriptions = telegram::fetch_subscriptions(db_connection, 1, 1000).unwrap();
             assert_eq!(0, subscriptions.len());
 
             Ok(())
@@ -227,7 +227,7 @@ mod subscribe_tests {
 
     #[test]
     fn create_subscription_fails_to_create_chat_when_rss_url_is_not_rss() {
-        let db_connection = db::establish_test_connection();
+        let mut db_connection = db::establish_test_connection();
         let message = create_message();
 
         let path = "/not_feed";
@@ -238,11 +238,11 @@ mod subscribe_tests {
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url);
+            let result = Subscribe {}.subscribe(db_connection, &message, feed_url);
 
             assert_eq!(result, "Url is not a feed".to_string());
 
-            let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
+            let subscriptions = telegram::fetch_subscriptions(db_connection, 1, 1000).unwrap();
             assert_eq!(0, subscriptions.len());
 
             Ok(())
@@ -251,7 +251,7 @@ mod subscribe_tests {
 
     #[test]
     fn create_subscription_fails_to_create_a_subscription_if_it_already_exists() {
-        let db_connection = db::establish_test_connection();
+        let mut db_connection = db::establish_test_connection();
         let message = create_message();
 
         let path = "/feed";
@@ -263,13 +263,13 @@ mod subscribe_tests {
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
-            Subscribe {}.subscribe(&db_connection, &message, feed_url.clone());
+            Subscribe {}.subscribe(db_connection, &message, feed_url.clone());
 
-            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url);
+            let result = Subscribe {}.subscribe(db_connection, &message, feed_url);
 
             assert_eq!(result, "The subscription already exists".to_string());
 
-            let subscriptions = telegram::fetch_subscriptions(&db_connection, 1, 1000).unwrap();
+            let subscriptions = telegram::fetch_subscriptions(db_connection, 1, 1000).unwrap();
             assert_eq!(1, subscriptions.len());
 
             Ok(())
@@ -278,7 +278,7 @@ mod subscribe_tests {
 
     #[test]
     fn create_subscription_fails_to_create_a_subscription_if_it_already_has_20_suscriptions() {
-        let db_connection = db::establish_test_connection();
+        let mut db_connection = db::establish_test_connection();
         let message = create_message();
 
         let response = feed_example();
@@ -309,12 +309,12 @@ mod subscribe_tests {
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
             for rss_url in [feed_url1, feed_url2] {
-                let result = Subscribe {}.subscribe(&db_connection, &message, rss_url.clone());
+                let result = Subscribe {}.subscribe(db_connection, &message, rss_url.clone());
 
                 assert_eq!(format!("Successfully subscribed to {}", rss_url), result);
             }
 
-            let result = Subscribe {}.subscribe(&db_connection, &message, feed_url3.clone());
+            let result = Subscribe {}.subscribe(db_connection, &message, feed_url3.clone());
 
             assert_eq!("You exceeded the number of subscriptions", result);
 

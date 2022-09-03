@@ -70,9 +70,9 @@ mod list_subscriptions_tests {
 
     #[test]
     fn fetches_subscriptions() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<(), (), _>(|| {
+        connection.test_transaction::<(), (), _>(|connection| {
             let new_chat = NewTelegramChat {
                 id: 42,
                 kind: "private".to_string(),
@@ -81,18 +81,17 @@ mod list_subscriptions_tests {
                 last_name: Some("Last".to_string()),
                 title: None,
             };
-            let chat = telegram::create_chat(&mut connection, new_chat).unwrap();
+            let chat = telegram::create_chat(connection, new_chat).unwrap();
 
             for link in ["link1", "link2"] {
-                let feed =
-                    feeds::create(&mut connection, link.to_string(), "rss".to_string()).unwrap();
+                let feed = feeds::create(connection, link.to_string(), "rss".to_string()).unwrap();
 
                 let new_subscription = NewTelegramSubscription {
                     feed_id: feed.id,
                     chat_id: chat.id,
                 };
 
-                telegram::create_subscription(&mut connection, new_subscription).unwrap();
+                telegram::create_subscription(connection, new_subscription).unwrap();
             }
 
             let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
@@ -102,7 +101,7 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(&mut connection, &message);
+            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
 
             assert_eq!("link1\nlink2", result);
 
@@ -112,9 +111,9 @@ mod list_subscriptions_tests {
 
     #[test]
     fn returns_error_if_no_subscriptiops() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<(), (), _>(|| {
+        connection.test_transaction::<(), (), _>(|connection| {
             let new_chat = NewTelegramChat {
                 id: 42,
                 kind: "private".to_string(),
@@ -123,7 +122,7 @@ mod list_subscriptions_tests {
                 last_name: Some("Last".to_string()),
                 title: None,
             };
-            telegram::create_chat(&mut connection, new_chat).unwrap();
+            telegram::create_chat(connection, new_chat).unwrap();
             let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
             let message = Message::builder()
                 .message_id(1)
@@ -131,7 +130,7 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(&mut connection, &message);
+            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
 
             assert_eq!("You don't have any subscriptions", result);
 
@@ -141,9 +140,9 @@ mod list_subscriptions_tests {
 
     #[test]
     fn returns_error_if_chat_does_not_exist() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<(), (), _>(|| {
+        connection.test_transaction::<(), (), _>(|connection| {
             let chat = Chat::builder().id(42).type_field(ChatType::Private).build();
             let message = Message::builder()
                 .message_id(1)
@@ -151,7 +150,7 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(&mut connection, &message);
+            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
 
             assert_eq!("You don't have any subscriptions", result);
 

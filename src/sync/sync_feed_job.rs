@@ -303,19 +303,19 @@ mod tests {
             .with_body(response)
             .create();
         let link = format!("{}{}", mockito::server_url(), path);
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<(), (), _>(|| {
-            let feed = feeds::create(&connection, link, "rss".to_string()).unwrap();
+        connection.test_transaction::<(), (), _>(|connection| {
+            let feed = feeds::create(connection, link, "rss".to_string()).unwrap();
             let sync_job = SyncFeedJob { feed_id: feed.id };
 
-            sync_job.execute(&connection).unwrap();
+            sync_job.execute(connection).unwrap();
 
-            let created_items = feed_items::find(&connection, feed.id).unwrap();
+            let created_items = feed_items::find(connection, feed.id).unwrap();
 
             assert_eq!(created_items.len(), 9);
 
-            let updated_feed = feeds::find(&connection, feed.id).unwrap();
+            let updated_feed = feeds::find(connection, feed.id).unwrap();
             assert!(updated_feed.synced_at.is_some());
             assert!(updated_feed.title.is_some());
             assert!(updated_feed.description.is_some());
@@ -326,10 +326,10 @@ mod tests {
 
     #[test]
     fn it_returns_error_feed_is_not_found() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
         let sync_job = SyncFeedJob { feed_id: 5 };
 
-        let result = sync_job.execute(&connection);
+        let result = sync_job.execute(&mut connection);
 
         assert_eq!(
             Err(FeedError {
