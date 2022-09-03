@@ -140,15 +140,13 @@ impl Config {
 pub fn seconds_to_cron(seconds_amount: u32) -> String {
     let vec = seconds_to_units(seconds_amount);
 
-    let result = match vec.len() {
+    match vec.len() {
         1 => format!("*/{} * * * * * *", vec[0]),
         2 => format!("{} */{} * * * * *", vec[0], vec[1]),
         3 => format!("{} {} */{} * * * *", vec[0], vec[1], vec[2]),
         4 => format!("{} {} {} */{} * * *", vec[0], vec[1], vec[2], vec[3]),
         _ => panic!("Error fix units for cron"),
-    };
-
-    result
+    }
 }
 
 pub fn seconds_to_units(seconds_amount: u32) -> Vec<u32> {
