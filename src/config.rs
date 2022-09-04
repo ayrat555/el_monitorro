@@ -155,20 +155,35 @@ pub fn seconds_to_cron(seconds_amount: u32) -> String {
 pub fn seconds_to_units(seconds_amount: u32) -> Vec<u32> {
     let mut vec = vec![];
     let mut unit = seconds_amount;
-    for div in [60, 60, 24] {
+    let mut finish = false;
+    let mut divs = [60u32, 60u32, 24u32].iter();
+    let mut div_option = divs.next();
+
+    while div_option.is_some() && !finish {
+        let div = *div_option.unwrap();
         if unit < div {
             vec.push(unit);
-            break;
+            finish = true;
         } else {
             vec.push(unit % div);
 
             unit /= div;
         }
+        div_option = divs.next();
     }
 
-    if vec.len() == 3 && unit > 0 {
+    if vec.len() == 3 && !finish {
         vec.push(unit);
     }
 
     vec
+}
+
+mod test {
+
+    #[test]
+    fn test_second_to_units() {
+        let twelve_hours = super::seconds_to_units(43200);
+        assert_eq!(vec![0u32, 0u32, 12u32], twelve_hours);
+    }
 }
