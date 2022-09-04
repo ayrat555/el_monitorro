@@ -9,8 +9,9 @@ use crate::models::telegram_subscription::TelegramSubscription;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use fang::typetag;
-use fang::Error as FangError;
+use fang::FangError;
 use fang::PgConnection;
+use fang::Queueable;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -58,15 +59,15 @@ impl DeliverChatUpdatesJob {
         Self { chat_id }
     }
 
-    pub fn deliver(&self, db_connection: &PgConnection) {
+    pub fn deliver(&self, db_connection: &mut PgConnection) -> Result<(), FangError> {
         let subscriptions =
-            telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id).unwrap();
+            telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id)?;
         let api = Api::default();
 
         for subscription in subscriptions {
             match self.deliver_subscription_updates(&subscription, db_connection, &api) {
                 Ok(()) => {
-                    telegram::mark_subscription_delivered(db_connection, &subscription).unwrap();
+                    telegram::mark_subscription_delivered(db_connection, &subscription)?;
                 }
 
                 Err(error) => {
@@ -79,21 +80,26 @@ impl DeliverChatUpdatesJob {
                 }
             }
         }
+        Ok(())
     }
 
     fn deliver_subscription_updates(
         &self,
         subscription: &TelegramSubscription,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         api: &Api,
     ) -> Result<(), DeliverJobError> {
         let feed_items =
             telegram::find_undelivered_feed_items(connection, subscription, MESSAGES_LIMIT)?;
 
         let chat_id = subscription.chat_id;
-        let feed = feeds::find(connection, subscription.feed_id).unwrap();
+        let feed = feeds::find(connection, subscription.feed_id).ok_or(DeliverJobError {
+            msg: "Sub not found :(".to_string(),
+        })?;
 
-        let chat = telegram::find_chat(connection, chat_id).unwrap();
+        let chat = telegram::find_chat(connection, chat_id).ok_or(DeliverJobError {
+            msg: "Chat not found :(".to_string(),
+        })?;
         let filter_words = fetch_filter_words(&chat, subscription);
 
         if filter_words.is_none() {
@@ -146,7 +152,7 @@ impl DeliverChatUpdatesJob {
         &self,
         words: Vec<String>,
         messages: Vec<(String, DateTime<Utc>)>,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         subscription: &TelegramSubscription,
         api: &Api,
         chat: &TelegramChat,
@@ -196,7 +202,7 @@ impl DeliverChatUpdatesJob {
     fn maybe_send_unread_messages_count(
         &self,
         subscription: &TelegramSubscription,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         feed_items_count: i64,
         feed_link: String,
         api: &Api,
@@ -228,7 +234,7 @@ impl DeliverChatUpdatesJob {
         &self,
         chat: &TelegramChat,
         message: String,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         api: &Api,
     ) -> Result<(), DeliverJobError> {
         let delay = delay_period(chat);
@@ -251,7 +257,7 @@ impl DeliverChatUpdatesJob {
         &self,
         subscription: &TelegramSubscription,
         message: String,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         chat: &TelegramChat,
         api: &Api,
         publication_date: DateTime<Utc>,
@@ -263,7 +269,7 @@ impl DeliverChatUpdatesJob {
 
     fn update_last_deivered_at(
         &self,
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         subscription: &TelegramSubscription,
         publication_date: DateTime<Utc>,
     ) -> Result<(), DeliverJobError> {
@@ -285,10 +291,14 @@ impl DeliverChatUpdatesJob {
 
 #[typetag::serde]
 impl Runnable for DeliverChatUpdatesJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        self.deliver(connection);
+    fn run(&self, _queue: &dyn Queueable) -> Result<(), FangError> {
+        let mut db_connection = crate::db::pool().get()?;
 
-        Ok(())
+        self.deliver(&mut db_connection)
+    }
+
+    fn uniq(&self) -> bool {
+        true
     }
 
     fn task_type(&self) -> String {
@@ -296,7 +306,7 @@ impl Runnable for DeliverChatUpdatesJob {
     }
 }
 
-fn handle_error(error: String, connection: &PgConnection, chat_id: i64) -> DeliverJobError {
+fn handle_error(error: String, connection: &mut PgConnection, chat_id: i64) -> DeliverJobError {
     log::error!("Failed to deliver updates: {}", error);
 
     if bot_blocked(&error) {

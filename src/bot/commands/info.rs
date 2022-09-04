@@ -18,7 +18,7 @@ impl Info {
         Self {}.execute(db_pool, api, message);
     }
 
-    fn info(&self, db_connection: &PgConnection, _message: &Message) -> String {
+    fn info(&self, db_connection: &mut PgConnection, _message: &Message) -> String {
         let total_feeds = match feeds::count_feeds_with_subscriptions(db_connection) {
             Ok(res) => res,
             Err(err) => {
@@ -90,7 +90,7 @@ impl Command for Info {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.info(&connection, message),
+            Ok(mut connection) => self.info(&mut connection, message),
             Err(error_message) => error_message,
         }
     }

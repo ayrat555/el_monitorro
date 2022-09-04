@@ -7,7 +7,9 @@ fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let queue = Queue::new();
+    let queue = Queue::builder()
+        .connection_pool(el_monitorro::db::pool().clone())
+        .build();
 
     if Config::all_binaries() {
         el_monitorro::start_clean_workers(&queue);

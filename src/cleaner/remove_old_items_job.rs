@@ -1,7 +1,7 @@
 use crate::db::feed_items;
 use fang::typetag;
-use fang::Error as FangError;
-use fang::PgConnection;
+use fang::FangError;
+use fang::Queueable;
 use fang::Runnable;
 use serde::{Deserialize, Serialize};
 
@@ -17,9 +17,11 @@ impl RemoveOldItemsJob {
         Self { feed_id }
     }
 
-    pub fn run(&self, db_connection: &PgConnection) {
+    pub fn run(&self) -> Result<(), FangError> {
+        let conn = &mut crate::db::pool().get()?;
+
         if let Err(error) =
-            feed_items::delete_old_feed_items(db_connection, self.feed_id, MESSAGES_LIMIT_PER_FEED)
+            feed_items::delete_old_feed_items(conn, self.feed_id, MESSAGES_LIMIT_PER_FEED)
         {
             log::error!(
                 "Failed to delete old feed items for {}: {:?}",
@@ -27,15 +29,19 @@ impl RemoveOldItemsJob {
                 error
             );
         };
+
+        Ok(())
     }
 }
 
 #[typetag::serde]
 impl Runnable for RemoveOldItemsJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        self.run(connection);
+    fn run(&self, _queue: &dyn Queueable) -> Result<(), FangError> {
+        self.run()
+    }
 
-        Ok(())
+    fn uniq(&self) -> bool {
+        true
     }
 
     fn task_type(&self) -> String {

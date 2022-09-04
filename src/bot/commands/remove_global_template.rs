@@ -15,7 +15,11 @@ impl RemoveGlobalTemplate {
         Self {}.execute(db_pool, api, message);
     }
 
-    fn remove_global_template(&self, db_connection: &PgConnection, message: &Message) -> String {
+    fn remove_global_template(
+        &self,
+        db_connection: &mut PgConnection,
+        message: &Message,
+    ) -> String {
         let chat = match telegram::find_chat(db_connection, message.chat.id) {
             Some(chat) => chat,
             None => return "You don't have any subcriptions".to_string(),
@@ -40,7 +44,7 @@ impl Command for RemoveGlobalTemplate {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.remove_global_template(&connection, message),
+            Ok(mut connection) => self.remove_global_template(&mut connection, message),
             Err(error_message) => error_message,
         }
     }

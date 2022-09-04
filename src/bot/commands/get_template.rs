@@ -16,7 +16,7 @@ impl GetTemplate {
 
     fn get_template(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         feed_url: String,
     ) -> String {
@@ -42,10 +42,10 @@ impl Command for GetTemplate {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => {
+            Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.get_template(&connection, message, argument)
+                self.get_template(&mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }

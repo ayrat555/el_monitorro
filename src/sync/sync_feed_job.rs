@@ -12,8 +12,8 @@ use chrono::Duration;
 use diesel::pg::PgConnection;
 use diesel::result::Error;
 use fang::typetag;
-use fang::Error as FangError;
-use fang::Queue;
+use fang::FangError;
+use fang::Queueable;
 use fang::Runnable;
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -40,12 +40,23 @@ impl From<Error> for FeedSyncError {
     }
 }
 
+impl From<FeedSyncError> for FangError {
+    fn from(error: FeedSyncError) -> Self {
+        let msg = format!("{:?}", error);
+        FangError { description: msg }
+    }
+}
+
 #[typetag::serde]
 impl Runnable for SyncFeedJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
-        self.sync_feed(connection);
+    fn run(&self, _queue: &dyn Queueable) -> Result<(), FangError> {
+        let mut db_connection = crate::db::pool().get()?;
 
-        Ok(())
+        self.sync_feed(&mut db_connection)
+    }
+
+    fn uniq(&self) -> bool {
+        true
     }
 
     fn task_type(&self) -> String {
@@ -58,57 +69,47 @@ impl SyncFeedJob {
         Self { feed_id }
     }
 
-    pub fn enqueue(&self, connection: &PgConnection) -> Result<fang::Task, diesel::result::Error> {
-        Queue::push_task_query(connection, self)
-    }
-
-    pub fn sync_feed(&self, db_connection: &PgConnection) {
+    pub fn sync_feed(&self, db_connection: &mut PgConnection) -> Result<(), FangError> {
         let feed_sync_result = self.execute(db_connection);
 
         match feed_sync_result {
             Err(FeedSyncError::StaleError) => {
                 error!("Feed can not be processed for a long time {}", self.feed_id);
 
-                self.remove_feed_and_notify_subscribers(db_connection);
+                self.remove_feed_and_notify_subscribers(db_connection)?;
             }
             Err(error) => error!("Failed to process feed {}: {:?}", self.feed_id, error),
             Ok(_) => (),
-        }
+        };
+
+        Ok(())
     }
 
-    fn remove_feed_and_notify_subscribers(&self, db_connection: &PgConnection) {
-        let feed = feeds::find(db_connection, self.feed_id).unwrap();
-        let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id).unwrap();
+    fn remove_feed_and_notify_subscribers(
+        &self,
+        db_connection: &mut PgConnection,
+    ) -> Result<(), FangError> {
+        let feed = feeds::find(db_connection, self.feed_id).ok_or(FeedSyncError::DbError {
+            msg: "Feed not found :(".to_string(),
+        })?;
+        let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id)?;
 
         let message = format!("{} can not be processed. It was removed.", feed.link);
 
         let api = Api::default();
 
         for chat in chats.into_iter() {
-            match api.send_text_message(chat.id, message.clone()) {
-                Ok(_) => (),
-                Err(error) => {
-                    error!("Failed to send a message: {:?}", error);
-                }
-            }
+            api.send_text_message(chat.id, message.clone())?;
         }
 
-        match feeds::remove_feed(db_connection, self.feed_id) {
-            Ok(_) => info!("Feed was removed: {}", self.feed_id),
-            Err(err) => error!("Failed to remove feed: {} {}", self.feed_id, err),
-        }
+        feeds::remove_feed(db_connection, self.feed_id)?;
+        Ok(())
     }
 
-    fn execute(&self, db_connection: &PgConnection) -> Result<(), FeedSyncError> {
-        let feed = match feeds::find(db_connection, self.feed_id) {
-            None => {
-                let error = FeedSyncError::FeedError {
-                    msg: format!("Error: feed not found {:?}", self.feed_id),
-                };
-                return Err(error);
-            }
-            Some(found_feed) => found_feed,
-        };
+    fn execute(&self, db_connection: &mut PgConnection) -> Result<(), FeedSyncError> {
+        let feed = feeds::find(db_connection, self.feed_id).ok_or(FeedSyncError::DbError {
+            msg: "Feed not found :(".to_string(),
+        })?;
 
         match self.read_feed(&feed) {
             Ok(fetched_feed) => self.maybe_upsert_feed_items(db_connection, feed, fetched_feed),
@@ -118,7 +119,7 @@ impl SyncFeedJob {
 
     fn maybe_upsert_feed_items(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: Feed,
         fetched_feed: FetchedFeed,
     ) -> Result<(), FeedSyncError> {
@@ -154,7 +155,7 @@ impl SyncFeedJob {
 
     fn create_feed_items(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: Feed,
         fetched_feed: FetchedFeed,
     ) -> Result<(), FeedSyncError> {
@@ -192,7 +193,7 @@ impl SyncFeedJob {
 
     fn set_synced_at(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: Feed,
         title: String,
         description: String,
@@ -217,7 +218,7 @@ impl SyncFeedJob {
     fn check_staleness(
         &self,
         err: FeedReaderError,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: Feed,
     ) -> Result<(), FeedSyncError> {
         let created_at_or_last_synced_at = if feed.synced_at.is_some() {
@@ -239,7 +240,7 @@ impl SyncFeedJob {
 
     fn set_error(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         feed: &Feed,
         sync_error: FeedReaderError,
     ) -> FeedSyncError {
@@ -285,7 +286,7 @@ impl SyncFeedJob {
 
 #[cfg(test)]
 mod tests {
-    use super::FeedSyncError::FeedError;
+    use super::FeedSyncError;
     use super::SyncFeedJob;
     use crate::db;
     use crate::db::{feed_items, feeds};
@@ -301,19 +302,19 @@ mod tests {
             .with_body(response)
             .create();
         let link = format!("{}{}", mockito::server_url(), path);
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<(), (), _>(|| {
-            let feed = feeds::create(&connection, link, "rss".to_string()).unwrap();
+        connection.test_transaction::<(), (), _>(|connection| {
+            let feed = feeds::create(connection, link, "rss".to_string()).unwrap();
             let sync_job = SyncFeedJob { feed_id: feed.id };
 
-            sync_job.execute(&connection).unwrap();
+            sync_job.execute(connection).unwrap();
 
-            let created_items = feed_items::find(&connection, feed.id).unwrap();
+            let created_items = feed_items::find(connection, feed.id).unwrap();
 
             assert_eq!(created_items.len(), 9);
 
-            let updated_feed = feeds::find(&connection, feed.id).unwrap();
+            let updated_feed = feeds::find(connection, feed.id).unwrap();
             assert!(updated_feed.synced_at.is_some());
             assert!(updated_feed.title.is_some());
             assert!(updated_feed.description.is_some());
@@ -324,14 +325,14 @@ mod tests {
 
     #[test]
     fn it_returns_error_feed_is_not_found() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
         let sync_job = SyncFeedJob { feed_id: 5 };
 
-        let result = sync_job.execute(&connection);
+        let result = sync_job.execute(&mut connection);
 
         assert_eq!(
-            Err(FeedError {
-                msg: "Error: feed not found 5".to_string()
+            Err(FeedSyncError::DbError {
+                msg: "Feed not found :(".to_string()
             }),
             result
         );

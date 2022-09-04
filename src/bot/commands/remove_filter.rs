@@ -17,7 +17,7 @@ impl RemoveFilter {
 
     pub fn remove_filter(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         feed_url: String,
     ) -> String {
@@ -45,10 +45,10 @@ impl Command for RemoveFilter {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => {
+            Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.remove_filter(&connection, message, argument)
+                self.remove_filter(&mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }

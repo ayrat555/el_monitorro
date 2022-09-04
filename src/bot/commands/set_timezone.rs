@@ -17,7 +17,7 @@ impl SetTimezone {
 
     fn set_timezone(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         data: String,
     ) -> String {
@@ -29,7 +29,7 @@ impl SetTimezone {
 
     fn update_timezone(
         &self,
-        db_connection: &PgConnection,
+        db_connection: &mut PgConnection,
         message: &Message,
         data: String,
     ) -> Result<(), &str> {
@@ -76,10 +76,10 @@ impl Command for SetTimezone {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => {
+            Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_timezone(&connection, message, argument)
+                self.set_timezone(&mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }

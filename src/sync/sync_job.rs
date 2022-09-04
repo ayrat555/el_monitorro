@@ -1,10 +1,12 @@
 use super::SyncFeedJob;
 use crate::db;
 use crate::db::feeds;
+use crate::Config;
 use fang::typetag;
-use fang::Error as FangError;
-use fang::PgConnection;
+use fang::FangError;
+use fang::Queueable;
 use fang::Runnable;
+use fang::Scheduled;
 use serde::{Deserialize, Serialize};
 
 const FEEDS_PER_PAGE: i64 = 100;
@@ -30,7 +32,9 @@ impl SyncJob {
 
 #[typetag::serde]
 impl Runnable for SyncJob {
-    fn run(&self, connection: &PgConnection) -> Result<(), FangError> {
+    fn run(&self, queue: &dyn Queueable) -> Result<(), FangError> {
+        let mut connection = crate::db::pool().get()?;
+
         let mut unsynced_feed_ids: Vec<i64>;
         let mut page = 1;
 
@@ -41,7 +45,7 @@ impl Runnable for SyncJob {
         let last_synced_at = db::current_time();
         loop {
             unsynced_feed_ids = match feeds::find_unsynced_feeds(
-                connection,
+                &mut connection,
                 last_synced_at,
                 page,
                 FEEDS_PER_PAGE,
@@ -57,7 +61,7 @@ impl Runnable for SyncJob {
             page += 1;
 
             for id in &unsynced_feed_ids {
-                SyncFeedJob::new(*id).enqueue(connection).unwrap();
+                queue.insert_task(&SyncFeedJob::new(*id))?;
             }
 
             if unsynced_feed_ids.is_empty() {
@@ -72,9 +76,17 @@ impl Runnable for SyncJob {
             total_number
         );
 
-        feeds::increment_and_reset_skips(connection).unwrap();
+        feeds::increment_and_reset_skips(&mut connection)?;
 
         Ok(())
+    }
+
+    fn cron(&self) -> Option<Scheduled> {
+        Some(Scheduled::CronPattern(Config::sync_cron_pattern()))
+    }
+
+    fn uniq(&self) -> bool {
+        true
     }
 
     fn task_type(&self) -> String {

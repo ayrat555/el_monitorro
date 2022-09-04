@@ -5,18 +5,20 @@ use chrono::{DateTime, Utc};
 use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::result::Error;
+use diesel::sql_types::BigInt;
+use diesel::sql_types::Bool;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 
 const MAX_RETRIES: i32 = 5;
 
 #[derive(Insertable, AsChangeset)]
-#[table_name = "feeds"]
+#[diesel(table_name = feeds)]
 struct NewFeed {
     link: String,
     feed_type: String,
 }
 
-pub fn create(conn: &PgConnection, link: String, feed_type: String) -> Result<Feed, Error> {
+pub fn create(conn: &mut PgConnection, link: String, feed_type: String) -> Result<Feed, Error> {
     if feed_type != *"atom" && feed_type != *"rss" && feed_type != *"json" {
         unimplemented!()
     }
@@ -26,15 +28,16 @@ pub fn create(conn: &PgConnection, link: String, feed_type: String) -> Result<Fe
         feed_type,
     };
 
-    diesel::insert_into(feeds::table)
+    let feed = diesel::insert_into(feeds::table)
         .values(new_feed)
         .on_conflict(feeds::link)
         .do_update()
         .set(feeds::updated_at.eq(db::current_time()))
-        .get_result::<Feed>(conn)
+        .get_result::<Feed>(conn)?;
+    Ok(feed)
 }
 
-pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
+pub fn set_error(conn: &mut PgConnection, feed: &Feed, error: &str) -> Result<Feed, Error> {
     let next_retry_number = if feed.sync_retries == MAX_RETRIES {
         MAX_RETRIES
     } else {
@@ -51,7 +54,7 @@ pub fn set_error(conn: &PgConnection, feed: &Feed, error: &str) -> Result<Feed, 
 }
 
 pub fn set_synced_at(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed: &Feed,
     title: Option<String>,
     description: Option<String>,
@@ -71,14 +74,14 @@ pub fn set_synced_at(
         .get_result::<Feed>(conn)
 }
 
-pub fn find(conn: &PgConnection, id: i64) -> Option<Feed> {
+pub fn find(conn: &mut PgConnection, id: i64) -> Option<Feed> {
     match feeds::table.filter(feeds::id.eq(id)).first::<Feed>(conn) {
         Ok(record) => Some(record),
         _ => None,
     }
 }
 
-pub fn find_by_link(conn: &PgConnection, link: String) -> Option<Feed> {
+pub fn find_by_link(conn: &mut PgConnection, link: String) -> Option<Feed> {
     match feeds::table
         .filter(feeds::link.eq(link))
         .first::<Feed>(conn)
@@ -88,14 +91,14 @@ pub fn find_by_link(conn: &PgConnection, link: String) -> Option<Feed> {
     }
 }
 
-pub fn remove_feed(conn: &PgConnection, feed_id: i64) -> Result<usize, Error> {
+pub fn remove_feed(conn: &mut PgConnection, feed_id: i64) -> Result<usize, Error> {
     let record_query = feeds::table.filter(feeds::id.eq(feed_id));
 
     diesel::delete(record_query).execute(conn)
 }
 
 pub fn find_unsynced_feeds(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     last_updated_at: DateTime<Utc>,
     page: i64,
     count: i64,
@@ -109,7 +112,7 @@ pub fn find_unsynced_feeds(
                 .lt(last_updated_at)
                 .or(feeds::synced_at.is_null()),
         )
-        .filter(feeds::sync_retries.eq(0).or(sql(
+        .filter(feeds::sync_retries.eq(0).or(sql::<Bool>(
             "\"feeds\".\"sync_skips\" = pow(2, \"feeds\".\"sync_retries\" - 1)",
         )))
         .select(feeds::id)
@@ -120,7 +123,7 @@ pub fn find_unsynced_feeds(
         .load::<i64>(conn)
 }
 
-pub fn increment_and_reset_skips(conn: &PgConnection) -> Result<usize, Error> {
+pub fn increment_and_reset_skips(conn: &mut PgConnection) -> Result<usize, Error> {
     // diesel doesn't support updates with joins
     // https://github.com/diesel-rs/diesel/issues/1478
     let query = "UPDATE \"feeds\" SET \"sync_skips\" = -1\
@@ -141,7 +144,7 @@ pub fn increment_and_reset_skips(conn: &PgConnection) -> Result<usize, Error> {
 }
 
 pub fn set_content_fields(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     feed: &Feed,
     content_fields: Vec<String>,
 ) -> Result<Feed, Error> {
@@ -150,7 +153,7 @@ pub fn set_content_fields(
         .get_result::<Feed>(conn)
 }
 
-pub fn load_feed_ids(conn: &PgConnection, page: i64, count: i64) -> Result<Vec<i64>, Error> {
+pub fn load_feed_ids(conn: &mut PgConnection, page: i64, count: i64) -> Result<Vec<i64>, Error> {
     let offset = (page - 1) * count;
 
     feeds::table
@@ -161,21 +164,23 @@ pub fn load_feed_ids(conn: &PgConnection, page: i64, count: i64) -> Result<Vec<i
         .load::<i64>(conn)
 }
 
-pub fn delete_feeds_without_subscriptions(conn: &PgConnection) -> Result<usize, Error> {
+pub fn delete_feeds_without_subscriptions(conn: &mut PgConnection) -> Result<usize, Error> {
     let feeds_without_subscriptions = feeds::table
         .left_join(telegram_subscriptions::table)
         .filter(telegram_subscriptions::feed_id.is_null())
-        .select(feeds::id);
+        .limit(2000)
+        .select(feeds::id)
+        .load::<i64>(conn)?;
 
     let delete_query = feeds::table.filter(feeds::id.eq_any(feeds_without_subscriptions));
 
     diesel::delete(delete_query).execute(conn)
 }
 
-pub fn count_feeds_with_subscriptions(conn: &PgConnection) -> Result<i64, Error> {
+pub fn count_feeds_with_subscriptions(conn: &mut PgConnection) -> Result<i64, Error> {
     let result = feeds::table
         .inner_join(telegram_subscriptions::table)
-        .select(sql("COUNT (DISTINCT \"feeds\".\"id\")"))
+        .select(sql::<BigInt>("COUNT (DISTINCT \"feeds\".\"id\")"))
         .first::<i64>(conn);
 
     if let Err(Error::NotFound) = result {
@@ -201,10 +206,10 @@ mod tests {
     #[test]
     fn create_creates_new_feed() {
         let link = "Link";
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        let result = connection.test_transaction::<Feed, Error, _>(|| {
-            super::create(&connection, link.to_string(), "atom".to_string())
+        let result = connection.test_transaction::<Feed, Error, _>(|connection| {
+            super::create(connection, link.to_string(), "atom".to_string())
         });
 
         assert_eq!(result.title, None);
@@ -215,10 +220,10 @@ mod tests {
     #[test]
     fn create_fails_to_create_feed_without_link() {
         let link = "".to_string();
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
-            let result = super::create(&connection, link, "rss".to_string());
+        connection.test_transaction::<_, Error, _>(|connection| {
+            let result = super::create(connection, link, "rss".to_string());
 
             match result.err().unwrap() {
                 Error::DatabaseError(_, error_info) => assert_eq!(
@@ -239,17 +244,17 @@ mod tests {
         let title = "Title".to_string();
         let description = "Description".to_string();
 
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
-            let feed = super::create(&connection, link.clone(), "rss".to_string()).unwrap();
+        connection.test_transaction::<_, Error, _>(|connection| {
+            let feed = super::create(connection, link.clone(), "rss".to_string()).unwrap();
 
             assert_eq!(feed.title, None);
             assert_eq!(feed.link, link);
             assert_eq!(feed.description, None);
 
             let updated_feed = super::set_synced_at(
-                &connection,
+                connection,
                 &feed,
                 Some(title.clone()),
                 Some(description.clone()),
@@ -272,11 +277,11 @@ mod tests {
         let title = "Title".to_string();
         let description = "Description".to_string();
 
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
-            let feed = super::create(&connection, link.clone(), "rss".to_string()).unwrap();
-            let feed_with_error = super::set_error(&connection, &feed, "error").unwrap();
+        connection.test_transaction::<_, Error, _>(|connection| {
+            let feed = super::create(connection, link.clone(), "rss".to_string()).unwrap();
+            let feed_with_error = super::set_error(connection, &feed, "error").unwrap();
 
             assert_eq!(feed_with_error.error.unwrap(), "error".to_string());
             assert_eq!(feed_with_error.title, None);
@@ -284,7 +289,7 @@ mod tests {
             assert_eq!(feed_with_error.description, None);
 
             let updated_feed = super::set_synced_at(
-                &connection,
+                connection,
                 &feed,
                 Some(title.clone()),
                 Some(description.clone()),
@@ -303,13 +308,13 @@ mod tests {
 
     #[test]
     fn find_finds_feed() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link.clone(), "atom".to_string()).unwrap();
+            let feed = super::create(connection, link.clone(), "atom".to_string()).unwrap();
 
-            let found_feed = super::find(&connection, feed.id).unwrap();
+            let found_feed = super::find(connection, feed.id).unwrap();
 
             assert_eq!(feed.id, found_feed.id);
             assert_eq!(found_feed.title, None);
@@ -322,13 +327,13 @@ mod tests {
 
     #[test]
     fn find_by_link_finds_feed() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link.clone(), "rss".to_string()).unwrap();
+            let feed = super::create(connection, link.clone(), "rss".to_string()).unwrap();
 
-            let found_feed = super::find_by_link(&connection, link.clone()).unwrap();
+            let found_feed = super::find_by_link(connection, link.clone()).unwrap();
 
             assert_eq!(feed.id, found_feed.id);
             assert_eq!(found_feed.title, None);
@@ -341,10 +346,10 @@ mod tests {
 
     #[test]
     fn find_cant_find_feed() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
-            let found_feed = super::find(&connection, 42);
+        connection.test_transaction::<_, Error, _>(|connection| {
+            let found_feed = super::find(connection, 42);
 
             assert_eq!(found_feed, None);
 
@@ -354,14 +359,14 @@ mod tests {
 
     #[test]
     fn set_error_sets_error_message_to_feed() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link, "atom".to_string()).unwrap();
+            let feed = super::create(connection, link, "atom".to_string()).unwrap();
             let error = "Error syncing feed";
 
-            let updated_feed = super::set_error(&connection, &feed, error).unwrap();
+            let updated_feed = super::set_error(connection, &feed, error).unwrap();
 
             assert_eq!(updated_feed.error.unwrap(), error);
 
@@ -371,26 +376,26 @@ mod tests {
 
     #[test]
     fn set_error_increments_retries() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link, "atom".to_string()).unwrap();
+            let feed = super::create(connection, link, "atom".to_string()).unwrap();
             let error = "Error syncing feed";
 
             assert_eq!(0, feed.sync_retries);
 
-            let mut updated_feed = super::set_error(&connection, &feed, error).unwrap();
+            let mut updated_feed = super::set_error(connection, &feed, error).unwrap();
 
             assert_eq!(updated_feed.error.clone().unwrap(), error);
             assert_eq!(1, updated_feed.sync_retries);
 
-            updated_feed = super::set_error(&connection, &updated_feed, error).unwrap();
+            updated_feed = super::set_error(connection, &updated_feed, error).unwrap();
 
             assert_eq!(updated_feed.error.clone().unwrap(), error);
             assert_eq!(2, updated_feed.sync_retries);
 
-            updated_feed = super::set_error(&connection, &updated_feed, error).unwrap();
+            updated_feed = super::set_error(connection, &updated_feed, error).unwrap();
             assert_eq!(updated_feed.error.clone().unwrap(), error);
             assert_eq!(3, updated_feed.sync_retries);
 
@@ -400,18 +405,17 @@ mod tests {
 
     #[test]
     fn set_synced_at_sets_current_time_to_synced_at() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
             let description = Some("Description".to_string());
             let title = Some("Title".to_string());
-            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+            let feed = super::create(connection, link, "rss".to_string()).unwrap();
 
             assert!(feed.synced_at.is_none());
 
-            let updated_feed =
-                super::set_synced_at(&connection, &feed, description, title).unwrap();
+            let updated_feed = super::set_synced_at(connection, &feed, description, title).unwrap();
 
             assert!(updated_feed.synced_at.is_some());
             assert!(updated_feed.title.is_some());
@@ -423,19 +427,18 @@ mod tests {
 
     #[test]
     fn set_synced_at_removes_retries_and_skips() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
             let description = Some("Description".to_string());
             let title = Some("Title".to_string());
-            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+            let feed = super::create(connection, link, "rss".to_string()).unwrap();
 
-            let updated_feed = super::set_error(&connection, &feed, "Error").unwrap();
+            let updated_feed = super::set_error(connection, &feed, "Error").unwrap();
             assert_eq!(updated_feed.sync_retries, 1);
 
-            let updated_feed =
-                super::set_synced_at(&connection, &feed, description, title).unwrap();
+            let updated_feed = super::set_synced_at(connection, &feed, description, title).unwrap();
 
             assert_eq!(updated_feed.sync_retries, 0);
 
@@ -449,16 +452,16 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_does_not_fetch_feeds_without_telegram_subscriptions() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
             let feed_without_synced_at =
-                super::create(&connection, link, "rss".to_string()).unwrap();
+                super::create(connection, link, "rss".to_string()).unwrap();
             assert!(feed_without_synced_at.synced_at.is_none());
 
             let found_unsynced_feeds =
-                super::find_unsynced_feeds(&connection, Utc::now(), 1, 1).unwrap();
+                super::find_unsynced_feeds(connection, Utc::now(), 1, 1).unwrap();
 
             assert_eq!(found_unsynced_feeds.len(), 0);
 
@@ -468,15 +471,15 @@ mod tests {
 
     #[test]
     fn increment_and_reset_skips_doesnt_update_feeds_without_subscriptions() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+            let feed = super::create(connection, link, "rss".to_string()).unwrap();
 
-            super::set_error(&connection, &feed, "error").unwrap();
+            super::set_error(connection, &feed, "error").unwrap();
 
-            let result = super::increment_and_reset_skips(&connection).unwrap();
+            let result = super::increment_and_reset_skips(connection).unwrap();
             assert_eq!(0, result);
 
             Ok(())
@@ -485,16 +488,16 @@ mod tests {
 
     #[test]
     fn set_content_fields() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+            let feed = super::create(connection, link, "rss".to_string()).unwrap();
 
             assert_eq!(None, feed.content_fields);
 
             let updated_feed = super::set_content_fields(
-                &connection,
+                connection,
                 &feed,
                 vec!["guid".to_string(), "description".to_string()],
             )
@@ -511,41 +514,41 @@ mod tests {
 
     #[test]
     fn increment_skips_updates_feeds_with_subscriptions() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+            let feed = super::create(connection, link, "rss".to_string()).unwrap();
 
-            super::set_error(&connection, &feed, "error").unwrap();
+            super::set_error(connection, &feed, "error").unwrap();
 
-            create_telegram_subscription(&connection, &feed);
+            create_telegram_subscription(connection, &feed);
 
-            let result1 = super::increment_and_reset_skips(&connection).unwrap();
+            let result1 = super::increment_and_reset_skips(connection).unwrap();
             assert_eq!(1, result1);
 
-            let result_feed1 = super::find(&connection, feed.id).unwrap();
+            let result_feed1 = super::find(connection, feed.id).unwrap();
 
             assert_eq!(1, result_feed1.sync_skips);
 
-            let result2 = super::increment_and_reset_skips(&connection).unwrap();
+            let result2 = super::increment_and_reset_skips(connection).unwrap();
             assert_eq!(1, result2);
 
-            let result_feed2 = super::find(&connection, feed.id).unwrap();
+            let result_feed2 = super::find(connection, feed.id).unwrap();
 
             assert_eq!(0, result_feed2.sync_skips);
 
-            let result3 = super::increment_and_reset_skips(&connection).unwrap();
+            let result3 = super::increment_and_reset_skips(connection).unwrap();
             assert_eq!(1, result3);
 
-            let result_feed3 = super::find(&connection, feed.id).unwrap();
+            let result_feed3 = super::find(connection, feed.id).unwrap();
 
             assert_eq!(1, result_feed3.sync_skips);
 
-            let result4 = super::increment_and_reset_skips(&connection).unwrap();
+            let result4 = super::increment_and_reset_skips(connection).unwrap();
             assert_eq!(1, result4);
 
-            let result_feed4 = super::find(&connection, feed.id).unwrap();
+            let result_feed4 = super::find(connection, feed.id).unwrap();
 
             assert_eq!(0, result_feed4.sync_skips);
 
@@ -555,49 +558,49 @@ mod tests {
 
     #[test]
     fn increment_skips_resets_max_skips() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let mut feed = super::create(&connection, link, "rss".to_string()).unwrap();
-            create_telegram_subscription(&connection, &feed);
+            let mut feed = super::create(connection, link, "rss".to_string()).unwrap();
+            create_telegram_subscription(connection, &feed);
 
             for _i in 1..5 {
-                feed = super::set_error(&connection, &feed, "error").unwrap();
+                feed = super::set_error(connection, &feed, "error").unwrap();
             }
 
             assert_eq!(4, feed.sync_retries);
             assert_eq!(0, feed.sync_skips);
 
             for i in 1..9 {
-                let result = super::increment_and_reset_skips(&connection).unwrap();
+                let result = super::increment_and_reset_skips(connection).unwrap();
                 assert_eq!(1, result);
 
-                let result_feed = super::find(&connection, feed.id).unwrap();
+                let result_feed = super::find(connection, feed.id).unwrap();
 
                 assert_eq!(i, result_feed.sync_skips);
             }
 
-            feed = super::set_error(&connection, &feed, "error").unwrap();
+            feed = super::set_error(connection, &feed, "error").unwrap();
             assert_eq!(5, feed.sync_retries);
 
             for i in 9..17 {
-                let result = super::increment_and_reset_skips(&connection).unwrap();
+                let result = super::increment_and_reset_skips(connection).unwrap();
                 assert_eq!(1, result);
 
-                let result_feed = super::find(&connection, feed.id).unwrap();
+                let result_feed = super::find(connection, feed.id).unwrap();
 
                 assert_eq!(i, result_feed.sync_skips);
             }
 
-            let result_feed = super::find(&connection, feed.id).unwrap();
+            let result_feed = super::find(connection, feed.id).unwrap();
 
             assert_eq!(16, result_feed.sync_skips);
 
-            let result = super::increment_and_reset_skips(&connection).unwrap();
+            let result = super::increment_and_reset_skips(connection).unwrap();
             assert_eq!(1, result);
 
-            let result_feed = super::find(&connection, feed.id).unwrap();
+            let result_feed = super::find(connection, feed.id).unwrap();
             assert_eq!(0, result_feed.sync_skips);
 
             Ok(())
@@ -606,24 +609,24 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_fetches_unsynced_feeds_without_synced_at() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
             let feed_without_synced_at =
-                super::create(&connection, link, "atom".to_string()).unwrap();
+                super::create(connection, link, "atom".to_string()).unwrap();
             assert!(feed_without_synced_at.synced_at.is_none());
 
-            create_telegram_subscription(&connection, &feed_without_synced_at);
+            create_telegram_subscription(connection, &feed_without_synced_at);
 
             let found_unsynced_feeds =
-                super::find_unsynced_feeds(&connection, Utc::now(), 1, 1).unwrap();
+                super::find_unsynced_feeds(connection, Utc::now(), 1, 1).unwrap();
 
             assert_eq!(found_unsynced_feeds.len(), 1);
             assert_eq!(found_unsynced_feeds[0], feed_without_synced_at.id);
 
             let found_unsynced_feeds_page2 =
-                super::find_unsynced_feeds(&connection, Utc::now(), 2, 1).unwrap();
+                super::find_unsynced_feeds(connection, Utc::now(), 2, 1).unwrap();
 
             assert_eq!(found_unsynced_feeds_page2.len(), 0);
 
@@ -633,39 +636,39 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_skips_based_on_retries() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let mut feed = super::create(&connection, link, "atom".to_string()).unwrap();
+            let mut feed = super::create(connection, link, "atom".to_string()).unwrap();
 
-            create_telegram_subscription(&connection, &feed);
+            create_telegram_subscription(connection, &feed);
 
             let found_unsynced_feeds =
-                super::find_unsynced_feeds(&connection, Utc::now(), 1, 1).unwrap();
+                super::find_unsynced_feeds(connection, Utc::now(), 1, 1).unwrap();
 
             assert_eq!(found_unsynced_feeds.len(), 1);
 
-            super::set_error(&connection, &feed, "error").unwrap();
+            super::set_error(connection, &feed, "error").unwrap();
 
             for i in 0..17 {
-                feed = super::find(&connection, feed.id).unwrap();
+                feed = super::find(connection, feed.id).unwrap();
                 let retry = feed.sync_retries;
 
                 let found_unsynced_feeds =
-                    super::find_unsynced_feeds(&connection, Utc::now(), 1, 1).unwrap();
+                    super::find_unsynced_feeds(connection, Utc::now(), 1, 1).unwrap();
 
                 if i == 2_i32.pow((retry - 1) as u32) {
                     assert_eq!(found_unsynced_feeds.len(), 1);
-                    super::set_error(&connection, &feed, "error").unwrap();
+                    super::set_error(connection, &feed, "error").unwrap();
                 } else {
                     assert_eq!(found_unsynced_feeds.len(), 0);
                 }
 
-                super::increment_and_reset_skips(&connection).unwrap();
+                super::increment_and_reset_skips(connection).unwrap();
             }
 
-            feed = super::find(&connection, feed.id).unwrap();
+            feed = super::find(connection, feed.id).unwrap();
             assert_eq!(5, feed.sync_retries);
             assert_eq!(0, feed.sync_skips);
 
@@ -675,32 +678,32 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_fetches_unsynced_feeds_with_expired_synced_at() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let mut feed = super::create(&connection, link, "atom".to_string()).unwrap();
+            let mut feed = super::create(connection, link, "atom".to_string()).unwrap();
 
-            create_telegram_subscription(&connection, &feed);
+            create_telegram_subscription(connection, &feed);
 
             let expired_synced_at = Utc::now() - Duration::hours(40);
 
             feed = diesel::update(&feed)
                 .set(feeds::synced_at.eq(expired_synced_at))
-                .get_result::<Feed>(&connection)
+                .get_result::<Feed>(connection)
                 .unwrap();
 
             assert!(feed.synced_at.is_some());
 
             let found_unsynced_feeds =
-                super::find_unsynced_feeds(&connection, Utc::now() - Duration::hours(24), 1, 1)
+                super::find_unsynced_feeds(connection, Utc::now() - Duration::hours(24), 1, 1)
                     .unwrap();
 
             assert_eq!(found_unsynced_feeds.len(), 1);
             assert_eq!(found_unsynced_feeds[0], feed.id);
 
             let found_unsynced_feeds_page2 =
-                super::find_unsynced_feeds(&connection, Utc::now(), 2, 1).unwrap();
+                super::find_unsynced_feeds(connection, Utc::now(), 2, 1).unwrap();
 
             assert_eq!(found_unsynced_feeds_page2.len(), 0);
 
@@ -710,25 +713,25 @@ mod tests {
 
     #[test]
     fn find_unsynced_feeds_doesnt_fetch_synced_feeds() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let mut feed = super::create(&connection, link, "rss".to_string()).unwrap();
+            let mut feed = super::create(connection, link, "rss".to_string()).unwrap();
 
-            create_telegram_subscription(&connection, &feed);
+            create_telegram_subscription(connection, &feed);
 
             let expired_synced_at = Utc::now() - Duration::hours(10);
 
             feed = diesel::update(&feed)
                 .set(feeds::synced_at.eq(expired_synced_at))
-                .get_result::<Feed>(&connection)
+                .get_result::<Feed>(connection)
                 .unwrap();
 
             assert!(feed.synced_at.is_some());
 
             let found_unsynced_feeds =
-                super::find_unsynced_feeds(&connection, Utc::now() - Duration::hours(24), 1, 1)
+                super::find_unsynced_feeds(connection, Utc::now() - Duration::hours(24), 1, 1)
                     .unwrap();
 
             assert_eq!(found_unsynced_feeds.len(), 0);
@@ -739,16 +742,16 @@ mod tests {
 
     #[test]
     fn delete_feeds_without_subscriptions() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+            let feed = super::create(connection, link, "rss".to_string()).unwrap();
 
             let deleted_feeds_count =
-                super::delete_feeds_without_subscriptions(&connection).unwrap();
+                super::delete_feeds_without_subscriptions(connection).unwrap();
 
-            assert!(super::find(&connection, feed.id).is_none());
+            assert!(super::find(connection, feed.id).is_none());
             assert_eq!(deleted_feeds_count, 1);
 
             Ok(())
@@ -757,18 +760,18 @@ mod tests {
 
     #[test]
     fn delete_feeds_without_subscriptions_doesnt_remove_feeds_with_subscriptions() {
-        let connection = db::establish_test_connection();
+        let mut connection = db::establish_test_connection();
 
-        connection.test_transaction::<_, Error, _>(|| {
+        connection.test_transaction::<_, Error, _>(|connection| {
             let link = "Link".to_string();
-            let feed = super::create(&connection, link, "rss".to_string()).unwrap();
+            let feed = super::create(connection, link, "rss".to_string()).unwrap();
 
-            create_telegram_subscription(&connection, &feed);
+            create_telegram_subscription(connection, &feed);
 
             let deleted_feeds_count =
-                super::delete_feeds_without_subscriptions(&connection).unwrap();
+                super::delete_feeds_without_subscriptions(connection).unwrap();
 
-            assert!(super::find(&connection, feed.id).is_some());
+            assert!(super::find(connection, feed.id).is_some());
             assert_eq!(deleted_feeds_count, 0);
 
             Ok(())
@@ -776,7 +779,7 @@ mod tests {
     }
 
     fn create_telegram_subscription(
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         feed: &Feed,
     ) -> TelegramSubscription {
         let new_chat = NewTelegramChat {

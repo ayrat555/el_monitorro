@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 use std::{env, str::FromStr};
 
+// 3 days as much
+const MAX_SECONDS: u32 = 259_200;
+
 pub struct Config {}
 
 impl Config {
@@ -48,16 +51,48 @@ impl Config {
         Self::read_var_with_default("DATABASE_POOL_SIZE", "5")
     }
 
-    pub fn deliver_interval_in_seconds() -> i32 {
-        Self::read_var_with_default("DELIVER_INTERVAL_SECONDS", "60")
+    fn check_interval(interval: &u32) {
+        if !(1..=MAX_SECONDS).contains(interval) {
+            panic!("Config::clean_interval_in_seconds() value is not in the interval [1 second , MAX_SECONDS]")
+        }
     }
 
-    pub fn sync_interval_in_seconds() -> i32 {
-        Self::read_var_with_default("SYNC_INTERVAL_SECONDS", "60")
+    pub fn deliver_interval_in_seconds() -> u32 {
+        let interval: u32 = Self::read_var_with_default("DELIVER_INTERVAL_SECONDS", "60");
+
+        Self::check_interval(&interval);
+        interval
     }
 
-    pub fn clean_interval_in_seconds() -> i32 {
-        Self::read_var_with_default("CLEAN_INTERVAL_SECONDS", "3600")
+    pub fn deliver_cron_pattern() -> String {
+        let interval = Config::deliver_interval_in_seconds();
+        seconds_to_cron(interval)
+    }
+
+    pub fn sync_interval_in_seconds() -> u32 {
+        let interval = Self::read_var_with_default("SYNC_INTERVAL_SECONDS", "60");
+
+        Self::check_interval(&interval);
+
+        interval
+    }
+
+    pub fn sync_cron_pattern() -> String {
+        let interval = Config::sync_interval_in_seconds();
+        seconds_to_cron(interval)
+    }
+
+    pub fn clean_interval_in_seconds() -> u32 {
+        let interval = Self::read_var_with_default("CLEAN_INTERVAL_SECONDS", "3600");
+
+        Self::check_interval(&interval);
+
+        interval
+    }
+
+    pub fn clean_cron_pattern() -> String {
+        let interval = Config::clean_interval_in_seconds();
+        seconds_to_cron(interval)
     }
 
     pub fn all_binaries() -> bool {
@@ -100,4 +135,35 @@ impl Config {
             Err(_error) => None,
         }
     }
+}
+
+pub fn seconds_to_cron(seconds_amount: u32) -> String {
+    let vec = seconds_to_units(seconds_amount);
+
+    match vec.len() {
+        1 => format!("*/{} * * * * * *", vec[0]),
+        2 => format!("{} */{} * * * * *", vec[0], vec[1]),
+        3 => format!("{} {} */{} * * * *", vec[0], vec[1], vec[2]),
+        4 => format!("{} {} {} */{} * * *", vec[0], vec[1], vec[2], vec[3]),
+        _ => panic!("Error fix units for cron"),
+    }
+}
+
+pub fn seconds_to_units(seconds_amount: u32) -> Vec<u32> {
+    let mut vec = vec![];
+    let mut unit = seconds_amount;
+    for div in [60, 60, 24] {
+        if unit < div {
+            vec.push(unit);
+            break;
+        } else {
+            vec.push(unit % div);
+
+            unit /= div;
+        }
+    }
+    if vec.len() == 3 {
+        vec.push(unit);
+    }
+    vec
 }

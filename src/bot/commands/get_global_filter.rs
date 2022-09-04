@@ -15,7 +15,7 @@ impl GetGlobalFilter {
         Self {}.execute(db_pool, api, message);
     }
 
-    fn get_global_template(&self, db_connection: &PgConnection, message: &Message) -> String {
+    fn get_global_template(&self, db_connection: &mut PgConnection, message: &Message) -> String {
         match telegram::find_chat(db_connection, message.chat.id) {
             None => "You don't have the global filter set".to_string(),
             Some(chat) => match chat.filter_words {
@@ -40,7 +40,7 @@ impl Command for GetGlobalFilter {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.get_global_template(&connection, message),
+            Ok(mut connection) => self.get_global_template(&mut connection, message),
             Err(error_message) => error_message,
         }
     }

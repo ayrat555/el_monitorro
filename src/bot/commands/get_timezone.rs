@@ -15,7 +15,7 @@ impl GetTimezone {
         Self {}.execute(db_pool, api, message);
     }
 
-    fn get_timezone(&self, db_connection: &PgConnection, message: &Message) -> String {
+    fn get_timezone(&self, db_connection: &mut PgConnection, message: &Message) -> String {
         match telegram::find_chat(db_connection, message.chat.id) {
             None => "You don't have timezone set".to_string(),
             Some(chat) => match chat.utc_offset_minutes {
@@ -38,7 +38,7 @@ impl Command for GetTimezone {
         _api: &Api,
     ) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(connection) => self.get_timezone(&connection, message),
+            Ok(mut connection) => self.get_timezone(&mut connection, message),
             Err(error_message) => error_message,
         }
     }
