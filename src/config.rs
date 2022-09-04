@@ -189,18 +189,23 @@ mod test {
     fn test_second_to_units() {
         let twelve_hours = super::seconds_to_units(43200);
         assert_eq!(vec![0u32, 0u32, 12u32], twelve_hours);
+
         let one_day_twelve_hours = super::seconds_to_units(43200 * 3);
         assert_eq!(vec![0u32, 0u32, 12u32, 1u32], one_day_twelve_hours);
+
         let one_day_twelve_hours_twelve_minutes_twelwe_seconds =
             super::seconds_to_units(43200 * 3 + 12 * 61);
         assert_eq!(
             vec![12u32, 12u32, 12u32, 1u32],
             one_day_twelve_hours_twelve_minutes_twelwe_seconds
         );
+
         let twelve_minutes = super::seconds_to_units(12 * 60);
         assert_eq!(vec![0u32, 12u32], twelve_minutes);
+
         let twelve_seconds = super::seconds_to_units(12);
         assert_eq!(vec![12u32], twelve_seconds);
+
         let twelve_minutes_twelve_seconds = super::seconds_to_units(12 * 61);
         assert_eq!(vec![12u32, 12u32], twelve_minutes_twelve_seconds);
     }
