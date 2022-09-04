@@ -176,7 +176,7 @@ pub fn seconds_to_units(seconds_amount: u32) -> Vec<u32> {
         div_option = divs.next();
     }
 
-    if vec.len() == 3 && !finish {
+    if !finish {
         vec.push(unit);
     }
 
