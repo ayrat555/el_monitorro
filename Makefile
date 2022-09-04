@@ -3,7 +3,7 @@ db:
   -e POSTGRES_DB=el_monitorro \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
-  postgres:latest
+  postgres:13.4
 
 clippy:
 	cargo clippy --all-features
