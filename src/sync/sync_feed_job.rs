@@ -50,7 +50,9 @@ impl From<FeedSyncError> for FangError {
 #[typetag::serde]
 impl Runnable for SyncFeedJob {
     fn run(&self, _queue: &dyn Queueable) -> Result<(), FangError> {
-        self.sync_feed()
+        let mut db_connection = crate::db::pool().get()?;
+
+        self.sync_feed(&mut db_connection)
     }
 
     fn uniq(&self) -> bool {
@@ -67,16 +69,14 @@ impl SyncFeedJob {
         Self { feed_id }
     }
 
-    pub fn sync_feed(&self) -> Result<(), FangError> {
-        let mut db_connection = crate::db::pool().get()?;
-
-        let feed_sync_result = self.execute(&mut db_connection);
+    pub fn sync_feed(&self, db_connection: &mut PgConnection) -> Result<(), FangError> {
+        let feed_sync_result = self.execute(db_connection);
 
         match feed_sync_result {
             Err(FeedSyncError::StaleError) => {
                 error!("Feed can not be processed for a long time {}", self.feed_id);
 
-                self.remove_feed_and_notify_subscribers(&mut db_connection)?;
+                self.remove_feed_and_notify_subscribers(db_connection)?;
             }
             Err(error) => error!("Failed to process feed {}: {:?}", self.feed_id, error),
             Ok(_) => (),
