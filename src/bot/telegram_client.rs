@@ -50,7 +50,6 @@ impl Api {
         let base_url = Config::telegram_base_url();
         let api_url = format!("{}{}", base_url, token);
 
-        log::info!("URL {}", api_url);
         let update_params = GetUpdatesParams::builder()
             .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
             .build();

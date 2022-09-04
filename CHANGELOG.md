@@ -4,6 +4,16 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.10.0 (2022-09-04)
+
+### Added
+- Add template helpers (html links, text formatting) ([#244](https://github.com/ayrat555/el_monitorro/pull/244))
+
+### Improved
+- Update diesel crate to 2.0 version. ([#247](https://github.com/ayrat555/el_monitorro/pull/247))
+- Update fang crate to 0.9.0 version. ([#247](https://github.com/ayrat555/el_monitorro/pull/247))
+- Docker push automatization. ([#239](https://github.com/ayrat555/el_monitorro/pull/239))
+
 ## 0.9.0 (2022-08-01)
 
 - Do not reply to message replies ([#219](https://github.com/ayrat555/el_monitorro/pull/219))
