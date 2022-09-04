@@ -53,7 +53,10 @@ impl Config {
 
     fn check_interval(interval: &u32) {
         if !(1..=MAX_SECONDS).contains(interval) {
-            panic!("Config::clean_interval_in_seconds() value is not in the interval [1 second , MAX_SECONDS]")
+            panic!(
+                "Value {} is not in the interval [1 second , MAX_SECONDS]",
+                interval
+            )
         }
     }
 
@@ -162,8 +165,10 @@ pub fn seconds_to_units(seconds_amount: u32) -> Vec<u32> {
             unit /= div;
         }
     }
-    if vec.len() == 3 {
+
+    if vec.len() == 3 && unit > 0 {
         vec.push(unit);
     }
+
     vec
 }

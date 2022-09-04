@@ -5,7 +5,7 @@ use fang::Queue;
 
 fn main() {
     dotenv().ok();
-    env_logger::init();
+    pretty_env_logger::init();
 
     let queue = Queue::builder()
         .connection_pool(el_monitorro::db::pool().clone())
