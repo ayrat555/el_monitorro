@@ -11,9 +11,7 @@ use isahc::{prelude::*, Request};
 use std::collections::VecDeque;
 use std::path::PathBuf;
 
-static BASE_API_URL: &str = "https://api.telegram.org/bot";
-
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Api {
     pub api_url: String,
     pub update_params: GetUpdatesParams,
@@ -49,8 +47,10 @@ impl From<Error> for FangError {
 impl Api {
     pub fn new() -> Api {
         let token = Config::telegram_bot_token();
-        let api_url = format!("{}{}", BASE_API_URL, token);
+        let base_url = Config::telegram_base_url();
+        let api_url = format!("{}{}", base_url, token);
 
+        log::info!("URL {}", api_url);
         let update_params = GetUpdatesParams::builder()
             .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
             .build();
