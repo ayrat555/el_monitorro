@@ -899,7 +899,8 @@ mod tests {
         connection.test_transaction::<(), Error, _>(|connection| {
             let new_chat = build_new_chat();
             let chat = super::create_chat(connection, new_chat).unwrap();
-            let feed = feeds::create(connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed =
+                feeds::create(connection, "Link two".to_string(), "rss".to_string()).unwrap();
 
             let new_subscription = NewTelegramSubscription {
                 feed_id: feed.id,
@@ -930,7 +931,8 @@ mod tests {
         connection.test_transaction::<(), Error, _>(|connection| {
             let new_chat = build_new_chat();
             let chat = super::create_chat(connection, new_chat).unwrap();
-            let feed = feeds::create(connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed =
+                feeds::create(connection, "Link one".to_string(), "rss".to_string()).unwrap();
 
             let new_subscription = NewTelegramSubscription {
                 feed_id: feed.id,

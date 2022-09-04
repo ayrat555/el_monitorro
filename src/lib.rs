@@ -41,7 +41,7 @@ pub fn start_clean_workers(queue: &Queue) {
 }
 
 pub fn start_scheduler(queue: &Queue) {
-    queue.remove_all_scheduled_tasks().unwrap();
+    queue.remove_all_tasks().unwrap();
 
     queue.schedule_task(&SyncJob::default()).unwrap();
 

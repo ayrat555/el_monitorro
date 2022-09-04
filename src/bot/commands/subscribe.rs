@@ -175,6 +175,18 @@ mod subscribe_tests {
     use frankenstein::ChatType;
     use frankenstein::Message;
     use mockito::mock;
+    use mockito::Mock;
+
+    fn set_deliver_server_response() -> Mock {
+        let response_string = "{\"ok\":true,\"result\":{\"message_id\":2746,\"from\":{\"id\":1276618370,\"is_bot\":true,\"first_name\":\"test_el_bot\",\"username\":\"el_mon_test_bot\"},\"date\":1618207352,\"chat\":{\"id\":275808073,\"type\":\"private\",\"username\":\"Ayrat555\",\"first_name\":\"Ayrat\",\"last_name\":\"Badykov\"},\"text\":\"Hello!\"}}";
+
+        std::env::set_var("TELEGRAM_BASE_URL", format!("{}/", mockito::server_url()));
+
+        mockito::mock("POST", "/sendMessage")
+            .with_status(200)
+            .with_body(response_string)
+            .create()
+    }
 
     #[test]
     fn creates_new_subscription() {
@@ -188,6 +200,8 @@ mod subscribe_tests {
             .with_body(response)
             .create();
         let feed_url = format!("{}{}", mockito::server_url(), path);
+
+        let _m = set_deliver_server_response();
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
             let result = Subscribe {}.subscribe(db_connection, &message, feed_url.clone());
@@ -258,6 +272,8 @@ mod subscribe_tests {
             .create();
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
+        let _m = set_deliver_server_response();
+
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
             Subscribe {}.subscribe(db_connection, &message, feed_url.clone());
 
@@ -300,6 +316,8 @@ mod subscribe_tests {
         let feed_url1 = format!("{}{}", mockito::server_url(), path1);
         let feed_url2 = format!("{}{}", mockito::server_url(), path2);
         let feed_url3 = format!("{}{}", mockito::server_url(), path3);
+
+        let _m = set_deliver_server_response();
 
         std::env::set_var("SUBSCRIPTION_LIMIT", "2");
 

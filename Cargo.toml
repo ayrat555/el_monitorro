@@ -15,7 +15,7 @@ atom_syndication = "0.11"
 chrono = "0.4"
 diesel = { version = "2", features = ["postgres","r2d2"] }
 dotenv = "0.15"
-env_logger = "0.9"
+pretty_env_logger = "0.4"
 fang = { version = "0.9", features = ["blocking"], default-features = false }
 feed-rs = "1"
 frankenstein = { version = "0.20", default-features = false, features = ["telegram-trait"] }
