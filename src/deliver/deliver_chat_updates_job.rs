@@ -59,16 +59,15 @@ impl DeliverChatUpdatesJob {
         Self { chat_id }
     }
 
-    pub fn deliver(&self) -> Result<(), FangError> {
-        let mut db_connection = crate::db::pool().get()?;
+    pub fn deliver(&self, db_connection: &mut PgConnection) -> Result<(), FangError> {
         let subscriptions =
-            telegram::find_unread_subscriptions_for_chat(&mut db_connection, self.chat_id)?;
+            telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id)?;
         let api = Api::default();
 
         for subscription in subscriptions {
-            match self.deliver_subscription_updates(&subscription, &mut db_connection, &api) {
+            match self.deliver_subscription_updates(&subscription, db_connection, &api) {
                 Ok(()) => {
-                    telegram::mark_subscription_delivered(&mut db_connection, &subscription)?;
+                    telegram::mark_subscription_delivered(db_connection, &subscription)?;
                 }
 
                 Err(error) => {
@@ -293,7 +292,9 @@ impl DeliverChatUpdatesJob {
 #[typetag::serde]
 impl Runnable for DeliverChatUpdatesJob {
     fn run(&self, _queue: &dyn Queueable) -> Result<(), FangError> {
-        self.deliver()
+        let mut db_connection = crate::db::pool().get()?;
+
+        self.deliver(&mut db_connection)
     }
 
     fn uniq(&self) -> bool {
