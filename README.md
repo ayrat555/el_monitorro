@@ -166,7 +166,7 @@ All configuration is done through env variables
 |--------------------------|----------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | DATABASE_URL             | yes      | --            | postgres://postgres:postgres@localhost/el_monitorro                                                                                                                                 |
 | TELEGRAM_BOT_TOKEN       | yes      | --            | 6666618370:AAGx5YhNQvUG4eUcQXN-OB_a09ZzYl6aaaa                                                                                                                                      |
-| DATABASE_POOL_SIZE       | no       | 5             | Db pool size to process user commands                                                                                                                                               |
+| DATABASE_POOL_SIZE       | no       | 5             | The maximum number of connections for global connection pool (global per binary except if ALL_BINARIES is set to true).                                                             |
 | ALL_BINARIES             | no       | --            | If this var is set, all services will be started in the main binary                                                                                                                 |
 | TELEGRAM_BOT_HANDLE      | no       | --            | This value is used during parsing of commands. If you set autocompletion menu for your bot,  the bot will understand commands like `/subscribe@handle` along with just `/subscribe` |
 | SUBSCRIPTION_LIMIT       | no       | 20            |                                                                                                                                                                                     |
@@ -179,6 +179,14 @@ All configuration is done through env variables
 | OWNER_TELEGRAM_ID        | no       | --            | If this value is set, the bot will process commands only from the specified user id                                                                                                      |
 | REQUEST_TIMEOUT          | no       | 5             | Timeout in seconds for feed syncing requests                                                                                                                                        |
 | ADMIN_TELEGRAM_ID        | no       | --            | If this value is set, `/info` command with stats is available for ADMIN_TELEGRAM_ID                                                                                                 |
+
+## Deployment suggestions
+
+It's recommended to use a self hosted PostgreSQL instance but if it's not possible there are free services that can host it fo you:
+
+- https://supabase.com  500mb db, up to 60 connections
+- https://yugabyte.com, 10gb db, up to 10 connections
+- https://bit.io, 3gb
 
 ## Using docker image
 
