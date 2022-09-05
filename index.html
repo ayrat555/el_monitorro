@@ -143,6 +143,10 @@
                 </div>
                 
                 <div class="toc-item-child">
+                    <a class="subtext" href="https://elmonitorro.badykov.com/#deployment-suggestions"><small>- Deployment suggestions</small></a>
+                </div>
+                
+                <div class="toc-item-child">
                     <a class="subtext" href="https://elmonitorro.badykov.com/#using-docker-image"><small>- Using docker image</small></a>
                 </div>
                 
@@ -195,7 +199,11 @@ Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
 
     {{bot_item_link}}
 
-Also, there is `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}
+Also, there are some helpers for templates:
+- `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}
+- `create_link` helper. This helper creates an html link. For example, {{create_link bot_item_name bot_item_link}} or {{create_link &quot;custom_name&quot; bot_item_link}}
+- `italic` helper. Usage: {{italic bot_item_description}}
+- `bold` helper. Usage:  {{bold bot_item_name}}
 
 /get_template url - get a template for the subscription
 
@@ -292,7 +300,7 @@ TELEGRAM_BOT_TOKEN=MYTOKEN
 <table><thead><tr><th>Name</th><th>Required</th><th>Default value</th><th>Example / Description</th></tr></thead><tbody>
 <tr><td>DATABASE_URL</td><td>yes</td><td>--</td><td>postgres://postgres:postgres@localhost/el_monitorro</td></tr>
 <tr><td>TELEGRAM_BOT_TOKEN</td><td>yes</td><td>--</td><td>6666618370:AAGx5YhNQvUG4eUcQXN-OB_a09ZzYl6aaaa</td></tr>
-<tr><td>DATABASE_POOL_SIZE</td><td>no</td><td>5</td><td>Db pool size to process user commands</td></tr>
+<tr><td>DATABASE_POOL_SIZE</td><td>no</td><td>5</td><td>The maximum number of connections for global connection pool (global per binary except if ALL_BINARIES is set to true).</td></tr>
 <tr><td>ALL_BINARIES</td><td>no</td><td>--</td><td>If this var is set, all services will be started in the main binary</td></tr>
 <tr><td>TELEGRAM_BOT_HANDLE</td><td>no</td><td>--</td><td>This value is used during parsing of commands. If you set autocompletion menu for your bot,  the bot will understand commands like <code>/subscribe@handle</code> along with just <code>/subscribe</code></td></tr>
 <tr><td>SUBSCRIPTION_LIMIT</td><td>no</td><td>20</td><td></td></tr>
@@ -306,6 +314,13 @@ TELEGRAM_BOT_TOKEN=MYTOKEN
 <tr><td>REQUEST_TIMEOUT</td><td>no</td><td>5</td><td>Timeout in seconds for feed syncing requests</td></tr>
 <tr><td>ADMIN_TELEGRAM_ID</td><td>no</td><td>--</td><td>If this value is set, <code>/info</code> command with stats is available for ADMIN_TELEGRAM_ID</td></tr>
 </tbody></table>
+<h2 id="deployment-suggestions">Deployment suggestions</h2>
+<p>It's recommended to use a self hosted PostgreSQL instance but if it's not possible there are free services that can host it fo you:</p>
+<ul>
+<li>https://supabase.com  500mb db, up to 60 connections</li>
+<li>https://yugabyte.com, 10gb db, up to 10 connections</li>
+<li>https://bit.io, 3gb</li>
+</ul>
 <h2 id="using-docker-image">Using docker image</h2>
 <p>The image is published on docker hub under <a href="https://hub.docker.com/r/ayratbadykov/el_monitorro">ayratbadykov/el_monitorro</a>. It accepts additional env variables:</p>
 <ul>
