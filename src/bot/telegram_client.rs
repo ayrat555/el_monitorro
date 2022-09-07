@@ -2,7 +2,6 @@ use crate::config::Config;
 use crate::http_client;
 use fang::FangError;
 use frankenstein::AllowedUpdate;
-use frankenstein::ParseMode;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
 use frankenstein::ParseMode;

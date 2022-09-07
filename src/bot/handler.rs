@@ -28,6 +28,8 @@ use frankenstein::UpdateContent;
 use std::str::FromStr;
 use std::thread;
 
+const BOT_NAME: &str = "@el_monitorro_bot "; //replace it with your botname,this const is used to remove bot name from the command
+
 pub struct Handler {}
 
 impl Handler {
@@ -74,6 +76,7 @@ impl Handler {
             return;
         }
 
+<<<<<<< HEAD
         let command = BotCommand::from_str(&text.unwrap()).unwrap();
 
         match command {
@@ -184,6 +187,58 @@ impl Handler {
                 .build()
                 .run(),
         };
+=======
+        let commands = &text.unwrap();
+        let command = &commands.replace(BOT_NAME, ""); //removes bot name from the command (switch_inline_query_current_chat adds botname automatically)
+
+        if !command.starts_with('/') {
+            UnknownCommand::execute(db_pool, api, message);
+        } else if command.starts_with(Subscribe::command()) {
+            Subscribe::execute(db_pool, api, message);
+        } else if command.starts_with(Help::command()) {
+            Help::execute(db_pool, api, message);
+        } else if command.starts_with(Unsubscribe::command()) {
+            Unsubscribe::execute(db_pool, api, message);
+        } else if command.starts_with(ListSubscriptions::command()) {
+            ListSubscriptions::execute(db_pool, api, message);
+        } else if command.starts_with(Start::command()) {
+            Start::execute(db_pool, api, message);
+        } else if command.starts_with(SetTimezone::command()) {
+            SetTimezone::execute(db_pool, api, message);
+        } else if command.starts_with(GetTimezone::command()) {
+            GetTimezone::execute(db_pool, api, message);
+        } else if command.starts_with(SetFilter::command()) {
+            SetFilter::execute(db_pool, api, message);
+        } else if command.starts_with(GetFilter::command()) {
+            GetFilter::execute(db_pool, api, message);
+        } else if command.starts_with(RemoveFilter::command()) {
+            RemoveFilter::execute(db_pool, api, message);
+        } else if command.starts_with(SetTemplate::command()) {
+            SetTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(GetTemplate::command()) {
+            GetTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(RemoveTemplate::command()) {
+            RemoveTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(SetGlobalTemplate::command()) {
+            SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(RemoveGlobalTemplate::command()) {
+            RemoveGlobalTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(GetGlobalTemplate::command()) {
+            GetGlobalTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(SetGlobalFilter::command()) {
+            SetGlobalFilter::execute(db_pool, api, message);
+        } else if command.starts_with(GetGlobalFilter::command()) {
+            GetGlobalFilter::execute(db_pool, api, message);
+        } else if command.starts_with(RemoveGlobalFilter::command()) {
+            RemoveGlobalFilter::execute(db_pool, api, message);
+        } else if command.starts_with(Info::command()) {
+            Info::execute(db_pool, api, message);
+        } else if command.starts_with(SetContentFields::command()) {
+            SetContentFields::execute(db_pool, api, message);
+        } else {
+            UnknownCommand::execute(db_pool, api, message);
+        }
+>>>>>>> 64539e0 (added inline keyboard for setting global template)
     }
 
     fn owner_telegram_id() -> Option<i64> {

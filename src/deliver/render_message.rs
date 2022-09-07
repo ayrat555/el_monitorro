@@ -19,17 +19,19 @@ const BOT_FEED_LINK: &str = "bot_feed_link";
 const BOT_ITEM_LINK: &str = "bot_item_link";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
 
-const BOT_NAME: &str = "@sasaathulbot ";
-
 const SUBSTRING_HELPER: &str = "substring";
 const CREATE_LINK_HELPER: &str = "create_link";
 const BOLD_HELPER: &str = "bold";
 const ITALIC_HELPER: &str = "italic";
 
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
+<<<<<<< HEAD
 const MAX_MESSAGE_CHARS: usize = 4000;
 const MAX_ITEM_CHARS: usize = 3000;
 const MAX_LINK_CHARS: usize = 1000;
+=======
+const MAX_CHARS: usize = 4000;
+>>>>>>> 64539e0 (added inline keyboard for setting global template)
 
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
@@ -163,11 +165,15 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
 }
 
 fn render_link(s: &str, l: &str) -> String {
+<<<<<<< HEAD
     let value = if s.is_empty() {
         "link".to_string()
     } else {
         truncate(s, MAX_LINK_CHARS)
     };
+=======
+    let value = if s.is_empty() { "link" } else { s };
+>>>>>>> 64539e0 (added inline keyboard for setting global template)
     format!("<a href=\"{}\">{}</a>", l, value)
 }
 
