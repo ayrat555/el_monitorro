@@ -7,6 +7,11 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
+use frankenstein::ReplyMarkup;
+use frankenstein::SendMessageParams;
+
 static COMMAND: &str = "/set_global_template";
 
 pub struct SetGlobalTemplate {}
@@ -24,7 +29,7 @@ impl SetGlobalTemplate {
         template: String,
     ) -> String {
         if template.is_empty() {
-            return "Template can not be empty".to_string();
+            "".to_string();
         }
 
         let chat = match telegram::find_chat(db_connection, message.chat.id) {
@@ -72,4 +77,51 @@ impl Command for SetGlobalTemplate {
     fn command(&self) -> &str {
         Self::command()
     }
+}
+
+pub fn set_global_template_keyboard(message: &Message) -> SendMessageParams {
+    let chat_id: i64 = message.chat.id;
+    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+    let mut row: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row2: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row3: Vec<InlineKeyboardButton> = Vec::new();
+
+    let create_link_item_description = InlineKeyboardButton::builder()
+        .text("Make bot item descriptions as the link to the feed page")
+        .switch_inline_query_current_chat(
+            "/set_global_template {{create_link bot_item_description bot_item_link }}",
+        )
+        .build();
+    let create_link_item_name = InlineKeyboardButton::builder()
+        .text("Make bot item name as the link to the feed page")
+        .switch_inline_query_current_chat(
+            "/set_global_template {{create_link bot_item_name bot_item_link }}",
+        )
+        .build();
+    let create_link_custom_name = InlineKeyboardButton::builder()
+        .text("Make custom name as the link to the feed page")
+        .switch_inline_query_current_chat(
+            "/set_global_template {{create_link \"custom_name\" bot_item_link }}",
+        )
+        .build();
+
+    row.push(create_link_item_description);
+    row2.push(create_link_item_name);
+    row3.push(create_link_custom_name);
+
+    keyboard.push(row);
+    keyboard.push(row2);
+    keyboard.push(row3);
+
+    let inline_keyboard = InlineKeyboardMarkup::builder()
+        .inline_keyboard(keyboard)
+        .build();
+
+    let send_message_params = SendMessageParams::builder()
+        .chat_id(chat_id)
+        .text("Use this options to set your template")
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+        .build();
+    return send_message_params;
 }

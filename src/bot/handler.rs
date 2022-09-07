@@ -28,6 +28,8 @@ use frankenstein::Update;
 use frankenstein::UpdateContent;
 use std::thread;
 
+const BOT_NAME: &str = "@el_monitorro_bot "; //replace it with your botname,this const is used to remove bot name from the command
+
 pub struct Handler {}
 
 impl Handler {
@@ -83,7 +85,8 @@ impl Handler {
             return;
         }
 
-        let command = &text.unwrap();
+        let commands = &text.unwrap();
+        let command = &commands.replace(BOT_NAME, ""); //removes bot name from the command (switch_inline_query_current_chat adds botname automatically)
 
         if !command.starts_with('/') {
             UnknownCommand::execute(db_pool, api, message);

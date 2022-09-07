@@ -1,3 +1,5 @@
+use crate::bot;
+use crate::bot::commands::set_global_template::set_global_template_keyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
@@ -13,6 +15,7 @@ use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::Message;
+use frankenstein::TelegramApi;
 
 pub mod get_filter;
 pub mod get_global_filter;
@@ -36,6 +39,8 @@ pub mod start;
 pub mod subscribe;
 pub mod unknown_command;
 pub mod unsubscribe;
+
+const BOT_NAME: &str = "@el_monitorro_bot "; //replace with your bot name add a space after the name
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
@@ -66,15 +71,19 @@ pub trait Command {
     ) -> String;
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        info!(
-            "{:?} wrote: {}",
-            message.chat.id,
-            message.text.as_ref().unwrap()
-        );
+        let messages = message.text.as_ref().unwrap().to_string();
+        let response_message = &messages.replace(BOT_NAME, "");
+        info!("{:?} wrote: {}", message.chat.id, response_message,);
 
         let text = self.response(db_pool, &message, &api);
+        let api = bot::telegram_client::Api::new();
 
-        self.reply_to_message(api, message, text)
+        if response_message == "/set_global_template" {
+            let send_message_params = set_global_template_keyboard(&message);
+            api.send_message(&send_message_params).unwrap();
+        } else {
+            self.reply_to_message(api, message, text);
+        }
     }
 
     fn reply_to_message(&self, api: Api, message: Message, text: String) {
@@ -95,10 +104,15 @@ pub trait Command {
         if full_command.starts_with(&command_with_handle) {
             full_command
                 .replace(&command_with_handle, "")
+                .replace(BOT_NAME, "")
                 .trim()
                 .to_string()
         } else {
-            full_command.replace(command, "").trim().to_string()
+            full_command
+                .replace(command, "")
+                .replace(BOT_NAME, "")
+                .trim()
+                .to_string()
         }
     }
 
