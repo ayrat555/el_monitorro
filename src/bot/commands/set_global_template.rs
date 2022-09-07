@@ -118,10 +118,9 @@ pub fn set_global_template_keyboard(message: &Message) -> SendMessageParams {
         .inline_keyboard(keyboard)
         .build();
 
-    let send_message_params = SendMessageParams::builder()
+    SendMessageParams::builder()
         .chat_id(chat_id)
         .text("Use this options to set your template")
         .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
-        .build();
-    return send_message_params;
+        .build()
 }
