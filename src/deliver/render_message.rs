@@ -158,7 +158,11 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
 }
 
 fn render_link(s: &str, l: &str) -> String {
-    let value = if s.is_empty() { "link" } else { s };
+    let value = if s.is_empty() {
+        "link".to_string()
+    } else {
+        truncate(s, 1000)
+    };
     format!("<a href=\"{}\">{}</a>", l, value)
 }
 
