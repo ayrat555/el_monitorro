@@ -4,6 +4,12 @@ use crate::bot::telegram_client::Api;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
+use frankenstein::KeyboardButton;
+use frankenstein::ReplyKeyboardMarkup;
+use frankenstein::ReplyMarkup;
+use frankenstein::SendMessageParams;
 
 static HELP: &str =
         "/start - show the description of the bot and its contact information\n\n\
@@ -65,4 +71,127 @@ impl Command for Help {
     fn command(&self) -> &str {
         Self::command()
     }
+}
+
+pub fn set_help_keyboard(message: &Message) -> SendMessageParams {
+    let chat_id: i64 = message.chat.id;
+    let mut keyboard: Vec<Vec<KeyboardButton>> = Vec::new();
+
+    let mut row: Vec<KeyboardButton> = Vec::new();
+    let mut row2: Vec<KeyboardButton> = Vec::new();
+    let mut row3: Vec<KeyboardButton> = Vec::new();
+    let mut row4: Vec<KeyboardButton> = Vec::new();
+    let mut row5: Vec<KeyboardButton> = Vec::new();
+    let mut row6: Vec<KeyboardButton> = Vec::new();
+
+    let start = KeyboardButton::builder()
+        .text("/start")
+        // .url(
+        //     "https://api.telegram.org/bot5523781029:AAEvkb0Cb904Yijt_v698ddhf77OnnBt78I/sendMessage?chat_id=614443505&text=_&reply_markup={%22inline_keyboard%22:%20[[{%22text%22:%20%22/set_global_template%22,%20%22callback_data%22:%20%22hi%22}]]}",
+        // )
+        .build();
+    let subscribe = KeyboardButton::builder()
+        // .text("Subscribe to a feed")
+        // .switch_inline_query_current_chat
+        .text("/subscribe")
+        .build();
+    let unsubscribe = KeyboardButton::builder()
+        // .text("Unsubscribe from a feed")
+        // .switch_inline_query_current_chat
+        .text("/unsubscribe")
+        .build();
+
+    let list_subscription = KeyboardButton::builder()
+        // .text("List your subscriptions")
+        // .switch_inline_query_current_chat
+        .text("/list_subscriptions")
+        .build();
+    // CallbackQuery::builder().inline_message_id(list_subscription).build();
+    let set_global_template = KeyboardButton::builder()
+        // .text("Set global template")
+        // .switch_inline_query_current_chat
+        .text("/set_global_template")
+        .build();
+    let remove_global_template = KeyboardButton::builder()
+        // .text("Remove global template")
+        // .switch_inline_query_current_chat
+        .text("/remove_global_template")
+        .build();
+    let set_timezone = KeyboardButton::builder()
+        // .text("Set your timezone")
+        // .switch_inline_query_current_chat
+        .text("/set_timezone")
+        .build();
+    let get_timezone = KeyboardButton::builder()
+        // .text("Get your timezone")
+        // .switch_inline_query_current_chat
+        .text("/get_timezone")
+        .build();
+    let set_template = KeyboardButton::builder()
+        // .text("Set template")
+        // .switch_inline_query_current_chat
+        .text("/set_template")
+        .build();
+    let get_template = KeyboardButton::builder()
+        // .text("Get template")
+        // .switch_inline_query_current_chat
+        .text("/get_template")
+        .build();
+
+    row.push(start);
+    row2.push(subscribe);
+    row2.push(unsubscribe);
+    row3.push(list_subscription);
+    row4.push(set_global_template);
+    row4.push(remove_global_template);
+    row5.push(set_timezone);
+    row5.push(get_timezone);
+    row6.push(set_template);
+    row6.push(get_template);
+
+    keyboard.push(row);
+    keyboard.push(row2);
+    keyboard.push(row3);
+    keyboard.push(row4);
+    keyboard.push(row5);
+    keyboard.push(row6);
+
+    let inline_keyboard = ReplyKeyboardMarkup::builder()
+        .keyboard(keyboard)
+        .one_time_keyboard(true)
+        .resize_keyboard(true)
+        .input_field_placeholder("use this to play with your bot")
+        .build();
+
+    SendMessageParams::builder()
+        .chat_id(chat_id)
+        .text("Shows all your commands")
+        .reply_markup(ReplyMarkup::ReplyKeyboardMarkup(inline_keyboard))
+        .build()
+}
+
+pub fn set_subscribe_keyboard(message: &Message) -> SendMessageParams {
+    let chat_id: i64 = message.chat.id;
+    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+    let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+    let italic_bot_item_description = InlineKeyboardButton::builder()
+        .text("Subscribe to a feed")
+        .switch_inline_query_current_chat("/subscribe \"put feed link here\"")
+        .build();
+
+    row.push(italic_bot_item_description);
+
+    keyboard.push(row);
+
+    let keyboard = InlineKeyboardMarkup::builder()
+        .inline_keyboard(keyboard)
+        .build();
+
+    SendMessageParams::builder()
+        .chat_id(chat_id)
+        .text("Use this options to set your template")
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
+        .build()
 }

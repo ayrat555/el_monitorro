@@ -28,7 +28,7 @@ use frankenstein::Update;
 use frankenstein::UpdateContent;
 use std::thread;
 
-const BOT_NAME: &str = "@el_monitorro_bot "; //replace it with your botname,this const is used to remove bot name from the command
+const BOT_NAME: &str = "@sasaathulbot "; //replace it with your botname,this const is used to remove bot name from the command
 
 pub struct Handler {}
 
@@ -47,6 +47,7 @@ impl Handler {
 
         loop {
             while let Some(update) = api.next_update() {
+                println!("{:?}", &update.content);
                 let db_pool = crate::db::pool().clone();
                 let tg_api = api.clone();
 

@@ -75,8 +75,9 @@ impl Api {
                 if let Some(last_update) = self.buffer.back() {
                     self.update_params.offset = Some((last_update.update_id + 1).into());
                 }
-
+                // println!("buffer =  {:?}",self.buffer.pop_front());
                 self.buffer.pop_front()
+                
             }
 
             Err(err) => {

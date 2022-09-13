@@ -173,7 +173,11 @@ mod subscribe_tests {
     use diesel::connection::Connection;
     use frankenstein::Chat;
     use frankenstein::ChatType;
+    use frankenstein::KeyboardButton;
     use frankenstein::Message;
+    use frankenstein::ReplyKeyboardMarkup;
+    use frankenstein::ReplyMarkup;
+    use frankenstein::SendMessageParams;
     use mockito::mock;
     use mockito::Mock;
 

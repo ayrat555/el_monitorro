@@ -1,5 +1,12 @@
 use crate::bot;
+use crate::bot::commands::help::set_help_keyboard;
+use crate::bot::commands::help::set_subscribe_keyboard;
+use crate::bot::commands::set_global_template::set_global_template_bold_keyboard;
+use crate::bot::commands::set_global_template::set_global_template_create_link_keyboard;
+use crate::bot::commands::set_global_template::set_global_template_italic_keyboard;
 use crate::bot::commands::set_global_template::set_global_template_keyboard;
+use crate::bot::commands::set_global_template::set_global_template_substring_keyboard;
+use crate::bot::commands::set_template::set_template_keyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
@@ -12,10 +19,13 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
+use frankenstein::AnswerCallbackQueryParams;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::Message;
 use frankenstein::TelegramApi;
+
+// use async_trait::async_trait;
 
 pub mod get_filter;
 pub mod get_global_filter;
@@ -40,7 +50,7 @@ pub mod subscribe;
 pub mod unknown_command;
 pub mod unsubscribe;
 
-const BOT_NAME: &str = "@el_monitorro_bot "; //replace with your bot name add a space after the name
+const BOT_NAME: &str = "@sasaathulbot "; //replace with your bot name add a space after the name
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
@@ -74,12 +84,34 @@ pub trait Command {
         let messages = message.text.as_ref().unwrap().to_string();
         let response_message = &messages.replace(BOT_NAME, "");
         info!("{:?} wrote: {}", message.chat.id, response_message,);
-
-        let text = self.response(db_pool, &message, &api);
-        let api = bot::telegram_client::Api::new();
-
-        if response_message == "/set_global_template" {
+        let text = self.response(db_pool.clone(), &message, &api);
+        // let mut api = bot::telegram_client::Api::new();
+        //   let answerquery =  AnswerCallbackQueryParams::builder().callback_query_id().text("hi").build();
+        if response_message == "/subscribe" {
+            let send_message_params = set_subscribe_keyboard(&message);
+            api.send_message(&send_message_params).unwrap();
+        } else if response_message == "/set_global_template" {
             let send_message_params = set_global_template_keyboard(&message);
+            api.send_message(&send_message_params).unwrap();
+        } else if response_message == "/set_global_template substring" {
+            let send_message_params = set_global_template_substring_keyboard(&message);
+            api.send_message(&send_message_params).unwrap();
+        } else if response_message == "/set_global_template italic" {
+            let send_message_params = set_global_template_italic_keyboard(&message);
+            api.send_message(&send_message_params).unwrap();
+        } else if response_message == "/set_global_template bold" {
+            let send_message_params = set_global_template_bold_keyboard(&message);
+            api.send_message(&send_message_params).unwrap();
+        } else if response_message == "/set_global_template create_link" {
+            let send_message_params = set_global_template_create_link_keyboard(&message);
+            api.send_message(&send_message_params).unwrap();
+        } else if response_message == "/help" {
+            let send_message_params = set_help_keyboard(&message);
+            api.send_message(&send_message_params).unwrap();
+        } else if response_message == "/list_subscriptions" {
+            self.reply_to_message(api, message, text);
+        } else if response_message == "/set_template" {
+            let send_message_params = set_template_keyboard(&message);
             api.send_message(&send_message_params).unwrap();
         } else {
             self.reply_to_message(api, message, text);
