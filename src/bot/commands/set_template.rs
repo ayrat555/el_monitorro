@@ -87,11 +87,11 @@ impl Command for SetTemplate {
     }
 }
 
-pub fn set_template_keyboard(message: Message,command: String) -> SendMessageParams {
+pub fn set_template_keyboard(message: Message, command: String) -> SendMessageParams {
     let chat_id: i64 = message.chat.id;
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
-    let data =command.replace("feed1", "");
-    println!("list subscriptions feed url data ==={}",data);
+    let data = command.replace("feed1", "");
+    println!("list subscriptions feed url data ==={}", data);
     let mut row: Vec<InlineKeyboardButton> = Vec::new();
     let mut row1: Vec<InlineKeyboardButton> = Vec::new();
     let mut row2: Vec<InlineKeyboardButton> = Vec::new();
@@ -99,15 +99,15 @@ pub fn set_template_keyboard(message: Message,command: String) -> SendMessagePar
 
     let create_link_item_description = InlineKeyboardButton::builder()
         .text("Make bot item descriptions as the link")
-        .callback_data(format!("/set_template_des {}",data))
+        .callback_data(format!("/set_template_des {}", data))
         .build();
     let create_link_item_name = InlineKeyboardButton::builder()
         .text("Make bot item name as the link")
-        .callback_data(format!("/set_template_itm {}",data))
+        .callback_data(format!("/set_template_itm {}", data))
         .build();
     let create_link_custom_name = InlineKeyboardButton::builder()
         .text("Make custom name as the link")
-        .callback_data(format!("/set_template_cst {}",data))
+        .callback_data(format!("/set_template_cst {}", data))
         .build();
 
     row1.push(create_link_item_description);
@@ -129,9 +129,9 @@ pub fn set_template_keyboard(message: Message,command: String) -> SendMessagePar
         .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
         .build()
 }
-pub fn set_template_menu_keyboard(message: Message,command: String) -> SendMessageParams {
+pub fn set_template_menu_keyboard(message: Message, command: String) -> SendMessageParams {
     let text = message.text.unwrap();
-    let data =command.replace("feed1", "");
+    let data = command.replace("feed_for_template", "");
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
     let mut row: Vec<InlineKeyboardButton> = Vec::new();
@@ -141,19 +141,19 @@ pub fn set_template_menu_keyboard(message: Message,command: String) -> SendMessa
 
     let substring = InlineKeyboardButton::builder()
         .text("Limit number of characters of feed message")
-        .callback_data("substring")
+        .callback_data(format!("substring {}", data))
         .build();
     let bold = InlineKeyboardButton::builder()
         .text("Set your feed message bold ")
-        .callback_data("bold")
+        .callback_data(format!("bold_set_template {}", data))
         .build();
     let italic = InlineKeyboardButton::builder()
         .text("Set your feed message italic")
-        .callback_data("italic")
+        .callback_data(format!("italic_set_template {}", data))
         .build();
     let create_link = InlineKeyboardButton::builder()
         .text("Create link to feed site")
-        .callback_data("create_link")
+        .callback_data(format!("create_link {}", data))
         .build();
 
     row.push(substring);
@@ -176,41 +176,18 @@ pub fn set_template_menu_keyboard(message: Message,command: String) -> SendMessa
         .build()
 }
 pub fn select_feed_url(message: Message, data: String) -> SendMessageParams {
-   
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
     let mut row: Vec<InlineKeyboardButton> = Vec::new();
-    // let mut row1: Vec<InlineKeyboardButton> = Vec::new();
-    // let mut row2: Vec<InlineKeyboardButton> = Vec::new();
-    // let mut row3: Vec<InlineKeyboardButton> = Vec::new();
 
-    let create_link_item_description = InlineKeyboardButton::builder()
-        .text("Make bot item descriptions as the link")
-        .callback_data(format!("/set_template {} {{bot_item_description}}", data))
-        .build();
-    let create_link_item_name = InlineKeyboardButton::builder()
-        .text("Make bot item name as the link")
-        .callback_data(format!("/set_template {} {{bot_item_name}}", data))
-        .build();
-    let create_link_custom_name = InlineKeyboardButton::builder()
-        .text("Make custom name as the link")
-        .switch_inline_query_current_chat(format!("/set_template {} {{custom_name}}", data))
-        .build();
     let subscriptions_list = InlineKeyboardButton::builder()
         .text(data.clone())
-        .callback_data(format!("feed1 {}",data))
-        // .switch_inline_query(data)
+        .callback_data(format!("feed_for_template {}", data))
         .build();
 
     row.push(subscriptions_list);
-    // row1.push(create_link_item_description);
-    // row2.push(create_link_item_name);
-    // row3.push(create_link_custom_name);
 
     keyboard.push(row);
-    
-    // keyboard.push(row2);
-    // keyboard.push(row3);
 
     let inline_keyboard = InlineKeyboardMarkup::builder()
         .inline_keyboard(keyboard)
@@ -219,6 +196,84 @@ pub fn select_feed_url(message: Message, data: String) -> SendMessageParams {
     SendMessageParams::builder()
         .chat_id(message.chat.id)
         .text("select feed url to be modifies")
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+        .build()
+}
+pub fn set_template_bold_keyboard(message: Message, command: String) -> SendMessageParams {
+    let text = message.text.unwrap();
+    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+    let mut row1: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row2: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row3: Vec<InlineKeyboardButton> = Vec::new();
+
+    let bold_bot_description = InlineKeyboardButton::builder()
+        .text("Make bot item description 𝐛𝐨𝐥𝐝")
+        .callback_data(format!("/set_template_bold_des {}", command))
+        .build();
+    let bold_bot_item_name = InlineKeyboardButton::builder()
+        .text("Make bot item name 𝐛𝐨𝐥𝐝")
+        .callback_data(format!("/set_template_bold_item {}", command))
+        .build();
+    let back_to_menu = InlineKeyboardButton::builder()
+        .text("Back to menu 🔙 ")
+        .callback_data("back to set_template menu")
+        .build();
+
+    row1.push(bold_bot_description);
+    row2.push(bold_bot_item_name);
+    row3.push(back_to_menu);
+
+    keyboard.push(row1);
+    keyboard.push(row2);
+    keyboard.push(row3);
+
+    let inline_keyboard = InlineKeyboardMarkup::builder()
+        .inline_keyboard(keyboard)
+        .build();
+
+    SendMessageParams::builder()
+        .chat_id(message.chat.id)
+        .text(text)
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+        .build()
+}
+pub fn set_template_italic_keyboard(message: Message, command: String) -> SendMessageParams {
+    let text = message.text.unwrap();
+    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+    let mut row1: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row2: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row3: Vec<InlineKeyboardButton> = Vec::new();
+
+    let italic_bot_description = InlineKeyboardButton::builder()
+        .text("Make bot item description 𝘪𝘵𝘢𝘭𝘪𝘤")
+        .callback_data(format!("/set_template_italic_des {}", command))
+        .build();
+    let italic_bot_item_name = InlineKeyboardButton::builder()
+        .text("Make bot item name 𝘪𝘵𝘢𝘭𝘪𝘤")
+        .callback_data(format!("/set_template_italic_item {}", command))
+        .build();
+    let back_to_menu = InlineKeyboardButton::builder()
+        .text("Back to menu 🔙 ")
+        .callback_data("back to set_template menu")
+        .build();
+
+    row1.push(italic_bot_description);
+    row2.push(italic_bot_item_name);
+    row3.push(back_to_menu);
+
+    keyboard.push(row1);
+    keyboard.push(row2);
+    keyboard.push(row3);
+
+    let inline_keyboard = InlineKeyboardMarkup::builder()
+        .inline_keyboard(keyboard)
+        .build();
+
+    SendMessageParams::builder()
+        .chat_id(message.chat.id)
+        .text(text)
         .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
         .build()
 }

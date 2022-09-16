@@ -1,3 +1,5 @@
+use std::io::Split;
+
 use super::Command;
 use super::Message;
 use crate::bot::telegram_client::Api;
@@ -8,6 +10,10 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use frankenstein::CallbackQuery;
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
+use frankenstein::ReplyMarkup;
+use frankenstein::SendMessageParams;
 
 static COMMAND: &str = "/unsubscribe";
 
@@ -191,4 +197,55 @@ mod unsubscribe_tests {
             Ok(())
         });
     }
+}
+pub fn set_unsubscribe_keyboard(
+    message: Message,
+    feeds: Split<&str>,
+) -> SendMessageParams {
+    // let len =feeds.count() as i32;
+    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+    for i in 1..2 {
+        let mut row: Vec<InlineKeyboardButton> = Vec::new();
+        for feed in feeds{
+        let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
+            .text(feed)
+            .callback_data(format!("/unsubscribe {}", feed))
+            .build();
+
+        row.push(unsubscribe_inlinekeyboard);
+        }
+        keyboard.push(row);
+    }
+    let inline_keyboard = InlineKeyboardMarkup::builder()
+        .inline_keyboard(keyboard)
+        .build();
+    SendMessageParams::builder()
+        .chat_id(message.chat.id)
+        .text("Select feed url to unsubscribe")
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+        .build()
+}
+pub fn select_feed_url_unsubscribe(message: Message, data: String) -> SendMessageParams {
+    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+    let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+    let subscriptions_list = InlineKeyboardButton::builder()
+        .text(data.clone())
+        .callback_data(format!("unu unsubscribe {}", data))
+        .build();
+
+    row.push(subscriptions_list);
+
+    keyboard.push(row);
+
+    let inline_keyboard = InlineKeyboardMarkup::builder()
+        .inline_keyboard(keyboard)
+        .build();
+
+    SendMessageParams::builder()
+        .chat_id(message.chat.id)
+        .text(data)
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+        .build()
 }
