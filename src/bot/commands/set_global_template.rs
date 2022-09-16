@@ -7,6 +7,7 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
+use frankenstein::CallbackQuery;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
 use frankenstein::ReplyMarkup;
@@ -20,6 +21,16 @@ impl SetGlobalTemplate {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
     }
+    pub fn execute_callback(
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        api: Api,
+        query: CallbackQuery,
+    ) {
+        Self {}.execute_callback(db_pool, api, query);
+    }
+    // pub fn execute_callback_command(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api,chat_id: i64,query: CallbackQuery,messageid: i32,message: Message){
+    //     Self {}.execute_callback_command(db_pool, api, chat_id,query,message);
+    // }
 
     fn set_global_template(
         &self,
@@ -31,6 +42,7 @@ impl SetGlobalTemplate {
         if template.is_empty() {
             "".to_string();
         }
+        // println!("template {:?}",&template);
 
         let chat = match telegram::find_chat(db_connection, message.chat.id) {
             Some(chat) => chat,
@@ -64,6 +76,10 @@ impl Command for SetGlobalTemplate {
         message: &Message,
         api: &Api,
     ) -> String {
+        println!(
+            "text in response setglobal template {}",
+            message.text.as_ref().unwrap()
+        );
         match self.fetch_db_connection(db_pool) {
             Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
@@ -78,8 +94,9 @@ impl Command for SetGlobalTemplate {
         Self::command()
     }
 }
-pub fn set_global_template_keyboard(message: &Message) -> SendMessageParams {
-    let chat_id: i64 = message.chat.id;
+
+pub fn set_global_template_keyboard(message: Message) -> SendMessageParams {
+    let text = message.text.unwrap();
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
     let mut row: Vec<InlineKeyboardButton> = Vec::new();
@@ -89,19 +106,19 @@ pub fn set_global_template_keyboard(message: &Message) -> SendMessageParams {
 
     let substring = InlineKeyboardButton::builder()
         .text("Limit number of characters of feed message")
-        .switch_inline_query_current_chat("/set_global_template substring")
+        .callback_data("substring")
         .build();
     let bold = InlineKeyboardButton::builder()
         .text("Set your feed message bold ")
-        .switch_inline_query_current_chat("/set_global_template bold")
+        .callback_data("bold")
         .build();
     let italic = InlineKeyboardButton::builder()
         .text("Set your feed message italic")
-        .switch_inline_query_current_chat("/set_global_template italic")
+        .callback_data("italic")
         .build();
     let create_link = InlineKeyboardButton::builder()
         .text("Create link to feed site")
-        .switch_inline_query_current_chat("/set_global_template create_link")
+        .callback_data("create_link")
         .build();
 
     row.push(substring);
@@ -117,20 +134,20 @@ pub fn set_global_template_keyboard(message: &Message) -> SendMessageParams {
     let inline_keyboard = InlineKeyboardMarkup::builder()
         .inline_keyboard(keyboard)
         .build();
-
     SendMessageParams::builder()
-        .chat_id(chat_id)
-        .text("Use this options to set your template")
+        .chat_id(message.chat.id)
+        .text(text)
         .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
         .build()
 }
 
-pub fn set_global_template_substring_keyboard(message: &Message) -> SendMessageParams {
-    let chat_id: i64 = message.chat.id;
+pub fn set_global_template_substring_keyboard(message: Message) -> SendMessageParams {
+    let text = message.text.unwrap();
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
-    let mut row: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row1: Vec<InlineKeyboardButton> = Vec::new();
     let mut row2: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row3: Vec<InlineKeyboardButton> = Vec::new();
 
     let substring_bot_description = InlineKeyboardButton::builder()
         .text("Limit bot item description characters")
@@ -142,125 +159,96 @@ pub fn set_global_template_substring_keyboard(message: &Message) -> SendMessageP
         .text("Limit bot item name characters")
         .switch_inline_query_current_chat("/set_global_template {{substring bot_item_name 100 }}")
         .build();
+    let back_to_menu = InlineKeyboardButton::builder()
+        .text("Back to menu 🔙 ")
+        .callback_data("back to menu")
+        .build();
 
-    row.push(substring_bot_description);
+    row1.push(substring_bot_description);
     row2.push(substring_bot_name);
+    row3.push(back_to_menu);
 
-    keyboard.push(row);
+    keyboard.push(row1);
     keyboard.push(row2);
-
+    keyboard.push(row3);
     let inline_keyboard = InlineKeyboardMarkup::builder()
         .inline_keyboard(keyboard)
         .build();
-
     SendMessageParams::builder()
-        .chat_id(chat_id)
-        .text("Use this options to set your template")
+        .chat_id(message.chat.id)
+        .text(text)
         .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
         .build()
 }
 
-pub fn set_global_template_bold_keyboard(message: &Message) -> SendMessageParams {
-    let chat_id: i64 = message.chat.id;
+pub fn set_global_template_bold_keyboard(message: Message) -> SendMessageParams {
+    let text = message.text.unwrap();
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
-    let mut row: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row1: Vec<InlineKeyboardButton> = Vec::new();
     let mut row2: Vec<InlineKeyboardButton> = Vec::new();
     let mut row3: Vec<InlineKeyboardButton> = Vec::new();
 
     let bold_bot_description = InlineKeyboardButton::builder()
         .text("Make bot item description bold")
-        .callback_data("bold")
+        .callback_data("/set_global_template {{bold bot_item_description }}")
         .build();
     let bold_bot_item_name = InlineKeyboardButton::builder()
         .text("Make bot item name bold")
-        .switch_inline_query_current_chat("/set_global_template {{bold bot_item_name }}")
+        .callback_data("/set_global_template {{bold bot_item_name }}")
         .build();
-    let back = InlineKeyboardButton::builder()
-        .text("Back to main menu")
+    let back_to_menu = InlineKeyboardButton::builder()
+        .text("Back to menu 🔙 ")
         .callback_data("back to menu")
         .build();
-    row.push(bold_bot_description);
+
+    row1.push(bold_bot_description);
     row2.push(bold_bot_item_name);
-    row3.push(back);
-    keyboard.push(row);
+    row3.push(back_to_menu);
+
+    keyboard.push(row1);
     keyboard.push(row2);
     keyboard.push(row3);
 
     let inline_keyboard = InlineKeyboardMarkup::builder()
         .inline_keyboard(keyboard)
         .build();
-    //  CallbackQuery::builder()
+
     SendMessageParams::builder()
-        .chat_id(chat_id)
-        .text("Use this options to set your template")
+        .chat_id(message.chat.id)
+        .text(text)
         .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
         .build()
 }
 
-pub fn set_global_template_italic_keyboard(message: &Message) -> SendMessageParams {
-    let chat_id: i64 = message.chat.id;
+pub fn set_global_template_italic_keyboard(message: Message) -> SendMessageParams {
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
-    let mut row: Vec<InlineKeyboardButton> = Vec::new();
-    let mut row2: Vec<InlineKeyboardButton> = Vec::new();
-
-    let italic_bot_item_description = InlineKeyboardButton::builder()
-        .text("Make bot item description italic")
-        .switch_inline_query_current_chat("/set_global_template {{italic bot_item_description }}")
-        .build();
-    let italic_bot_item_name = InlineKeyboardButton::builder()
-        .text("Make bot item name italic")
-        .switch_inline_query_current_chat("/set_global_template {{italic bot_item_name }}")
-        .build();
-
-    row.push(italic_bot_item_description);
-    row2.push(italic_bot_item_name);
-
-    keyboard.push(row);
-    keyboard.push(row2);
-
-    let inline_keyboard = InlineKeyboardMarkup::builder()
-        .inline_keyboard(keyboard)
-        .build();
-
-    SendMessageParams::builder()
-        .chat_id(chat_id)
-        .text("Use this options to set your template")
-        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
-        .build()
-}
-
-pub fn set_global_template_create_link_keyboard(message: &Message) -> SendMessageParams {
-    let chat_id: i64 = message.chat.id;
-    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
-
+    let text = message.text.unwrap();
+    println!(
+        "text inside set global templ italic keyboard ======{:?}",
+        text
+    );
     let mut row: Vec<InlineKeyboardButton> = Vec::new();
     let mut row2: Vec<InlineKeyboardButton> = Vec::new();
     let mut row3: Vec<InlineKeyboardButton> = Vec::new();
 
-    let create_link_item_description = InlineKeyboardButton::builder()
-        .text("Make bot item descriptions as the link")
-        .switch_inline_query_current_chat(
-            "/set_global_template {{create_link bot_item_description bot_item_link }}",
-        )
+    let italic_bot_item_description = InlineKeyboardButton::builder()
+        .text("Make bot item description italic")
+        .callback_data("/set_global_template {{italic bot_item_description }}")
         .build();
-    let create_link_item_name = InlineKeyboardButton::builder()
-        .text("Make bot item name as the link")
-        .switch_inline_query_current_chat(
-            "/set_global_template {{create_link bot_item_name bot_item_link }}",
-        )
+    let italic_bot_item_name = InlineKeyboardButton::builder()
+        .text("Make bot item name italic")
+        .callback_data("/set_global_template {{italic bot_item_name }}")
         .build();
-    let create_link_custom_name = InlineKeyboardButton::builder()
-        .text("Make custom name as the link")
-        .switch_inline_query_current_chat(
-            "/set_global_template {{create_link \"custom_name\" bot_item_link }}",
-        )
+    let back_to_menu = InlineKeyboardButton::builder()
+        .text("Back to menu 🔙 ")
+        .callback_data("back to menu")
         .build();
 
-    row.push(create_link_item_description);
-    row2.push(create_link_item_name);
-    row3.push(create_link_custom_name);
+    row.push(italic_bot_item_description);
+    row2.push(italic_bot_item_name);
+    row3.push(back_to_menu);
 
     keyboard.push(row);
     keyboard.push(row2);
@@ -269,10 +257,58 @@ pub fn set_global_template_create_link_keyboard(message: &Message) -> SendMessag
     let inline_keyboard = InlineKeyboardMarkup::builder()
         .inline_keyboard(keyboard)
         .build();
-
     SendMessageParams::builder()
-        .chat_id(chat_id)
-        .text("Use this options to set your template")
+        .chat_id(message.chat.id)
+        .text(text)
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+        .build()
+}
+
+pub fn set_global_template_create_link_keyboard(message: Message) -> SendMessageParams {
+    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+    let text = message.text.unwrap();
+
+    let mut row1: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row2: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row3: Vec<InlineKeyboardButton> = Vec::new();
+    let mut row4: Vec<InlineKeyboardButton> = Vec::new();
+
+    let create_link_bot_item_description = InlineKeyboardButton::builder()
+        .text("Make bot item description as link")
+        .callback_data("/set_global_template {{create_link bot_item_description}}")
+        .build();
+    let create_link_bot_item_name = InlineKeyboardButton::builder()
+        .text("Make bot item name as link")
+        .callback_data("/set_global_template {{create_link bot_item_name}}")
+        .build();
+    let create_link_custom_name = InlineKeyboardButton::builder()
+        .text("Make bot item name as link")
+        .switch_inline_query_current_chat(
+            "/set_global_template {{create_link \"custom name\" bot_item_link}}",
+        )
+        .build();
+    let back_to_menu = InlineKeyboardButton::builder()
+        .text("Back to menu 🔙 ")
+        .callback_data("back to menu")
+        .build();
+
+    row1.push(create_link_bot_item_description);
+    row2.push(create_link_bot_item_name);
+    row3.push(create_link_custom_name);
+    row4.push(back_to_menu);
+
+    keyboard.push(row1);
+    keyboard.push(row2);
+    keyboard.push(row3);
+    keyboard.push(row4);
+
+    let inline_keyboard = InlineKeyboardMarkup::builder()
+        .inline_keyboard(keyboard)
+        .build();
+    SendMessageParams::builder()
+        .chat_id(message.chat.id)
+        .text(text)
         .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
         .build()
 }

@@ -20,10 +20,19 @@ use super::commands::start::Start;
 use super::commands::subscribe::Subscribe;
 use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
+use crate::bot::commands::set_global_template::set_global_template_bold_keyboard;
+use crate::bot::commands::set_global_template::set_global_template_create_link_keyboard;
+use crate::bot::commands::set_global_template::set_global_template_italic_keyboard;
+use crate::bot::commands::set_global_template::set_global_template_keyboard;
+use crate::bot::commands::set_global_template::set_global_template_substring_keyboard;
+use crate::bot::commands::set_template::select_feed_url;
+use crate::bot::commands::set_template::set_template_keyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use diesel::r2d2;
 use diesel::PgConnection;
+use frankenstein::DeleteMessageParams;
+use frankenstein::TelegramApi;
 use frankenstein::Update;
 use frankenstein::UpdateContent;
 use std::thread;
@@ -44,15 +53,28 @@ impl Handler {
         log::info!("Starting the El Monitorro bot");
 
         let interval = std::time::Duration::from_secs(1);
-
         loop {
             while let Some(update) = api.next_update() {
-                println!("{:?}", &update.content);
                 let db_pool = crate::db::pool().clone();
                 let tg_api = api.clone();
-
-                thread_pool
-                    .spawn(move || Self::process_message_or_channel_post(db_pool, tg_api, update));
+                //   println!("updat.content  ========{:?}",update.content.clone());
+                match update.content.clone() {
+                    UpdateContent::Message(ref _message) => {
+                        thread_pool.spawn(move || {
+                            Self::process_message_or_channel_post(db_pool, tg_api, update)
+                        });
+                    }
+                    UpdateContent::ChannelPost(ref _channelpost) => {
+                        thread_pool.spawn(move || {
+                            Self::process_message_or_channel_post(db_pool, tg_api, update)
+                        });
+                    }
+                    UpdateContent::CallbackQuery(ref _callback_query) => {
+                        thread_pool
+                            .spawn(move || Self::process_callback_query(db_pool, tg_api, update));
+                    }
+                    _ => return,
+                }
             }
 
             thread::sleep(interval);
@@ -64,6 +86,8 @@ impl Handler {
         api: Api,
         update: Update,
     ) {
+        // let data =update.clone();
+
         let message = match update.content {
             UpdateContent::Message(message) => message,
             UpdateContent::ChannelPost(channel_post) => channel_post,
@@ -82,11 +106,14 @@ impl Handler {
 
         let text = message.text.clone();
 
+        // let data =query.data.clone();
         if text.is_none() {
             return;
         }
 
         let commands = &text.unwrap();
+        // let query_data =&data.unwrap();
+        // println!("query data = {}",query_data);
         let command = &commands.replace(BOT_NAME, ""); //removes bot name from the command (switch_inline_query_current_chat adds botname automatically)
 
         if !command.starts_with('/') {
@@ -118,7 +145,8 @@ impl Handler {
         } else if command.starts_with(RemoveTemplate::command()) {
             RemoveTemplate::execute(db_pool, api, message);
         } else if command.starts_with(SetGlobalTemplate::command()) {
-            SetGlobalTemplate::execute(db_pool, api, message);
+            let send_message_params = set_global_template_keyboard(message);
+            api.send_message(&send_message_params).unwrap();
         } else if command.starts_with(RemoveGlobalTemplate::command()) {
             RemoveGlobalTemplate::execute(db_pool, api, message);
         } else if command.starts_with(GetGlobalTemplate::command()) {
@@ -140,5 +168,103 @@ impl Handler {
 
     fn owner_telegram_id() -> Option<i64> {
         Config::owner_telegram_id()
+    }
+
+    fn process_callback_query(
+        db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
+        api: Api,
+        update: Update,
+    ) {
+        let query = match update.content.clone() {
+            UpdateContent::CallbackQuery(callback_query) => callback_query,
+            _ => return,
+        };
+
+        let mut message = query.message.unwrap();
+        let messageid = message.message_id;
+        let chatid = message.chat.id;
+        println!("before updating text ={:?}", message.text);
+        let text = query.data.clone();
+        let delete_message_params = DeleteMessageParams::builder()
+            .chat_id(chatid)
+            .message_id(messageid)
+            .build();
+        if text.is_none() {
+            return;
+        }
+
+        let commands = &text.unwrap();
+
+        println!("command = {}", commands);
+        let command = commands.replace(BOT_NAME, ""); //removes bot name from the command (switch_inline_query_current_chat adds botname automatically)
+        message.text = Some(command.clone());
+        println!("after updating text ={:?}", message.text);
+        // let feed =message.clone().reply_markup.unwrap();
+     
+        //  println!(" feed 1 data {:?}",feed.inline_keyboard[0].to_vec());
+        // if !command.starts_with('/') {
+        //     UnknownCommand::execute(db_pool, api,message);
+        // }
+        // else
+        if command == "/set_global_template {{italic bot_item_description }}" {
+            SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command == "italic" {
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params = set_global_template_italic_keyboard(message);
+            api.send_message(&send_message_params).unwrap();
+        } else if command == "/set_global_template {{italic bot_item_name }}" {
+            SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command == "create_link" {
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params = set_global_template_create_link_keyboard(message);
+            api.send_message(&send_message_params).unwrap();
+        } else if command == "/set_global_template {{create_link bot_item_description}}" {
+            message.text = Some(
+                "/set_global_template {{create_link bot_item_description bot_item_link}}"
+                    .to_string(),
+            );
+            SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command == "/set_global_template {{create_link bot_item_name}}" {
+            message.text = Some(
+                "/set_global_template {{create_link bot_item_name bot_item_link}}".to_string(),
+            );
+            SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command == "bold" {
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params = set_global_template_bold_keyboard(message);
+            api.send_message(&send_message_params).unwrap();
+        } else if command == "/set_global_template {{bold bot_item_name }}" {
+            SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command == "/set_global_template {{bold bot_item_description }}" {
+            SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command == "substring" {
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params = set_global_template_substring_keyboard(message);
+            api.send_message(&send_message_params).unwrap();
+        } else if command == "back to menu" {
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params = set_global_template_keyboard(message);
+            api.send_message(&send_message_params).unwrap();
+        } else if command == "/set_template {{bot_item_description}}" {
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params = set_global_template_keyboard(message);
+            api.send_message(&send_message_params).unwrap();
+        } else if command.starts_with("feed1"){
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params = set_template_keyboard(message.clone(),command);
+            // let feed =message.reply_markup.unwrap();
+            // println!(" feed 1 data {:?}",feed.inline_keyboard[0].get(0).into_iter());
+            api.send_message(&send_message_params).unwrap();
+        } else if command.starts_with("/set_template_des"){
+            api.delete_message(&delete_message_params).unwrap();
+            let data =command.replace("/set_template_des", "");
+            message.text = Some(
+                format!("/set_template{} {{create_link bot_item_description bot_item_link}}",data)
+            );
+            SetTemplate::execute(db_pool, api, message);
+        } else {
+            // UnknownCommand::execute(db_pool, api, message);
+            println!("no command incoming")
+        }
     }
 }

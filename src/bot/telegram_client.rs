@@ -51,7 +51,12 @@ impl Api {
         let api_url = format!("{}{}", base_url, token);
 
         let update_params = GetUpdatesParams::builder()
-            .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
+            .allowed_updates(vec![
+                AllowedUpdate::Message,
+                AllowedUpdate::ChannelPost,
+                AllowedUpdate::CallbackQuery,
+                AllowedUpdate::InlineQuery,
+            ])
             .build();
 
         Api {
@@ -75,9 +80,8 @@ impl Api {
                 if let Some(last_update) = self.buffer.back() {
                     self.update_params.offset = Some((last_update.update_id + 1).into());
                 }
-                // println!("buffer =  {:?}",self.buffer.pop_front());
+
                 self.buffer.pop_front()
-                
             }
 
             Err(err) => {

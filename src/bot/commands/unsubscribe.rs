@@ -7,6 +7,7 @@ use crate::db::telegram::NewTelegramSubscription;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use frankenstein::CallbackQuery;
 
 static COMMAND: &str = "/unsubscribe";
 
@@ -22,6 +23,14 @@ enum DeleteSubscriptionError {
 impl Unsubscribe {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
+    }
+
+    pub fn execute_callback(
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        api: Api,
+        query: CallbackQuery,
+    ) {
+        Self {}.execute_callback(db_pool, api, query);
     }
 
     fn unsubscribe(

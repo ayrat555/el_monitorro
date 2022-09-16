@@ -4,6 +4,7 @@ use crate::bot::telegram_client::Api;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use frankenstein::CallbackQuery;
 use frankenstein::ChatType;
 
 static UNKNOWN_COMMAND_GROUP: &str = "Remove admin access from the bot in this group otherwise it will be replying to every message.";
@@ -16,6 +17,14 @@ pub struct UnknownCommand {}
 impl UnknownCommand {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
+    }
+
+    pub fn execute_callback(
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        api: Api,
+        query: CallbackQuery,
+    ) {
+        Self {}.execute_callback(db_pool, api, query);
     }
 
     pub fn command() -> &'static str {

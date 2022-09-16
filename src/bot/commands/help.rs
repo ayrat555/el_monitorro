@@ -73,8 +73,8 @@ impl Command for Help {
     }
 }
 
-pub fn set_help_keyboard(message: &Message) -> SendMessageParams {
-    let chat_id: i64 = message.chat.id;
+pub fn set_help_keyboard(chatid: i64) -> SendMessageParams {
+    // let chat_id: i64 = chatid;
     let mut keyboard: Vec<Vec<KeyboardButton>> = Vec::new();
 
     let mut row: Vec<KeyboardButton> = Vec::new();
@@ -164,14 +164,25 @@ pub fn set_help_keyboard(message: &Message) -> SendMessageParams {
         .build();
 
     SendMessageParams::builder()
-        .chat_id(chat_id)
+        .chat_id(chatid)
         .text("Shows all your commands")
         .reply_markup(ReplyMarkup::ReplyKeyboardMarkup(inline_keyboard))
         .build()
 }
-
-pub fn set_subscribe_keyboard(message: &Message) -> SendMessageParams {
-    let chat_id: i64 = message.chat.id;
+pub fn send_message_params_builder(
+    inline_keyboard: InlineKeyboardMarkup,
+    chatid: i64,
+    command: String,
+) -> SendMessageParams {
+    //  let chat_id: i64 = chatid;
+    SendMessageParams::builder()
+        .chat_id(chatid)
+        .text(command)
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+        .build()
+}
+pub fn set_subscribe_keyboard() -> InlineKeyboardMarkup {
+    // let chat_id: i64 = 614443505;
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
     let mut row: Vec<InlineKeyboardButton> = Vec::new();
@@ -185,13 +196,7 @@ pub fn set_subscribe_keyboard(message: &Message) -> SendMessageParams {
 
     keyboard.push(row);
 
-    let keyboard = InlineKeyboardMarkup::builder()
+    InlineKeyboardMarkup::builder()
         .inline_keyboard(keyboard)
-        .build();
-
-    SendMessageParams::builder()
-        .chat_id(chat_id)
-        .text("Use this options to set your template")
-        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
         .build()
 }
