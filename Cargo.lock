@@ -455,7 +455,6 @@ dependencies = [
  "isahc",
  "log",
  "mockito",
- "nanohtml2text",
  "once_cell",
  "pretty_env_logger",
  "rayon",
@@ -946,12 +945,6 @@ dependencies = [
  "serde_urlencoded",
  "similar",
 ]
-
-[[package]]
-name = "nanohtml2text"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f4e90f9a578233b3bd0b3c8686d1bfbe42ed2d8075beb53b21435c5360fc474"
 
 [[package]]
 name = "never"
