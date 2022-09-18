@@ -1,5 +1,6 @@
 use aho_corasick::AhoCorasickBuilder;
 use aho_corasick::MatchKind;
+use ammonia::Builder;
 use chrono::offset::FixedOffset;
 use chrono::prelude::*;
 use chrono::DateTime;
@@ -10,6 +11,7 @@ use handlebars::Handlebars;
 use handlebars::JsonValue;
 use htmlescape::decode_html;
 use serde_json::value::Map;
+use std::collections::HashSet;
 use typed_builder::TypedBuilder as Builder;
 
 const BOT_FEED_NAME: &str = "bot_feed_name";
@@ -197,7 +199,16 @@ fn truncate(s: &str, max_chars: usize) -> String {
 }
 
 fn remove_html(string_with_maybe_html: &str) -> String {
-    let string_without_html = nanohtml2text::html2text(string_with_maybe_html);
+    let mut vikings = HashSet::new();
+    vikings.insert("a");
+    vikings.insert("b");
+    vikings.insert("i");
+
+    let string_without_html = Builder::new()
+        .tags(vikings)
+        .link_rel(None)
+        .clean(string_with_maybe_html)
+        .to_string();
 
     let ac = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostFirst)
