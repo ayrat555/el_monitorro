@@ -198,13 +198,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
 }
 
 fn remove_html(string_with_maybe_html: &str) -> String {
-    let mut vikings = HashSet::new();
-    vikings.insert("a");
-    vikings.insert("b");
-    vikings.insert("i");
-
-    let string_without_html = ammonia::Builder::new()
-        .tags(vikings)
+    let string_without_html = ammonia::Builder::empty()
         .link_rel(None)
         .url_relative(ammonia::UrlRelative::Deny)
         .clean(string_with_maybe_html)
@@ -221,7 +215,7 @@ fn remove_html(string_with_maybe_html: &str) -> String {
         &[" ", "&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " "],
     );
 
-    let re = regex::Regex::new(r"(\n(\s)+\n(\s)+\n)").unwrap();
+    let re = regex::Regex::new(r"(\n(\s)*(\n)(\s)*\n)").unwrap();
 
     re.replace_all(&cleaned, "\n").into_owned()
 }
