@@ -10,7 +10,6 @@ use handlebars::Handlebars;
 use handlebars::JsonValue;
 use htmlescape::decode_html;
 use serde_json::value::Map;
-use std::collections::HashSet;
 use typed_builder::TypedBuilder as Builder;
 
 const BOT_FEED_NAME: &str = "bot_feed_name";
