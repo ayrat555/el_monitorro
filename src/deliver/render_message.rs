@@ -221,8 +221,6 @@ fn remove_html(string_with_maybe_html: &str) -> String {
         &[" ", "&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " "],
     );
 
-    log::error!("{:?}", cleaned);
-
     let re = regex::Regex::new(r"(\n(\s)+\n(\s)+\n)").unwrap();
 
     re.replace_all(&cleaned, "\n").into_owned()
