@@ -1,6 +1,5 @@
 use aho_corasick::AhoCorasickBuilder;
 use aho_corasick::MatchKind;
-use ammonia::Builder;
 use chrono::offset::FixedOffset;
 use chrono::prelude::*;
 use chrono::DateTime;
@@ -204,9 +203,10 @@ fn remove_html(string_with_maybe_html: &str) -> String {
     vikings.insert("b");
     vikings.insert("i");
 
-    let string_without_html = Builder::new()
+    let string_without_html = ammonia::Builder::new()
         .tags(vikings)
         .link_rel(None)
+        .url_relative(ammonia::UrlRelative::Deny)
         .clean(string_with_maybe_html)
         .to_string();
 
@@ -216,8 +216,14 @@ fn remove_html(string_with_maybe_html: &str) -> String {
             "&#32;", "&", "<", ">", "\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}",
         ]);
 
-    ac.replace_all(
+    let cleaned = ac.replace_all(
         &string_without_html,
         &[" ", "&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " "],
-    )
+    );
+
+    log::error!("{:?}", cleaned);
+
+    let re = regex::Regex::new(r"(\n(\s)+\n(\s)+\n)").unwrap();
+
+    re.replace_all(&cleaned, "\n").into_owned()
 }
