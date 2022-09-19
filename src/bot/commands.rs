@@ -84,7 +84,6 @@ pub trait Command {
             Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
             Err(_error_message) => "error fetching data".to_string(),
         };
-        println!("list subscription when empty {}",data);
         let feed_id = match self.fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => self.list_feed_id(&mut *connection, &message),
             Err(_error_message) => "error fetching data".to_string(),
@@ -93,15 +92,15 @@ pub trait Command {
         let feeds = data.split("`'\n'`");
         let feed = feeds.clone().count() as i32;
         let feeds_ids = feed_id.split("`','`").clone();
-        for f in feeds_ids.clone() {
-            println!("feeeeeed idddsssss = {}", f);
-        }
+        // for f in feeds_ids.clone() {
+        //     // println!("feeeeeed idddsssss = {}", f);
+        // }
         info!("{:?} wrote: {}", message.chat.id, response_message,);
         let text = self.response(db_pool.clone(), &message, &api);
-        println!(
-            "text in execute ================{}",
-            message.text.as_ref().unwrap()
-        );
+        // println!(
+        //     "text in execute ================{}",
+        //     message.text.as_ref().unwrap()
+        // );
 
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
@@ -122,25 +121,24 @@ pub trait Command {
             api.delete_message(&delete_message_params).unwrap();
             let send_message_params = select_feed_url_keyboard_for_filter(message, feeds, feed);
             api.send_message(&send_message_params).unwrap();
-        } else if messages =="/list_subscriptions" {
-            if data == "You don't have any subscriptions".to_string(){
+        } else if messages == "/list_subscriptions" {
+            if data == "You don't have any subscriptions" {
                 self.reply_to_message(api, message, text);
-            }else{
+            } else {
                 let send_message_params =
-                select_feed_url_keyboard_list_subscriptions(message, feeds, feeds_ids, db_pool);
-            api.send_message(&send_message_params).unwrap();
-            }
-            
-        } else if messages == "/set_template" {
-            if data == "You don't have any subscriptions".to_string(){
-                self.reply_to_message(api, message, text);
-            }else{
-                let send_message_params = select_feed_url_keyboard(message, feeds, feeds_ids, db_pool);
+                    select_feed_url_keyboard_list_subscriptions(message, feeds, feeds_ids, db_pool);
                 api.send_message(&send_message_params).unwrap();
             }
-            
+        } else if messages == "/set_template" {
+            if data == "You don't have any subscriptions" {
+                self.reply_to_message(api, message, text);
+            } else {
+                let send_message_params =
+                    select_feed_url_keyboard(message, feeds, feeds_ids, db_pool);
+                api.send_message(&send_message_params).unwrap();
+            }
         } else {
-            println!("excute recieved params {:?}", message);
+            // println!("excute recieved params {:?}", message);
             self.reply_to_message(api, message, text);
         }
     }
@@ -195,7 +193,7 @@ pub trait Command {
         feed_url: String,
     ) -> Result<TelegramSubscription, String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
-        println!("feed url in find subscription mwone ======{}", feed_url);
+        // println!("feed url in find subscription mwone ======{}", feed_url);
         let feed = self.find_feed(db_connection, feed_url)?;
 
         let chat = match telegram::find_chat(db_connection, chat_id) {

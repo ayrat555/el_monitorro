@@ -193,7 +193,7 @@ impl Handler {
             _ => return,
         };
         let mut message = query.message.unwrap();
-        let data = match fetch_db_connection(db_pool.clone()) {
+        let _data = match fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => list_feed_id(&mut *connection, &message),
             Err(_error_message) => "error fetching data".to_string(),
         };
@@ -212,7 +212,7 @@ impl Handler {
 
         let commands = &text.unwrap();
 
-        println!("command = {}", commands);
+        // println!("command = {}", commands);
 
         let command = commands.replace(BOT_NAME, "");
         message.text = Some(command.clone());
@@ -251,10 +251,10 @@ impl Handler {
             let send_message_params = set_global_template_substring_keyboard(message);
             api.send_message(&send_message_params).unwrap();
         } else if command.starts_with("list") {
-            println!("command.starts_with ======///////{}", command);
+            // println!("command.starts_with ======///////{}", command);
             let feed_id = Self::parse_int_from_string(&command);
             let feed_url = get_feed_url_by_id(db_pool, feed_id);
-            println!("set_template feed_id ======///////{}", feed_url);
+            // println!("set_template feed_id ======///////{}", feed_url);
             api.delete_message(&delete_message_params).unwrap();
             let send_message_params =
                 set_list_subcriptions_menu_keyboard(message, feed_id.to_string(), feed_url);
@@ -263,8 +263,7 @@ impl Handler {
             ListSubscriptions::execute(db_pool, api, message);
         } else if command.starts_with("set_template") {
             let feed_id = Self::parse_int_from_string(&command);
-
-            println!("set_template feed_id ======///////{}", feed_id);
+            // println!("set_template feed_id ======///////{}", feed_id);
             api.delete_message(&delete_message_params).unwrap();
             let send_message_params = set_template_menu_keyboard(message, feed_id.to_string());
             api.send_message(&send_message_params).unwrap();
@@ -288,7 +287,7 @@ impl Handler {
             api.send_message(&send_message_params).unwrap();
         } else if command.starts_with("create_link") {
             api.delete_message(&delete_message_params).unwrap();
-            println!("command before parsing command man {}", command);
+            // println!("command before parsing command man {}", command);
             let feed_id: i64 = Self::parse_int_from_string(&command);
             let data = command.replace("create_link", "");
             let feed_url = get_feed_url_by_id(db_pool, feed_id);
@@ -296,12 +295,12 @@ impl Handler {
             api.send_message(&send_message_params).unwrap();
         } else if command.starts_with("/set_template") {
             let feed_id = Self::parse_int_from_string(&command);
-            println!("parsed feed id ======{}", feed_id);
-            println!("feed id parsed using regex ==== {}", feed_id);
+            // println!("parsed feed id ======{}", feed_id);
+            // println!("feed id parsed using regex ==== {}", feed_id);
             let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id); //create a function to get feed url by feed id
-            println!("command made before using regex ==== {}", command); // println!("command before replacing with feed url ==={}", command.clone());
+                                                                         // println!("command made before using regex ==== {}", command); // println!("command before replacing with feed url ==={}", command.clone());
             let text = command.replace(&feed_id.to_string(), &feed_url);
-            println!("command made using regex ==== {}", text);
+            // println!("command made using regex ==== {}", text);
             message.text = Some(text.trim().to_string());
             SetTemplate::execute(db_pool, api, message);
         } else if command.starts_with("/get_template") {
@@ -316,39 +315,39 @@ impl Handler {
             GetTemplate::execute(db_pool, api, message);
         } else if command.starts_with("/remove_template") {
             let feed_id = Self::parse_int_from_string(&command);
-            println!("parsed feed id ======{}", feed_id);
-            println!("feed id parsed using regex ==== {}", feed_id);
+            // println!("parsed feed id ======{}", feed_id);
+            // println!("feed id parsed using regex ==== {}", feed_id);
             let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id); //create a function to get feed url by feed id
-            println!("command made before using regex ==== {}", command); // println!("command before replacing with feed url ==={}", command.clone());
+                                                                         // println!("command made before using regex ==== {}", command); // println!("command before replacing with feed url ==={}", command.clone());
             let text = command.replace(&feed_id.to_string(), &feed_url);
-            println!("command made using regex ==== {}", text);
+            // println!("command made using regex ==== {}", text);
             message.text = Some(text.trim().to_string());
             RemoveTemplate::execute(db_pool, api, message);
         } else if command.starts_with("/remove_filter") {
             let feed_id = Self::parse_int_from_string(&command);
-            println!("parsed feed id ======{}", feed_id);
-            println!("feed id parsed using regex ==== {}", feed_id);
+            // println!("parsed feed id ======{}", feed_id);
+            // println!("feed id parsed using regex ==== {}", feed_id);
             let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id); //create a function to get feed url by feed id
-            println!("command made before using regex ==== {}", command); // println!("command before replacing with feed url ==={}", command.clone());
+                                                                         // println!("command made before using regex ==== {}", command); // println!("command before replacing with feed url ==={}", command.clone());
             let text = command.replace(&feed_id.to_string(), &feed_url);
-            println!("command made using regex ==== {}", text);
+            // println!("command made using regex ==== {}", text);
             message.text = Some(text.trim().to_string());
             RemoveFilter::execute(db_pool, api, message);
         } else if command.starts_with("/unsubscribe") {
             let feed_id = Self::parse_int_from_string(&command);
-            println!("parsed feed id ======{}", feed_id);
-            println!("feed id parsed using regex ==== {}", feed_id);
+            // println!("parsed feed id ======{}", feed_id);
+            // println!("feed id parsed using regex ==== {}", feed_id);
             let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id); //create a function to get feed url by feed id
-            println!("command made before using regex ==== {}", command); // println!("command before replacing with feed url ==={}", command.clone());
+                                                                         // println!("command made before using regex ==== {}", command); // println!("command before replacing with feed url ==={}", command.clone());
             let text = command.replace(&feed_id.to_string(), &feed_url);
-            println!("command made using regex ==== {}", text);
+            // println!("command made using regex ==== {}", text);
             message.text = Some(text.trim().to_string());
             Unsubscribe::execute(db_pool, api, message);
         } else if command.starts_with("unsubscribe") {
             let feed_id = Self::parse_int_from_string(&command);
-            println!("feed_id in unsubscribe callback == {}", data);
+            // println!("feed_id in unsubscribe callback == {}", data);
             let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id); //create a function to get feed url by feed id
-            println!("feed url from get feed url by id {:?}", feed_url);
+                                                                         // println!("feed url from get feed url by id {:?}", feed_url);
             message.text = Some(format!("/unsubscribe {}", feed_url));
             Unsubscribe::execute(db_pool, api, message);
         } else if command.starts_with("/remove_template") {
@@ -363,7 +362,7 @@ impl Handler {
             message.text = Some("/set_template".to_string());
             SetTemplate::execute(db_pool, api, message);
         } else {
-           UnknownCommand::execute(db_pool, api, message)
+            UnknownCommand::execute(db_pool, api, message)
         }
         fn list_feed_id(db_connection: &mut PgConnection, message: &Message) -> String {
             match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
@@ -396,7 +395,7 @@ impl Handler {
     }
 }
 pub fn get_feed_url_by_id(db_pool: Pool<ConnectionManager<PgConnection>>, data: i64) -> String {
-    println!("feed id from command replace {}", data);
+    // println!("feed id from command replace {}", data);
     match fetch_db_connection(db_pool) {
         Ok(mut connection) => {
             let feeds = find(&mut *connection, data).unwrap();
