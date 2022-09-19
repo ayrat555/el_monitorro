@@ -7,7 +7,6 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
-use frankenstein::CallbackQuery;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
 use frankenstein::ReplyMarkup;
@@ -21,16 +20,6 @@ impl SetGlobalTemplate {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
     }
-    pub fn execute_callback(
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        api: Api,
-        query: CallbackQuery,
-    ) {
-        Self {}.execute_callback(db_pool, api, query);
-    }
-    // pub fn execute_callback_command(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api,chat_id: i64,query: CallbackQuery,messageid: i32,message: Message){
-    //     Self {}.execute_callback_command(db_pool, api, chat_id,query,message);
-    // }
 
     fn set_global_template(
         &self,
@@ -42,7 +31,6 @@ impl SetGlobalTemplate {
         if template.is_empty() {
             "".to_string();
         }
-        // println!("template {:?}",&template);
 
         let chat = match telegram::find_chat(db_connection, message.chat.id) {
             Some(chat) => chat,
@@ -106,19 +94,19 @@ pub fn set_global_template_keyboard(message: Message) -> SendMessageParams {
 
     let substring = InlineKeyboardButton::builder()
         .text("Limit number of characters of feed message")
-        .callback_data("substring")
+        .callback_data("global_substring")
         .build();
     let bold = InlineKeyboardButton::builder()
         .text("Set your feed message bold ")
-        .callback_data("bold")
+        .callback_data("global_bold")
         .build();
     let italic = InlineKeyboardButton::builder()
         .text("Set your feed message italic")
-        .callback_data("italic")
+        .callback_data("global_italic")
         .build();
     let create_link = InlineKeyboardButton::builder()
         .text("Create link to feed site")
-        .callback_data("create_link")
+        .callback_data("global_create_link")
         .build();
 
     row.push(substring);
@@ -190,11 +178,11 @@ pub fn set_global_template_bold_keyboard(message: Message) -> SendMessageParams 
     let mut row3: Vec<InlineKeyboardButton> = Vec::new();
 
     let bold_bot_description = InlineKeyboardButton::builder()
-        .text("Make bot item description bold")
+        .text("Make bot item description 𝐛𝐨𝐥𝐝")
         .callback_data("/set_global_template {{bold bot_item_description }}")
         .build();
     let bold_bot_item_name = InlineKeyboardButton::builder()
-        .text("Make bot item name bold")
+        .text("Make bot item name 𝐛𝐨𝐥𝐝")
         .callback_data("/set_global_template {{bold bot_item_name }}")
         .build();
     let back_to_menu = InlineKeyboardButton::builder()
@@ -234,11 +222,11 @@ pub fn set_global_template_italic_keyboard(message: Message) -> SendMessageParam
     let mut row3: Vec<InlineKeyboardButton> = Vec::new();
 
     let italic_bot_item_description = InlineKeyboardButton::builder()
-        .text("Make bot item description italic")
+        .text("Make bot item description 𝘪𝘵𝘢𝘭𝘪𝘤")
         .callback_data("/set_global_template {{italic bot_item_description }}")
         .build();
     let italic_bot_item_name = InlineKeyboardButton::builder()
-        .text("Make bot item name italic")
+        .text("Make bot item name 𝘪𝘵𝘢𝘭𝘪𝘤")
         .callback_data("/set_global_template {{italic bot_item_name }}")
         .build();
     let back_to_menu = InlineKeyboardButton::builder()
@@ -276,14 +264,14 @@ pub fn set_global_template_create_link_keyboard(message: Message) -> SendMessage
 
     let create_link_bot_item_description = InlineKeyboardButton::builder()
         .text("Make bot item description as link")
-        .callback_data("/set_global_template {{create_link bot_item_description}}")
+        .callback_data("/set_global_template create_link_description")
         .build();
     let create_link_bot_item_name = InlineKeyboardButton::builder()
         .text("Make bot item name as link")
-        .callback_data("/set_global_template {{create_link bot_item_name}}")
+        .callback_data("/set_global_template create_link_item_name")
         .build();
     let create_link_custom_name = InlineKeyboardButton::builder()
-        .text("Make bot item name as link")
+        .text("Make custom name as link")
         .switch_inline_query_current_chat(
             "/set_global_template {{create_link \"custom name\" bot_item_link}}",
         )

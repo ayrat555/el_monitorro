@@ -5,6 +5,10 @@ use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
+use frankenstein::ReplyMarkup;
+use frankenstein::SendMessageParams;
 
 static COMMAND: &str = "/remove_template";
 
@@ -57,4 +61,29 @@ impl Command for RemoveTemplate {
     fn command(&self) -> &str {
         Self::command()
     }
+}
+pub fn remove_template_keyboard(message: Message, feed_url: String) -> SendMessageParams {
+    let text = message.text.unwrap();
+
+    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+    let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+    let substring = InlineKeyboardButton::builder()
+        .text("Remove template")
+        .callback_data(format!("/remove_temp {}", feed_url))
+        .build();
+
+    row.push(substring);
+
+    keyboard.push(row);
+
+    let inline_keyboard = InlineKeyboardMarkup::builder()
+        .inline_keyboard(keyboard)
+        .build();
+    SendMessageParams::builder()
+        .chat_id(message.chat.id)
+        .text(text)
+        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+        .build()
 }

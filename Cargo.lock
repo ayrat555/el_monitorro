@@ -445,6 +445,7 @@ dependencies = [
  "once_cell",
  "pretty_env_logger",
  "rayon",
+ "regex",
  "rss",
  "serde",
  "serde_json",

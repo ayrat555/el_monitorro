@@ -1,5 +1,3 @@
-use std::io::Split;
-
 use super::Command;
 use super::Message;
 use crate::bot::telegram_client::Api;
@@ -9,7 +7,6 @@ use crate::db::telegram::NewTelegramSubscription;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
-use frankenstein::CallbackQuery;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
 use frankenstein::ReplyMarkup;
@@ -29,14 +26,6 @@ enum DeleteSubscriptionError {
 impl Unsubscribe {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
-    }
-
-    pub fn execute_callback(
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        api: Api,
-        query: CallbackQuery,
-    ) {
-        Self {}.execute_callback(db_pool, api, query);
     }
 
     fn unsubscribe(
@@ -200,22 +189,28 @@ mod unsubscribe_tests {
 }
 pub fn set_unsubscribe_keyboard(
     message: Message,
-    feeds: Split<&str>,
+    feeds: std::str::Split<'_, &str>,
+    feed_id: String,
 ) -> SendMessageParams {
-    // let len =feeds.count() as i32;
+    let id = feed_id.split("/n");
+    println!("feed ids {:?}", id);
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
-    for i in 1..2 {
-        let mut row: Vec<InlineKeyboardButton> = Vec::new();
-        for feed in feeds{
-        let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
-            .text(feed)
-            .callback_data(format!("/unsubscribe {}", feed))
-            .build();
 
-        row.push(unsubscribe_inlinekeyboard);
+    for feed in feeds.clone() {
+        for feedid in id.clone() {
+            let mut row: Vec<InlineKeyboardButton> = Vec::new();
+            let name = format!("{} ", feed);
+
+            let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
+                .text(name.clone())
+                .callback_data(format!("unsubscribe {}", feedid))
+                .build();
+
+            row.push(unsubscribe_inlinekeyboard);
+            keyboard.push(row);
         }
-        keyboard.push(row);
     }
+
     let inline_keyboard = InlineKeyboardMarkup::builder()
         .inline_keyboard(keyboard)
         .build();

@@ -1,15 +1,9 @@
 use crate::bot::commands::help::send_message_params_builder;
-use crate::bot::commands::help::set_help_keyboard;
 use crate::bot::commands::help::set_subscribe_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_bold_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_create_link_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_italic_keyboard;
+use crate::bot::commands::list_subscriptions::select_feed_url_keyboard_list_subscriptions;
+use crate::bot::commands::set_global_filter::select_feed_url_keyboard_for_filter;
 use crate::bot::commands::set_global_template::set_global_template_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_substring_keyboard;
-use crate::bot::commands::set_template::select_feed_url;
-use crate::bot::commands::set_template::set_template_keyboard;
-use crate::bot::commands::set_template::set_template_menu_keyboard;
-use crate::bot::commands::unsubscribe::select_feed_url_unsubscribe;
+use crate::bot::commands::set_template::select_feed_url_keyboard;
 use crate::bot::commands::unsubscribe::set_unsubscribe_keyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
@@ -23,14 +17,11 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
-use frankenstein::CallbackQuery;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::DeleteMessageParams;
 use frankenstein::Message;
 use frankenstein::TelegramApi;
-
-// use async_trait::async_trait;
 
 pub mod get_filter;
 pub mod get_global_filter;
@@ -86,22 +77,31 @@ pub trait Command {
     ) -> String;
 
     fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        let db_connection: &mut PgConnection;
         let messages = message.text.as_ref().unwrap().to_string();
         let chat_id = message.chat.id;
         let response_message = messages.replace(BOT_NAME, "");
         let data = match self.fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
-            Err(error_message) => "error fetching data".to_string(),
+            Err(_error_message) => "error fetching data".to_string(),
         };
-        let feeds = data.split("\n");
+        let feed_id = match self.fetch_db_connection(db_pool.clone()) {
+            Ok(mut connection) => self.list_feed_id(&mut *connection, &message),
+            Err(_error_message) => "error fetching data".to_string(),
+        };
 
+        let feeds = data.split("`'\n'`");
+        let feed = feeds.clone().count() as i32;
+        let feeds_ids = feed_id.split("`','`").clone();
+        for f in feeds_ids.clone() {
+            println!("feeeeeed idddsssss = {}", f);
+        }
         info!("{:?} wrote: {}", message.chat.id, response_message,);
         let text = self.response(db_pool.clone(), &message, &api);
         println!(
             "text in execute ================{}",
             message.text.as_ref().unwrap()
         );
+
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
             .message_id(message.message_id)
@@ -111,140 +111,28 @@ pub trait Command {
                 send_message_params_builder(set_subscribe_keyboard(), chat_id, messages);
             api.send_message(&send_message_params).unwrap();
         } else if messages == "/unsubscribe" {
-            println!("unsubscribe data =={:?}", feeds);
-            let send_message_params = set_unsubscribe_keyboard(message, feeds);
+            let send_message_params = set_unsubscribe_keyboard(message, feeds, feed_id);
             api.send_message(&send_message_params).unwrap();
         } else if messages == "/set_global_template" {
             api.delete_message(&delete_message_params).unwrap();
             let send_message_params = set_global_template_keyboard(message);
             api.send_message(&send_message_params).unwrap();
-        } else if messages == "/set_global_template substring" {
-            let send_message_params = set_global_template_substring_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if messages == "/set_global_template italic" {
-            let send_message_params = set_global_template_italic_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if messages == "create_link" {
-            let send_message_params = set_global_template_create_link_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if messages == "/set_global_template bold" {
-            let send_message_params = set_global_template_bold_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if messages == "/set_global_template create_link" {
-            let send_message_params = set_global_template_create_link_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if messages == "/help" {
-            let send_message_params = set_help_keyboard(chat_id);
+        } else if messages == "/set_filter" {
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params = select_feed_url_keyboard_for_filter(message, feeds, feed);
             api.send_message(&send_message_params).unwrap();
         } else if messages == "/list_subscriptions" {
-            self.reply_to_message(api, message, text);
-        } else if messages == "/set_template" {
-            let send_message_params = select_feed_url(message.clone(), data);
+            let send_message_params =
+                select_feed_url_keyboard_list_subscriptions(message, feeds, feeds_ids, db_pool);
             api.send_message(&send_message_params).unwrap();
-        }
-        //  else if messages == "unsubscribe_feed" {
-        //     let send_message_params = select_feed_url_unsubscribe(message.clone(), data);
-        //     api.send_message(&send_message_params).unwrap();
-        // }
-        // else if messages == "feed1" {
-        //     let send_message_params = set_template_menu_keyboard(message.clone(), data);
-        //     api.send_message(&send_message_params).unwrap();
-        // }
-        else {
+        } else if messages == "/set_template" {
+            let send_message_params = select_feed_url_keyboard(message, feeds, feeds_ids, db_pool);
+            api.send_message(&send_message_params).unwrap();
+        } else {
             println!("excute recieved params {:?}", message);
             self.reply_to_message(api, message, text);
         }
     }
-
-    fn execute_callback(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        api: Api,
-        query: CallbackQuery,
-    ) {
-        let message = query.message.unwrap();
-        let messages = query.data.as_ref().unwrap().to_string();
-        let chat_id = query.from.id as i64;
-        let messageid = message.message_id;
-        let delete_message_params = DeleteMessageParams::builder()
-            .chat_id(chat_id)
-            .message_id(messageid)
-            .build();
-        let response_message = &messages.replace(BOT_NAME, "");
-        let text = self.response(db_pool.clone(), &message, &api);
-        info!("{:?} wrote: {}", message.chat.id, response_message);
-        println!("text in execute callback ========{}", messages);
-        // .as_ref().unwrap());
-
-        if response_message == "/subscribe" {
-            let send_message_params = send_message_params_builder(
-                set_subscribe_keyboard(),
-                chat_id,
-                response_message.to_string(),
-            );
-            api.send_message(&send_message_params).unwrap();
-        } else if response_message == "/set_global_template" {
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if response_message == "substring" {
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_substring_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if response_message == "italic" {
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_italic_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if response_message == "bold" {
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_bold_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if response_message == "create_link" {
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_create_link_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if response_message == "/help" {
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_help_keyboard(chat_id);
-            api.send_message(&send_message_params).unwrap();
-        } else if response_message == "/set_global_template {{italic bot_item_description }}" {
-            // let send_message_params = set_help_keyboard(chat_id);
-            // api.send_message(&send_message_params).unwrap();
-            // GetGlobalTemplate::execute(db_pool, api, message);
-            self.reply_to_callback(api, message, text);
-        } else {
-            // let send_message_params = set_template_keyboard(&message);
-            // api.send_message(&send_message_params).unwrap();
-            print!("text in message {}", text);
-            self.reply_to_message(api, message, text);
-        }
-        // } else {
-        //     self.reply_to_message(api, message, text);
-        // }
-    }
-    // fn execute_callback_command(&self, db_pool: Pool<ConnectionManager<PgConnection>>,  api: Api, chat_id: i64,query: CallbackQuery,message: Message) {
-
-    //     let messages = query.data.as_ref().unwrap().to_string();
-    //     let response_message = messages.replace(BOT_NAME, "");
-    //     let messageid=message.message_id;
-    //     let text = self.response(db_pool.clone(), &message, &api);
-    //     //  info!("{:?} wrote: ", response_message.clone());
-
-    //     if response_message == "/set_global_template {{italic bot_item_description }}" {
-
-    //         self.reply_to_message(api, );
-    //     }
-
-    //     else{
-    //         // let send_message_params = set_template_keyboard(&message);
-    //         // api.send_message(&send_message_params).unwrap();
-    //          print!("nothing recieved")
-    //         // self.reply_to_message(api, message, text);
-    //     }
-    //     // } else {
-    //     //     self.reply_to_message(api, message, text);
-    //     // }
-    // }
 
     fn reply_to_message(&self, api: Api, message: Message, text: String) {
         if let Err(error) =
@@ -253,12 +141,12 @@ pub trait Command {
             error!("Failed to reply to update {:?} {:?}", error, message);
         }
     }
-    fn reply_to_callback(&self, api: Api, query: Message, text: String) {
-        if let Err(error) = api.reply_with_text_message(query.chat.id, text, Some(query.message_id))
-        {
-            error!("Failed to reply to update {:?} {:?}", error, query);
-        }
-    }
+    // fn reply_to_callback(&self, api: Api, query: Message, text: String) {
+    //     if let Err(error) = api.reply_with_text_message(query.chat.id, text, Some(query.message_id))
+    //     {
+    //         error!("Failed to reply to update {:?} {:?}", error, query);
+    //     }
+    // }
 
     fn command(&self) -> &str;
 
@@ -303,6 +191,7 @@ pub trait Command {
         feed_url: String,
     ) -> Result<TelegramSubscription, String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
+        println!("feed url in find subscription mwone ======{}", feed_url);
         let feed = self.find_feed(db_connection, feed_url)?;
 
         let chat = match telegram::find_chat(db_connection, chat_id) {
@@ -358,14 +247,20 @@ pub trait Command {
             }
         }
     }
+    fn list_feed_id(&self, db_connection: &mut PgConnection, message: &Message) -> String {
+        match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
+            Err(_) => "Couldn't fetch your subscriptions".to_string(),
+            Ok(feeds) => {
+                if feeds.is_empty() {
+                    "You don't have any subscriptions".to_string()
+                } else {
+                    feeds
+                        .into_iter()
+                        .map(|feed| feed.id.to_string())
+                        .collect::<Vec<String>>()
+                        .join(",")
+                }
+            }
+        }
+    }
 }
-// pub fn get_chat_id()-> i64{
-//     // let db_connection: &mut PgConnection;
-//     // let other_chat_id: i64;
-//     // let chat_not_exists_error = Err("Subscription does not exist".to_string());
-//      let chat = match telegram::find_chat(db_connection, other_chat_id) {
-//          Some(chat) => chat,
-//          None => return 1 ,
-//      };
-//   return chat.id
-//  }

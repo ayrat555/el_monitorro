@@ -32,6 +32,7 @@ serde_json = "1"
 sha2 = "0.10"
 typed-builder = "0.10"
 url = "2"
+regex ="1"
 
 [dev-dependencies]
 mockito = "0.31"

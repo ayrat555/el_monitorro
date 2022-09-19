@@ -13,7 +13,6 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::Connection;
 use diesel::PgConnection;
-use frankenstein::CallbackQuery;
 use url::Url;
 
 static COMMAND: &str = "/subscribe";
@@ -40,13 +39,7 @@ impl Subscribe {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
     }
-    pub fn execute_callback(
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        api: Api,
-        query: CallbackQuery,
-    ) {
-        Self {}.execute_callback(db_pool, api, query);
-    }
+
     fn subscribe(
         &self,
         db_connection: &mut PgConnection,
@@ -180,11 +173,7 @@ mod subscribe_tests {
     use diesel::connection::Connection;
     use frankenstein::Chat;
     use frankenstein::ChatType;
-    use frankenstein::KeyboardButton;
     use frankenstein::Message;
-    use frankenstein::ReplyKeyboardMarkup;
-    use frankenstein::ReplyMarkup;
-    use frankenstein::SendMessageParams;
     use mockito::mock;
     use mockito::Mock;
 
