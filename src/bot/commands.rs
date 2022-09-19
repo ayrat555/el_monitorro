@@ -84,6 +84,7 @@ pub trait Command {
             Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
             Err(_error_message) => "error fetching data".to_string(),
         };
+        println!("list subscription when empty {}",data);
         let feed_id = match self.fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => self.list_feed_id(&mut *connection, &message),
             Err(_error_message) => "error fetching data".to_string(),
@@ -121,13 +122,23 @@ pub trait Command {
             api.delete_message(&delete_message_params).unwrap();
             let send_message_params = select_feed_url_keyboard_for_filter(message, feeds, feed);
             api.send_message(&send_message_params).unwrap();
-        } else if messages == "/list_subscriptions" {
-            let send_message_params =
+        } else if messages =="/list_subscriptions" {
+            if data == "You don't have any subscriptions".to_string(){
+                self.reply_to_message(api, message, text);
+            }else{
+                let send_message_params =
                 select_feed_url_keyboard_list_subscriptions(message, feeds, feeds_ids, db_pool);
             api.send_message(&send_message_params).unwrap();
+            }
+            
         } else if messages == "/set_template" {
-            let send_message_params = select_feed_url_keyboard(message, feeds, feeds_ids, db_pool);
-            api.send_message(&send_message_params).unwrap();
+            if data == "You don't have any subscriptions".to_string(){
+                self.reply_to_message(api, message, text);
+            }else{
+                let send_message_params = select_feed_url_keyboard(message, feeds, feeds_ids, db_pool);
+                api.send_message(&send_message_params).unwrap();
+            }
+            
         } else {
             println!("excute recieved params {:?}", message);
             self.reply_to_message(api, message, text);
@@ -141,13 +152,6 @@ pub trait Command {
             error!("Failed to reply to update {:?} {:?}", error, message);
         }
     }
-    // fn reply_to_callback(&self, api: Api, query: Message, text: String) {
-    //     if let Err(error) = api.reply_with_text_message(query.chat.id, text, Some(query.message_id))
-    //     {
-    //         error!("Failed to reply to update {:?} {:?}", error, query);
-    //     }
-    // }
-
     fn command(&self) -> &str;
 
     fn parse_argument(&self, full_command: &str) -> String {
