@@ -46,7 +46,7 @@ pub mod subscribe;
 pub mod unknown_command;
 pub mod unsubscribe;
 
-const BOT_NAME: &str = "@sasaathulbot "; //replace with your bot name add a space after the name
+const BOT_NAME: &str = "@sasaathulbot "; //replace with your bot name and add a space at end
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
@@ -92,16 +92,8 @@ pub trait Command {
         let feeds = data.split("`'\n'`");
         let feed = feeds.clone().count() as i32;
         let feeds_ids = feed_id.split("`','`").clone();
-        // for f in feeds_ids.clone() {
-        //     // println!("feeeeeed idddsssss = {}", f);
-        // }
         info!("{:?} wrote: {}", message.chat.id, response_message,);
         let text = self.response(db_pool.clone(), &message, &api);
-        // println!(
-        //     "text in execute ================{}",
-        //     message.text.as_ref().unwrap()
-        // );
-
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
             .message_id(message.message_id)
@@ -138,7 +130,6 @@ pub trait Command {
                 api.send_message(&send_message_params).unwrap();
             }
         } else {
-            // println!("excute recieved params {:?}", message);
             self.reply_to_message(api, message, text);
         }
     }
@@ -193,7 +184,6 @@ pub trait Command {
         feed_url: String,
     ) -> Result<TelegramSubscription, String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
-        // println!("feed url in find subscription mwone ======{}", feed_url);
         let feed = self.find_feed(db_connection, feed_url)?;
 
         let chat = match telegram::find_chat(db_connection, chat_id) {
