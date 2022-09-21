@@ -51,7 +51,7 @@ use frankenstein::Update;
 use frankenstein::UpdateContent;
 use std::thread;
 
-const BOT_NAME: &str = "@sasaathulbot ";
+const BOT_NAME: &str = "@el_monitorro_bot ";
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 pub struct Handler {}
 
