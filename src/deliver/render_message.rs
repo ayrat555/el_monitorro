@@ -35,8 +35,21 @@ handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
 handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
+pub enum HtmlParser {
+    Nano,
+    Ammonia,
+}
+
+impl Default for HtmlParser {
+    fn default() -> Self {
+        HtmlParser::Ammonia
+    }
+}
+
 #[derive(Builder)]
 pub struct MessageRenderer {
+    #[builder(setter(into), default)]
+    html_parser: HtmlParser,
     #[builder(setter(into), default)]
     bot_feed_name: Option<String>,
     #[builder(setter(into), default)]
@@ -122,7 +135,7 @@ impl MessageRenderer {
 
     fn maybe_remove_html(&self, value_option: &Option<String>) -> Option<String> {
         if let Some(value) = value_option {
-            let without_html = remove_html(value);
+            let without_html = remove_html(value, &self.html_parser);
 
             return Some(without_html);
         }
@@ -196,12 +209,15 @@ fn truncate(s: &str, max_chars: usize) -> String {
     result.trim().to_string()
 }
 
-fn remove_html(string_with_maybe_html: &str) -> String {
-    let string_without_html = ammonia::Builder::empty()
-        .link_rel(None)
-        .url_relative(ammonia::UrlRelative::Deny)
-        .clean(string_with_maybe_html)
-        .to_string();
+fn remove_html(string_with_maybe_html: &str, html_parser: &HtmlParser) -> String {
+    let string_without_html = match html_parser {
+        HtmlParser::Nano => nanohtml2text::html2text(string_with_maybe_html),
+        HtmlParser::Ammonia => ammonia::Builder::empty()
+            .link_rel(None)
+            .url_relative(ammonia::UrlRelative::Deny)
+            .clean(string_with_maybe_html)
+            .to_string(),
+    };
 
     let ac = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostFirst)
@@ -214,7 +230,11 @@ fn remove_html(string_with_maybe_html: &str) -> String {
         &[" ", "&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " "],
     );
 
-    let re = regex::Regex::new(r"(\n(\s)*(\n)(\s)*\n)").unwrap();
-
-    re.replace_all(&cleaned, "\n").into_owned()
+    match html_parser {
+        HtmlParser::Nano => cleaned,
+        HtmlParser::Ammonia => {
+            let regexp = regex::Regex::new(r"(\n(\s)*(\n)(\s)*\n)").unwrap();
+            regexp.replace_all(&cleaned, "\n").into_owned()
+        }
+    }
 }
