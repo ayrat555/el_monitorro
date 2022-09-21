@@ -42,7 +42,7 @@ pub enum HtmlParser {
 
 impl Default for HtmlParser {
     fn default() -> Self {
-        HtmlParser::Ammonia
+        HtmlParser::Nano
     }
 }
 
