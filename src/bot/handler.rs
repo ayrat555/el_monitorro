@@ -22,18 +22,18 @@ use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
 use regex::Regex;
 
-use crate::bot::commands::list_subscriptions::set_list_subcriptions_menu_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_bold_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_create_link_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_italic_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_keyboard;
-use crate::bot::commands::set_global_template::set_global_template_substring_keyboard;
+use crate::bot::commands::list_subscriptions_inline_keyboard::set_list_subcriptions_menu_keyboard;
+use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_bold_keyboard;
+use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_create_link_keyboard;
+use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_italic_keyboard;
+use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_keyboard;
+use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_substring_keyboard;
+use crate::bot::commands::set_template_inline_keyboard::set_template_bold_keyboard;
+use crate::bot::commands::set_template_inline_keyboard::set_template_create_link_keyboard;
+use crate::bot::commands::set_template_inline_keyboard::set_template_italic_keyboard;
+use crate::bot::commands::set_template_inline_keyboard::set_template_menu_keyboard;
+use crate::bot::commands::set_template_inline_keyboard::set_template_substring_keyboard;
 
-use crate::bot::commands::set_template::set_template_bold_keyboard;
-use crate::bot::commands::set_template::set_template_create_link_keyboard;
-use crate::bot::commands::set_template::set_template_italic_keyboard;
-use crate::bot::commands::set_template::set_template_menu_keyboard;
-use crate::bot::commands::set_template::set_template_substring_keyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds::find;
@@ -51,7 +51,7 @@ use frankenstein::Update;
 use frankenstein::UpdateContent;
 use std::thread;
 
-const BOT_NAME: &str = "@sasaathulbot "; 
+const BOT_NAME: &str = "@sasaathulbot ";
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 pub struct Handler {}
 
@@ -215,20 +215,26 @@ impl Handler {
         let command = commands.replace(BOT_NAME, "");
         message.text = Some(command.clone());
 
-        if command.starts_with("list_subscriptions") {
+        if command.starts_with("/list_subscriptions") {
+            ListSubscriptions::execute(db_pool, api, message);
+        } else if command.starts_with("list_subscriptions") {
             let feed_id = Self::parse_int_from_string(&command);
             let feed_url = get_feed_url_by_id(db_pool, feed_id);
             api.delete_message(&delete_message_params).unwrap();
             let send_message_params =
                 set_list_subcriptions_menu_keyboard(message, feed_id.to_string(), feed_url);
             api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("/list_subscriptions") {
-            ListSubscriptions::execute(db_pool, api, message);
         } else if command.starts_with("/get_filter") {
             let feed_url =
                 get_feed_url_by_id(db_pool.clone(), Self::parse_int_from_string(&command));
             message.text = Some(format!("/get_filter {}", feed_url));
             GetFilter::execute(db_pool, api, message);
+        } else if command.starts_with("/set_template") {
+            let feed_id = Self::parse_int_from_string(&command);
+            let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id);
+            let text = command.replace(&feed_id.to_string(), &feed_url);
+            message.text = Some(text.trim().to_string());
+            SetTemplate::execute(db_pool, api, message);
         } else if command.starts_with("set_template") {
             let feed_id = Self::parse_int_from_string(&command);
             api.delete_message(&delete_message_params).unwrap();
@@ -258,12 +264,6 @@ impl Handler {
             let feed_url = get_feed_url_by_id(db_pool, feed_id);
             let send_message_params = set_template_create_link_keyboard(message, data, feed_url);
             api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("/set_template") {
-            let feed_id = Self::parse_int_from_string(&command);
-            let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id);
-            let text = command.replace(&feed_id.to_string(), &feed_url);
-            message.text = Some(text.trim().to_string());
-            SetTemplate::execute(db_pool, api, message);
         } else if command.starts_with("set_default_template") {
             let feed_url =
                 get_feed_url_by_id(db_pool.clone(), Self::parse_int_from_string(&command));

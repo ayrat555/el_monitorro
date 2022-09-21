@@ -1,10 +1,8 @@
-use crate::bot::commands::help::send_message_params_builder;
-use crate::bot::commands::help::set_subscribe_keyboard;
-use crate::bot::commands::list_subscriptions::select_feed_url_keyboard_list_subscriptions;
-use crate::bot::commands::set_global_filter::select_feed_url_keyboard_for_filter;
-use crate::bot::commands::set_global_template::set_global_template_keyboard;
-use crate::bot::commands::set_template::select_feed_url_keyboard;
-use crate::bot::commands::unsubscribe::set_unsubscribe_keyboard;
+use crate::bot::commands::list_subscriptions_inline_keyboard::select_feed_url_keyboard_list_subscriptions;
+use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_keyboard;
+use crate::bot::commands::set_template_inline_keyboard::select_feed_url_keyboard;
+use crate::bot::commands::subscribe_inline_keyboard::set_subscribe_keyboard;
+use crate::bot::commands::unsubscribe_inline_keyboard::set_unsubscribe_keyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
@@ -31,6 +29,7 @@ pub mod get_timezone;
 pub mod help;
 pub mod info;
 pub mod list_subscriptions;
+pub mod list_subscriptions_inline_keyboard;
 pub mod remove_filter;
 pub mod remove_global_filter;
 pub mod remove_global_template;
@@ -39,14 +38,18 @@ pub mod set_content_fields;
 pub mod set_filter;
 pub mod set_global_filter;
 pub mod set_global_template;
+pub mod set_global_template_inline_keyboard;
 pub mod set_template;
+pub mod set_template_inline_keyboard;
 pub mod set_timezone;
 pub mod start;
 pub mod subscribe;
+pub mod subscribe_inline_keyboard;
 pub mod unknown_command;
 pub mod unsubscribe;
+pub mod unsubscribe_inline_keyboard;
 
-const BOT_NAME: &str = "@sasaathulbot "; //replace with your bot name and add a space at end
+const BOT_NAME: &str = "@el_monitorro_bot "; //replace with your bot name and add a space at end
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
@@ -76,44 +79,46 @@ pub trait Command {
         api: &Api,
     ) -> String;
 
-    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        let messages = message.text.as_ref().unwrap().to_string();
-        let chat_id = message.chat.id;
-        let response_message = messages.replace(BOT_NAME, "");
+    fn execute(
+        &self,
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        api: Api,
+        mut message: Message,
+    ) {
+        let command = message.text.as_ref().unwrap().to_string();
+        let response_message = command.replace(BOT_NAME, "");
+
+        info!("{:?} wrote: {}", message.chat.id, response_message,);
+
         let data = match self.fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
             Err(_error_message) => "error fetching data".to_string(),
         };
+
         let feed_id = match self.fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => self.list_feed_id(&mut *connection, &message),
             Err(_error_message) => "error fetching data".to_string(),
         };
 
         let feeds = data.split("`'\n'`");
-        let feed = feeds.clone().count() as i32;
         let feeds_ids = feed_id.split("`','`").clone();
-        info!("{:?} wrote: {}", message.chat.id, response_message,);
         let text = self.response(db_pool.clone(), &message, &api);
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
             .message_id(message.message_id)
             .build();
-        if messages == "/subscribe" {
-            let send_message_params =
-                send_message_params_builder(set_subscribe_keyboard(), chat_id, messages);
+
+        if command == "/subscribe" {
+            let send_message_params = set_subscribe_keyboard(message);
             api.send_message(&send_message_params).unwrap();
-        } else if messages == "/unsubscribe" {
+        } else if command == "/unsubscribe" {
             let send_message_params = set_unsubscribe_keyboard(message, feeds, feed_id);
             api.send_message(&send_message_params).unwrap();
-        } else if messages == "/set_global_template" {
+        } else if command == "/set_global_template" {
             api.delete_message(&delete_message_params).unwrap();
             let send_message_params = set_global_template_keyboard(message);
             api.send_message(&send_message_params).unwrap();
-        } else if messages == "/set_filter" {
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = select_feed_url_keyboard_for_filter(message, feeds, feed);
-            api.send_message(&send_message_params).unwrap();
-        } else if messages == "/list_subscriptions" {
+        } else if command == "/list_subscriptions" {
             if data == "You don't have any subscriptions" {
                 self.reply_to_message(api, message, text);
             } else {
@@ -121,9 +126,10 @@ pub trait Command {
                     select_feed_url_keyboard_list_subscriptions(message, feeds, feeds_ids, db_pool);
                 api.send_message(&send_message_params).unwrap();
             }
-        } else if messages == "/set_template" {
+        } else if command == "/set_template" {
             if data == "You don't have any subscriptions" {
-                self.reply_to_message(api, message, text);
+                message.text = Some("/list_subscriptions".to_string());
+                self.reply_to_message(api, message, data);
             } else {
                 let send_message_params =
                     select_feed_url_keyboard(message, feeds, feeds_ids, db_pool);

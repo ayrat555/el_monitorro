@@ -74,34 +74,7 @@ impl Command for SetGlobalFilter {
         Self::command()
     }
 }
-pub fn select_feed_url_keyboard_for_filter(
-    message: Message,
-    feeds: std::str::Split<'_, &str>,
-    _len: i32,
-) -> SendMessageParams {
-    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
-    for feed in feeds.clone() {
-        let mut row: Vec<InlineKeyboardButton> = Vec::new();
-        let name = format!("{} ", feed);
-        let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
-            .text(name.clone())
-            .callback_data(format!("filt` {}", feed))
-            .build();
-
-        row.push(unsubscribe_inlinekeyboard);
-        keyboard.push(row);
-    }
-    let inline_keyboard = InlineKeyboardMarkup::builder()
-        .inline_keyboard(keyboard)
-        .build();
-
-    SendMessageParams::builder()
-        .chat_id(message.chat.id)
-        .text("Select feed url to be modify")
-        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
-        .build()
-}
 pub fn set_global_filter_keyboard(message: Message, _feed_url: String) -> SendMessageParams {
     let _text = message.text.unwrap();
     let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
