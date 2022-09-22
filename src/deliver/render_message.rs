@@ -44,7 +44,7 @@ pub enum HtmlParser {
 
 impl Default for HtmlParser {
     fn default() -> Self {
-        HtmlParser::Nano
+        HtmlParser::Ammonia
     }
 }
 
@@ -213,14 +213,14 @@ fn truncate(s: &str, max_chars: usize) -> String {
 }
 
 fn remove_html(string_with_maybe_html: &str, html_parser: &HtmlParser) -> String {
-    let string_without_html = match html_parser {
-        HtmlParser::Nano => nanohtml2text::html2text(string_with_maybe_html),
-        HtmlParser::Ammonia => ammonia::Builder::empty()
-            .link_rel(None)
-            .url_relative(ammonia::UrlRelative::Deny)
-            .clean(string_with_maybe_html)
-            .to_string(),
-    };
+    match html_parser {
+        HtmlParser::Nano => remove_html_with_nano(string_with_maybe_html),
+        HtmlParser::Ammonia => remove_html_with_ammonia(string_with_maybe_html),
+    }
+}
+
+fn remove_html_with_nano(string_with_maybe_html: &str) -> String {
+    let string_without_html = nanohtml2text::html2text(string_with_maybe_html);
 
     let ac = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostFirst)
@@ -228,16 +228,16 @@ fn remove_html(string_with_maybe_html: &str, html_parser: &HtmlParser) -> String
             "&#32;", "&", "<", ">", "\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}",
         ]);
 
-    let cleaned = ac.replace_all(
+    ac.replace_all(
         &string_without_html,
         &[" ", "&amp;", "&lt;", "&gt;", " ", " ", " ", " ", " "],
-    );
+    )
+}
 
-    match html_parser {
-        HtmlParser::Nano => cleaned,
-        HtmlParser::Ammonia => {
-            let regexp = regex::Regex::new(r"(\n(\s)*(\n)(\s)*\n)").unwrap();
-            regexp.replace_all(&cleaned, "\n").into_owned()
-        }
-    }
+fn remove_html_with_ammonia(string_with_maybe_html: &str) -> String {
+    ammonia::Builder::empty()
+        .link_rel(None)
+        .url_relative(ammonia::UrlRelative::Deny)
+        .clean(string_with_maybe_html)
+        .to_string()
 }
