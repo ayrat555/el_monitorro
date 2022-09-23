@@ -156,8 +156,8 @@ pub trait Command {
         let filter_words: Vec<String> =
             params.split(',').map(|s| s.trim().to_lowercase()).collect();
 
-        if filter_words.len() > 7 {
-            return Err("The number of filter words is limited by 7".to_string());
+        if filter_words.len() > 20 {
+            return Err("The number of filter words is limited by 20".to_string());
         }
 
         Ok(filter_words)
