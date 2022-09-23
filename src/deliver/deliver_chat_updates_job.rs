@@ -6,6 +6,7 @@ use crate::models::feed::Feed;
 use crate::models::feed_item::FeedItem;
 use crate::models::telegram_chat::TelegramChat;
 use crate::models::telegram_subscription::TelegramSubscription;
+use aho_corasick::AhoCorasickBuilder;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
 use fang::typetag;
@@ -160,26 +161,23 @@ impl DeliverChatUpdatesJob {
         let (negated_words, regular_words): (Vec<String>, Vec<String>) =
             words.into_iter().partition(|word| word.starts_with('!'));
 
+        let negated_words: Vec<String> = negated_words
+            .into_iter()
+            .map(|word| word.replace('!', ""))
+            .collect();
+
         for (message, publication_date) in messages {
             let mut mtch = true;
             let lowercase_message = message.to_lowercase();
 
             if !regular_words.is_empty() {
-                let regular_mtch = regular_words
-                    .iter()
-                    .any(|word| lowercase_message.contains(word));
-
-                mtch = regular_mtch;
+                mtch = check_filter_words(&lowercase_message, &regular_words);
             }
 
             if !negated_words.is_empty() {
-                let negated_mtch = negated_words.iter().all(|neg_word| {
-                    let word = neg_word.replace('!', "");
+                let negated_mtch = check_filter_words(&lowercase_message, &negated_words);
 
-                    !lowercase_message.contains(&word)
-                });
-
-                mtch = mtch && negated_mtch;
+                mtch = mtch && !negated_mtch;
             }
 
             if mtch {
@@ -378,6 +376,12 @@ fn delay_period(chat: &TelegramChat) -> Duration {
         "group" | "supergroup" => Duration::from_millis(2200),
         _ => Duration::from_millis(35),
     }
+}
+
+fn check_filter_words(text: &str, words: &Vec<String>) -> bool {
+    let ac = AhoCorasickBuilder::new().build(words);
+
+    ac.find(text).is_some()
 }
 
 #[cfg(test)]
