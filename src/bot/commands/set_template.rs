@@ -8,7 +8,8 @@ use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
 static COMMAND: &str = "/set_template";
-
+static CALLBACK: &str = "set_template";
+static DEFAULT_TEMPLATE: &str = "set_default_template";
 pub struct SetTemplate {}
 
 impl SetTemplate {
@@ -33,7 +34,7 @@ impl SetTemplate {
             return "Template can not be empty".to_string();
         }
 
-        let feed_url = vec[0].to_string();
+        let feed_url = vec[0].trim().to_string();
         let template = vec[1];
 
         let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
@@ -58,6 +59,14 @@ impl SetTemplate {
 
     pub fn command() -> &'static str {
         COMMAND
+    }
+
+    pub fn callback() -> &'static str {
+        CALLBACK
+    }
+
+    pub fn default_template() -> &'static str {
+        DEFAULT_TEMPLATE
     }
 }
 

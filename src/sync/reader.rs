@@ -1,11 +1,12 @@
 use self::atom::AtomReader;
 use self::json::JsonReader;
 use self::rss::RssReader;
-use crate::http_client;
-use chrono::DateTime;
-use chrono::Utc;
-use isahc::Request;
+use crate::config::Config;
+use chrono::{DateTime, Utc};
+use isahc::config::RedirectPolicy;
+use isahc::{prelude::*, Request};
 use std::io;
+use std::time::Duration;
 
 pub mod atom;
 pub mod json;
@@ -48,14 +49,21 @@ pub trait ReadFeed {
 }
 
 pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
-    let client = http_client::client();
-
-    let request = Request::get(url)
-        .header("User-Agent", "el_monitorro")
+    let client = match Request::get(url)
+        .timeout(Duration::from_secs(request_timeout_seconds()))
+        .header("User-Agent", "el_monitorro/0.2.2")
+        .redirect_policy(RedirectPolicy::Limit(10))
         .body(())
-        .unwrap();
+    {
+        Ok(cl) => cl,
+        Err(er) => {
+            let msg = format!("{:?}", er);
 
-    match client.send(request) {
+            return Err(FeedReaderError { msg });
+        }
+    };
+
+    match client.send() {
         Ok(mut response) => {
             let mut writer: Vec<u8> = vec![];
 
@@ -105,4 +113,8 @@ pub fn validate_rss_url(url: &str) -> Result<String, FeedReaderError> {
     Err(FeedReaderError {
         msg: "Url is not a feed".to_string(),
     })
+}
+
+fn request_timeout_seconds() -> u64 {
+    Config::request_timeout_in_seconds()
 }

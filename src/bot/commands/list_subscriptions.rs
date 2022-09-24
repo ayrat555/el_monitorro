@@ -7,7 +7,7 @@ use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
 static COMMAND: &str = "/list_subscriptions";
-
+static CALLBACK: &str = "list_subscriptions";
 pub struct ListSubscriptions {}
 
 impl ListSubscriptions {
@@ -34,6 +34,10 @@ impl ListSubscriptions {
 
     pub fn command() -> &'static str {
         COMMAND
+    }
+
+    pub fn callback() -> &'static str {
+        CALLBACK
     }
 }
 

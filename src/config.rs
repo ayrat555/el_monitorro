@@ -11,6 +11,10 @@ impl Config {
         Self::read_var("DATABASE_URL")
     }
 
+    pub fn telegram_bot_name() -> String {
+        Self::read_var("BOT_NAME")
+    }
+
     pub fn telegram_base_url() -> String {
         Self::read_var_with_default("TELEGRAM_BASE_URL", "https://api.telegram.org/bot")
     }
@@ -49,10 +53,6 @@ impl Config {
 
     pub fn subscription_limit() -> i64 {
         Self::read_var_with_default("SUBSCRIPTION_LIMIT", "20")
-    }
-
-    pub fn filter_limit() -> usize {
-        Self::read_var_with_default("FILTER_LIMIT", "20")
     }
 
     pub fn commands_db_pool_number() -> u32 {

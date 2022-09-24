@@ -17,7 +17,6 @@ impl UnknownCommand {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
     }
-
     pub fn command() -> &'static str {
         COMMAND
     }

@@ -1,4 +1,4 @@
-use crate::bot::telegram_client;
+use crate::bot::telegram_client::Api;
 use crate::db;
 use crate::db::{feed_items, feeds, telegram};
 use crate::models::feed::Feed;
@@ -96,7 +96,7 @@ impl SyncFeedJob {
 
         let message = format!("{} can not be processed. It was removed.", feed.link);
 
-        let api = telegram_client::api();
+        let api = Api::default();
 
         for chat in chats.into_iter() {
             api.send_text_message(chat.id, message.clone())?;

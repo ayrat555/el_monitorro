@@ -1,5 +1,4 @@
 use crate::config::Config;
-use crate::http_client;
 use fang::FangError;
 use frankenstein::AllowedUpdate;
 use frankenstein::ErrorResponse;
@@ -8,21 +7,15 @@ use frankenstein::ParseMode;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
-use isahc::prelude::*;
-use isahc::HttpClient;
-use isahc::Request;
-use once_cell::sync::OnceCell;
+use isahc::{prelude::*, Request};
 use std::collections::VecDeque;
 use std::path::PathBuf;
-
-static API: OnceCell<Api> = OnceCell::new();
 
 #[derive(Clone, Debug)]
 pub struct Api {
     pub api_url: String,
     pub update_params: GetUpdatesParams,
     pub buffer: VecDeque<Update>,
-    pub http_client: HttpClient,
 }
 
 #[derive(Debug)]
@@ -56,16 +49,19 @@ impl Api {
         let token = Config::telegram_bot_token();
         let base_url = Config::telegram_base_url();
         let api_url = format!("{}{}", base_url, token);
-        let http_client = http_client::client().clone();
 
         let update_params = GetUpdatesParams::builder()
-            .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
+            .allowed_updates(vec![
+                AllowedUpdate::Message,
+                AllowedUpdate::ChannelPost,
+                AllowedUpdate::CallbackQuery,
+                AllowedUpdate::InlineQuery,
+            ])
             .build();
 
         Api {
             api_url,
             update_params,
-            http_client,
             buffer: VecDeque::new(),
         }
     }
@@ -176,15 +172,10 @@ impl TelegramApi for Api {
         let request_builder = Request::post(url).header("Content-Type", "application/json");
 
         let mut response = match params {
-            None => {
-                let request = request_builder.body(())?;
-                self.http_client.send(request)?
-            }
+            None => request_builder.body(())?.send()?,
             Some(data) => {
                 let json = serde_json::to_string(&data).unwrap();
-                let request = request_builder.body(json)?;
-
-                self.http_client.send(request)?
+                request_builder.body(json)?.send()?
             }
         };
 
@@ -229,8 +220,4 @@ impl TelegramApi for Api {
 
         Err(Error::HttpError(error))
     }
-}
-
-pub fn api() -> &'static Api {
-    API.get_or_init(Api::new)
 }
