@@ -20,6 +20,7 @@ pub mod cleaner;
 pub mod config;
 pub mod db;
 pub mod deliver;
+mod http_client;
 mod models;
 mod schema;
 pub mod sync;
