@@ -51,6 +51,10 @@ impl Config {
         Self::read_var_with_default("SUBSCRIPTION_LIMIT", "20")
     }
 
+    pub fn filter_limit() -> usize {
+        Self::read_var_with_default("FILTER_LIMIT", "20")
+    }
+
     pub fn commands_db_pool_number() -> u32 {
         Self::read_var_with_default("DATABASE_POOL_SIZE", "5")
     }
