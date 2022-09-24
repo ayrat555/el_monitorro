@@ -4,6 +4,19 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.11.0 (2022-09-24)
+
+### Improved
+
+- Optimize filter word matching using the ahocorasick crate ([#263](https://github.com/ayrat555/el_monitorro/pull/263))
+- Configure the max number of filter words with the env var ([#264](https://github.com/ayrat555/el_monitorro/pull/264))
+- Re-use the http client for all requests ([#265](https://github.com/ayrat555/el_monitorro/pull/265))
+- Parse links along with their content   ([#266](https://github.com/ayrat555/el_monitorro/pull/266))
+
+### Fixed
+
+- Fix long links in templates ([#257](https://github.com/ayrat555/el_monitorro/pull/257))
+
 ## 0.10.0 (2022-09-04)
 
 ### Added

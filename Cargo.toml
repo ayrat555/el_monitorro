@@ -1,6 +1,6 @@
 [package]
 name = "el_monitorro"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Ayrat Badykov <ayratin555@gmail.com>"]
 edition = "2021"
 rust-version = "1.62"
