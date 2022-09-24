@@ -884,9 +884,9 @@ dependencies = [
 
 [[package]]
 name = "nanohtml2text"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f4e90f9a578233b3bd0b3c8686d1bfbe42ed2d8075beb53b21435c5360fc474"
+checksum = "999681fe3c0524336e98ece1c25ee4278607f25cc1e361ad0f9201c8bf56dc2c"
 
 [[package]]
 name = "never"
