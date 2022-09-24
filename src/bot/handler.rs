@@ -122,7 +122,6 @@ impl Handler {
         if !command.starts_with('/') {
             UnknownCommand::execute(db_pool, api, message);
         } else if command.starts_with(Subscribe::command()) {
-            println!("subscribe message.text {:?}", message.text);
             Subscribe::execute(db_pool, api, message);
         } else if command.starts_with(Help::command()) {
             Help::execute(db_pool, api, message);

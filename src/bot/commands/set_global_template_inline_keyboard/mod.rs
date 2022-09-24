@@ -143,11 +143,6 @@ impl SetGlobalTemplateInlineKeyboard {
     pub fn set_global_template_italic_keyboard(message: Message) -> SendMessageParams {
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
-        let text = message.text.unwrap();
-        println!(
-            "text inside set global templ italic keyboard ======{:?}",
-            text
-        );
         let mut row: Vec<InlineKeyboardButton> = Vec::new();
         let mut row2: Vec<InlineKeyboardButton> = Vec::new();
         let mut row3: Vec<InlineKeyboardButton> = Vec::new();

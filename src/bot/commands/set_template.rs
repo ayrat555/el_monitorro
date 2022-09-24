@@ -35,7 +35,6 @@ impl SetTemplate {
         }
 
         let feed_url = vec[0].trim().to_string();
-        println!("feed url in set_template====={}", feed_url);
         let template = vec[1];
 
         let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {

@@ -59,10 +59,6 @@ impl Command for SetGlobalTemplate {
         message: &Message,
         api: &Api,
     ) -> String {
-        println!(
-            "text in response setglobal template {}",
-            message.text.as_ref().unwrap()
-        );
         match self.fetch_db_connection(db_pool) {
             Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();

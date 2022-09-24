@@ -15,7 +15,6 @@ static BOLD: &str = "bold";
 
 pub struct SetTemplateInlineKeyboard {}
 impl SetTemplateInlineKeyboard {
-   
     pub fn set_template_menu_keyboard(message: Message, feed_id: String) -> SendMessageParams {
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
@@ -297,9 +296,8 @@ impl SetTemplateInlineKeyboard {
     pub fn create_link() -> &'static str {
         CREATE_LINK
     }
-    
+
     pub fn italic() -> &'static str {
         ITALIC
     }
-   
 }

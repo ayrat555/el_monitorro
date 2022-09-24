@@ -129,9 +129,7 @@ pub trait Command {
 
         let feeds = data.split('\n');
         let feeds_ids = feed_id.split(',').clone();
-for f in feeds_ids.clone(){
-    println!("feed id === {}",f);
-}
+
         let text = self.response(db_pool.clone(), &message, &api);
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
@@ -144,7 +142,8 @@ for f in feeds_ids.clone(){
                 api.send_message(&send_message_params).unwrap();
             }
             IncomingCommand::Unsubscribe => {
-                let send_message_params = UnsubscribeInlineKeyboard::set_unsubscribe_keyboard(message, feeds, feed_id);
+                let send_message_params =
+                    UnsubscribeInlineKeyboard::set_unsubscribe_keyboard(message, feeds, feed_id);
                 api.send_message(&send_message_params).unwrap();
             }
             IncomingCommand::SetGlobalTemplate => {
