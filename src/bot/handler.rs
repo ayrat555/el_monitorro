@@ -33,7 +33,6 @@ pub struct Handler {}
 
 impl Handler {
     pub fn start() {
-        // maybe Api can be share also
         let mut api = telegram_client::api().clone();
         let thread_pool = rayon::ThreadPoolBuilder::new()
             .num_threads(Config::commands_db_pool_number() as usize)
