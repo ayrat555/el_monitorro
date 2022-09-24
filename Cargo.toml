@@ -24,7 +24,7 @@ hex = "0.4"
 htmlescape = "0.3"
 isahc = "1"
 log = "0.4"
-nanohtml2text = "0.1"
+nanohtml2text = "0.1.4"
 rayon = "1.5"
 rss = "2"
 serde = { version = "1", features = ["derive"] }
