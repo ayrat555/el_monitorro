@@ -20,6 +20,7 @@ use super::commands::start::Start;
 use super::commands::subscribe::Subscribe;
 use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
+use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use diesel::r2d2;
@@ -33,7 +34,7 @@ pub struct Handler {}
 impl Handler {
     pub fn start() {
         // maybe Api can be share also
-        let mut api = Api::default();
+        let mut api = telegram_client::api().clone();
         let thread_pool = rayon::ThreadPoolBuilder::new()
             .num_threads(Config::commands_db_pool_number() as usize)
             .build()
