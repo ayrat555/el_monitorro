@@ -9,7 +9,7 @@ use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
 static COMMAND: &str = "/unsubscribe";
-
+static CALLBACK: &str = "unsubscribe";
 pub struct Unsubscribe {}
 
 enum DeleteSubscriptionError {
@@ -72,6 +72,9 @@ impl Unsubscribe {
 
     pub fn command() -> &'static str {
         COMMAND
+    }
+    pub fn callback() -> &'static str {
+        CALLBACK
     }
 }
 

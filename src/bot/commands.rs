@@ -1,8 +1,8 @@
-use crate::bot::commands::list_subscriptions_inline_keyboard::select_feed_url_keyboard_list_subscriptions;
-use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_keyboard;
-use crate::bot::commands::set_template_inline_keyboard::select_feed_url_keyboard;
-use crate::bot::commands::subscribe_inline_keyboard::set_subscribe_keyboard;
-use crate::bot::commands::unsubscribe_inline_keyboard::set_unsubscribe_keyboard;
+use crate::bot::commands::list_subscriptions_inline_keyboard::ListSubscriptionsInlineKeyboard;
+use crate::bot::commands::set_global_template_inline_keyboard::SetGlobalTemplateInlineKeyboard;
+use crate::bot::commands::set_template_inline_keyboard::SetTemplateInlineKeyboard;
+use crate::bot::commands::subscribe_inline_keyboard::SubscribeInlineKeyboard;
+use crate::bot::commands::unsubscribe_inline_keyboard::UnsubscribeInlineKeyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
@@ -20,6 +20,7 @@ use frankenstein::ChatType;
 use frankenstein::DeleteMessageParams;
 use frankenstein::Message;
 use frankenstein::TelegramApi;
+use std::str::FromStr;
 
 pub mod get_filter;
 pub mod get_global_filter;
@@ -49,7 +50,14 @@ pub mod unknown_command;
 pub mod unsubscribe;
 pub mod unsubscribe_inline_keyboard;
 
-const BOT_NAME: &str = "@el_monitorro_bot "; //replace with your bot name and add a space at end
+enum IncomingCommand {
+    Subscribe,
+    Unsubscribe,
+    SetGlobalTemplate,
+    ListSubscriptions,
+    SetTemplate,
+    UnknownCommand(String),
+}
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
@@ -70,6 +78,22 @@ impl From<Chat> for NewTelegramChat {
         }
     }
 }
+impl FromStr for IncomingCommand {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let result = match s.trim() {
+            "/subscribe" => IncomingCommand::Subscribe,
+            "/unsubscribe" => IncomingCommand::Unsubscribe,
+            "/set_template" => IncomingCommand::SetTemplate,
+            "/set_global_template" => IncomingCommand::SetGlobalTemplate,
+            "/list_subscriptions" => IncomingCommand::ListSubscriptions,
+            _ => IncomingCommand::UnknownCommand(s.to_string()),
+        };
+
+        Ok(result)
+    }
+}
 
 pub trait Command {
     fn response(
@@ -85,11 +109,14 @@ pub trait Command {
         api: Api,
         mut message: Message,
     ) {
-        let command = message.text.as_ref().unwrap().to_string();
-        let response_message = command.replace(BOT_NAME, "");
+        info!(
+            "{:?} wrote: {}",
+            message.chat.id,
+            message.text.as_ref().unwrap()
+        );
 
-        info!("{:?} wrote: {}", message.chat.id, response_message,);
-
+        let text: &str = message.text.as_ref().unwrap();
+        let command = IncomingCommand::from_str(text).unwrap();
         let data = match self.fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
             Err(_error_message) => "error fetching data".to_string(),
@@ -100,44 +127,56 @@ pub trait Command {
             Err(_error_message) => "error fetching data".to_string(),
         };
 
-        let feeds = data.split("`'\n'`");
-        let feeds_ids = feed_id.split("`','`").clone();
+        let feeds = data.split('\n');
+        let feeds_ids = feed_id.split(',').clone();
+for f in feeds_ids.clone(){
+    println!("feed id === {}",f);
+}
         let text = self.response(db_pool.clone(), &message, &api);
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
             .message_id(message.message_id)
             .build();
 
-        if command == "/subscribe" {
-            let send_message_params = set_subscribe_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if command == "/unsubscribe" {
-            let send_message_params = set_unsubscribe_keyboard(message, feeds, feed_id);
-            api.send_message(&send_message_params).unwrap();
-        } else if command == "/set_global_template" {
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if command == "/list_subscriptions" {
-            if data == "You don't have any subscriptions" {
+        match command {
+            IncomingCommand::Subscribe => {
+                let send_message_params = SubscribeInlineKeyboard::set_subscribe_keyboard(message);
+                api.send_message(&send_message_params).unwrap();
+            }
+            IncomingCommand::Unsubscribe => {
+                let send_message_params = UnsubscribeInlineKeyboard::set_unsubscribe_keyboard(message, feeds, feed_id);
+                api.send_message(&send_message_params).unwrap();
+            }
+            IncomingCommand::SetGlobalTemplate => {
+                api.delete_message(&delete_message_params).unwrap();
+                let send_message_params =
+                    SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
+                api.send_message(&send_message_params).unwrap();
+            }
+            IncomingCommand::ListSubscriptions => {
+                if data == "You don't have any subscriptions" {
+                    self.reply_to_message(api, message, data);
+                } else {
+                    let send_message_params =
+                        ListSubscriptionsInlineKeyboard::select_feed_url_keyboard_list_subscriptions(message, feeds_ids, db_pool);
+                    api.send_message(&send_message_params).unwrap();
+                }
+            }
+            IncomingCommand::SetTemplate => {
+                if data == "You don't have any subscriptions" {
+                    message.text = Some("/list_subscriptions".to_string());
+                    self.reply_to_message(api, message, data);
+                } else {
+                    let send_message_params = SetTemplateInlineKeyboard::select_feed_url_keyboard(
+                        message, feeds_ids, db_pool,
+                    );
+                    api.send_message(&send_message_params).unwrap();
+                }
+            }
+            _ => {
                 self.reply_to_message(api, message, text);
-            } else {
-                let send_message_params =
-                    select_feed_url_keyboard_list_subscriptions(message, feeds, feeds_ids, db_pool);
-                api.send_message(&send_message_params).unwrap();
             }
-        } else if command == "/set_template" {
-            if data == "You don't have any subscriptions" {
-                message.text = Some("/list_subscriptions".to_string());
-                self.reply_to_message(api, message, data);
-            } else {
-                let send_message_params =
-                    select_feed_url_keyboard(message, feeds, feeds_ids, db_pool);
-                api.send_message(&send_message_params).unwrap();
-            }
-        } else {
-            self.reply_to_message(api, message, text);
-        }
+        };
     }
 
     fn reply_to_message(&self, api: Api, message: Message, text: String) {
@@ -150,6 +189,7 @@ pub trait Command {
     fn command(&self) -> &str;
 
     fn parse_argument(&self, full_command: &str) -> String {
+        let bot_name = Config::telegram_bot_name();
         let command = self.command();
         let handle = Config::telegram_bot_handle();
         let command_with_handle = format!("{}@{}", command, handle);
@@ -157,13 +197,13 @@ pub trait Command {
         if full_command.starts_with(&command_with_handle) {
             full_command
                 .replace(&command_with_handle, "")
-                .replace(BOT_NAME, "")
+                .replace(&bot_name, "")
                 .trim()
                 .to_string()
         } else {
             full_command
                 .replace(command, "")
-                .replace(BOT_NAME, "")
+                .replace(&bot_name, "")
                 .trim()
                 .to_string()
         }

@@ -6,6 +6,7 @@ use super::commands::get_timezone::GetTimezone;
 use super::commands::help::Help;
 use super::commands::info::Info;
 use super::commands::list_subscriptions::ListSubscriptions;
+use super::commands::list_subscriptions_inline_keyboard::ListSubscriptionsInlineKeyboard;
 use super::commands::remove_filter::RemoveFilter;
 use super::commands::remove_global_filter::RemoveGlobalFilter;
 use super::commands::remove_global_template::RemoveGlobalTemplate;
@@ -22,22 +23,11 @@ use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
 use regex::Regex;
 
-use crate::bot::commands::list_subscriptions_inline_keyboard::set_list_subcriptions_menu_keyboard;
-use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_bold_keyboard;
-use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_create_link_keyboard;
-use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_italic_keyboard;
-use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_keyboard;
-use crate::bot::commands::set_global_template_inline_keyboard::set_global_template_substring_keyboard;
-use crate::bot::commands::set_template_inline_keyboard::set_template_bold_keyboard;
-use crate::bot::commands::set_template_inline_keyboard::set_template_create_link_keyboard;
-use crate::bot::commands::set_template_inline_keyboard::set_template_italic_keyboard;
-use crate::bot::commands::set_template_inline_keyboard::set_template_menu_keyboard;
-use crate::bot::commands::set_template_inline_keyboard::set_template_substring_keyboard;
-
+use crate::bot::commands::set_global_template_inline_keyboard::SetGlobalTemplateInlineKeyboard;
+use crate::bot::commands::set_template_inline_keyboard::SetTemplateInlineKeyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds::find;
-use crate::db::telegram;
 
 use diesel::r2d2;
 use diesel::r2d2::ConnectionManager;
@@ -45,13 +35,11 @@ use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::DeleteMessageParams;
-use frankenstein::Message;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
 use frankenstein::UpdateContent;
 use std::thread;
 
-const BOT_NAME: &str = "@el_monitorro_bot ";
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 pub struct Handler {}
 
@@ -72,18 +60,18 @@ impl Handler {
                 let db_pool = crate::db::pool().clone();
                 let tg_api = api.clone();
 
-                match update.content.clone() {
-                    UpdateContent::Message(ref _message) => {
+                match update.content {
+                    UpdateContent::Message(_) => {
                         thread_pool.spawn(move || {
                             Self::process_message_or_channel_post(db_pool, tg_api, update)
                         });
                     }
-                    UpdateContent::ChannelPost(ref _channelpost) => {
+                    UpdateContent::ChannelPost(_) => {
                         thread_pool.spawn(move || {
                             Self::process_message_or_channel_post(db_pool, tg_api, update)
                         });
                     }
-                    UpdateContent::CallbackQuery(ref _callback_query) => {
+                    UpdateContent::CallbackQuery(_) => {
                         thread_pool
                             .spawn(move || Self::process_callback_query(db_pool, tg_api, update));
                     }
@@ -100,6 +88,7 @@ impl Handler {
         api: Api,
         update: Update,
     ) {
+        let bot_name = Config::telegram_bot_name();
         let message = match update.content {
             UpdateContent::Message(message) => message,
             UpdateContent::ChannelPost(channel_post) => channel_post,
@@ -122,17 +111,18 @@ impl Handler {
             return;
         }
 
-        let commands = &text.unwrap();
         let _delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
             .message_id(message.message_id)
             .build();
 
-        let command = &commands.replace(BOT_NAME, ""); //removes bot name from the command (switch_inline_query_current_chat adds botname automatically)
+        let commands = &text.unwrap();
+        let command = &commands.replace(&bot_name, ""); //removes bot name from the command (switch_inline_query_current_chat adds botname automatically)
 
         if !command.starts_with('/') {
             UnknownCommand::execute(db_pool, api, message);
         } else if command.starts_with(Subscribe::command()) {
+            println!("subscribe message.text {:?}", message.text);
             Subscribe::execute(db_pool, api, message);
         } else if command.starts_with(Help::command()) {
             Help::execute(db_pool, api, message);
@@ -188,19 +178,14 @@ impl Handler {
         api: Api,
         update: Update,
     ) {
+        let bot_name = Config::telegram_bot_name();
         let query = match update.content {
             UpdateContent::CallbackQuery(callback_query) => callback_query,
             _ => return,
         };
         let mut message = query.message.unwrap();
-        let _data = match fetch_db_connection(db_pool.clone()) {
-            Ok(mut connection) => list_feed_id(&mut *connection, &message),
-            Err(_error_message) => "error fetching data".to_string(),
-        };
-
         let messageid = message.message_id;
         let chatid = message.chat.id;
-
         let text = query.data;
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(chatid)
@@ -211,85 +196,96 @@ impl Handler {
         }
 
         let commands = &text.unwrap();
+        let data = &commands.replace(&bot_name, "");
+        message.text = Some(data.clone());
 
-        let command = commands.replace(BOT_NAME, "");
-        message.text = Some(command.clone());
+        let command = data;
 
-        if command.starts_with("/list_subscriptions") {
+        if command.starts_with(ListSubscriptions::command()) {
             ListSubscriptions::execute(db_pool, api, message);
-        } else if command.starts_with("list_subscriptions") {
-            let feed_id = Self::parse_int_from_string(&command);
-            let feed_url = get_feed_url_by_id(db_pool, feed_id);
-            api.delete_message(&delete_message_params).unwrap();
-            let send_message_params =
-                set_list_subcriptions_menu_keyboard(message, feed_id.to_string(), feed_url);
-            api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("/get_filter") {
+        } else if command.starts_with(ListSubscriptions::callback()) {
+            let feed_id = Self::parse_int_from_string(command);
+            if feed_id == "none" {
+                ListSubscriptions::execute(db_pool, api, message);
+            } else {
+                let feed_url = Self::get_feed_url_by_id(db_pool, feed_id.clone());
+                api.delete_message(&delete_message_params).unwrap();
+                let send_message_params =
+                    ListSubscriptionsInlineKeyboard::set_list_subcriptions_menu_keyboard(
+                        message, feed_id, feed_url,
+                    );
+                api.send_message(&send_message_params).unwrap();
+            }
+        } else if command.starts_with(GetFilter::command()) {
             let feed_url =
-                get_feed_url_by_id(db_pool.clone(), Self::parse_int_from_string(&command));
+                Self::get_feed_url_by_id(db_pool.clone(), Self::parse_int_from_string(command));
             message.text = Some(format!("/get_filter {}", feed_url));
             GetFilter::execute(db_pool, api, message);
-        } else if command.starts_with("/set_template") {
-            let feed_id = Self::parse_int_from_string(&command);
-            let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id);
-            let text = command.replace(&feed_id.to_string(), &feed_url);
+        } else if command.starts_with(SetTemplate::command()) {
+            let feed_id = Self::parse_int_from_string(command);
+            let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.clone());
+            let text = command.replace(&feed_id, &feed_url);
             message.text = Some(text.trim().to_string());
             SetTemplate::execute(db_pool, api, message);
-        } else if command.starts_with("set_template") {
-            let feed_id = Self::parse_int_from_string(&command);
+        } else if command.starts_with(SetTemplate::callback()) {
+            let feed_id = Self::parse_int_from_string(command);
             api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_template_menu_keyboard(message, feed_id.to_string());
+            let send_message_params =
+                SetTemplateInlineKeyboard::set_template_menu_keyboard(message, feed_id);
             api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("substring") {
+        } else if command.starts_with(SetTemplateInlineKeyboard::substring()) {
             api.delete_message(&delete_message_params).unwrap();
-            let feed_id: i64 = Self::parse_int_from_string(&command);
+            let feed_id = Self::parse_int_from_string(command);
             let data = command.replace("substring", "");
-            let feed_url = get_feed_url_by_id(db_pool, feed_id);
-            let send_message_params = set_template_substring_keyboard(message, data, feed_url);
+            let feed_url = Self::get_feed_url_by_id(db_pool, feed_id);
+            let send_message_params =
+                SetTemplateInlineKeyboard::set_template_substring_keyboard(message, data, feed_url);
             api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("italic") {
+        } else if command.starts_with(SetTemplateInlineKeyboard::italic()) {
             api.delete_message(&delete_message_params).unwrap();
             let data = command.replace("italic", "");
-            let send_message_params = set_template_italic_keyboard(message, data);
+            let send_message_params =
+                SetTemplateInlineKeyboard::set_template_italic_keyboard(message, data);
             api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("bold") {
+        } else if command.starts_with(SetTemplateInlineKeyboard::bold()) {
             api.delete_message(&delete_message_params).unwrap();
             let data = command.replace("bold", "");
-            let send_message_params = set_template_bold_keyboard(message, data);
+            let send_message_params =
+                SetTemplateInlineKeyboard::set_template_bold_keyboard(message, data);
             api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("create_link") {
+        } else if command.starts_with(SetTemplateInlineKeyboard::create_link()) {
             api.delete_message(&delete_message_params).unwrap();
-            let feed_id: i64 = Self::parse_int_from_string(&command);
+            let feed_id = Self::parse_int_from_string(command);
             let data = command.replace("create_link", "");
-            let feed_url = get_feed_url_by_id(db_pool, feed_id);
-            let send_message_params = set_template_create_link_keyboard(message, data, feed_url);
+            let feed_url = Self::get_feed_url_by_id(db_pool, feed_id);
+            let send_message_params = SetTemplateInlineKeyboard::set_template_create_link_keyboard(
+                message, data, feed_url,
+            );
             api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("set_default_template") {
+        } else if command.starts_with(SetTemplate::default_template()) {
             let feed_url =
-                get_feed_url_by_id(db_pool.clone(), Self::parse_int_from_string(&command));
+                Self::get_feed_url_by_id(db_pool.clone(), Self::parse_int_from_string(command));
             message.text = Some(format!("/set_template {} {}", feed_url, DEFAULT_TEMPLATE));
             SetTemplate::execute(db_pool, api, message);
-        } else if command.starts_with("/get_template") {
-            let feed_id = Self::parse_int_from_string(&command);
-            println!("parsed feed id ======{}", feed_id);
-            println!("feed id parsed using regex ==== {}", feed_id);
-            let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id);
-            let text = command.replace(&feed_id.to_string(), &feed_url);
+        } else if command.starts_with(GetTemplate::command()) {
+            let feed_id = Self::parse_int_from_string(command);
+            let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.clone());
+            let text = command.replace(&feed_id, &feed_url);
             message.text = Some(text.trim().to_string());
             GetTemplate::execute(db_pool, api, message);
-        } else if command.starts_with("/remove_template") {
-            let feed_id = Self::parse_int_from_string(&command);
-            let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id);
-            let text = command.replace(&feed_id.to_string(), &feed_url);
+        } else if command.starts_with(RemoveTemplate::command()) {
+            let feed_id = Self::parse_int_from_string(command);
+            let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.clone());
+            let text = command.replace(&feed_id, &feed_url);
             message.text = Some(text.trim().to_string());
             RemoveTemplate::execute(db_pool, api, message);
-        } else if command.starts_with("/remove_filter") {
-            let feed_id = Self::parse_int_from_string(&command);
-            let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id);
-            let text = command.replace(&feed_id.to_string(), &feed_url);
+        } else if command.starts_with(RemoveFilter::command()) {
+            let feed_id = Self::parse_int_from_string(command);
+            let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.clone());
+            let text = command.replace(&feed_id, &feed_url);
             message.text = Some(text.trim().to_string());
             RemoveFilter::execute(db_pool, api, message);
-        } else if command.starts_with("/set_global_template") {
+        } else if command.starts_with(SetGlobalTemplate::command()) {
             match command.as_str() {
                 "/set_global_template create_link_description" => {
                     message.text = Some(
@@ -307,93 +303,93 @@ impl Handler {
                 }
                 _ => SetGlobalTemplate::execute(db_pool, api, message),
             }
-        } else if command == "global_italic" {
+        } else if command.starts_with(SetGlobalTemplateInlineKeyboard::italic()) {
             api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_italic_keyboard(message);
+            let send_message_params =
+                SetGlobalTemplateInlineKeyboard::set_global_template_italic_keyboard(message);
             api.send_message(&send_message_params).unwrap();
-        } else if command == "global_bold" {
+        } else if command.starts_with(SetGlobalTemplateInlineKeyboard::bold()) {
             api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_bold_keyboard(message);
+            let send_message_params =
+                SetGlobalTemplateInlineKeyboard::set_global_template_bold_keyboard(message);
             api.send_message(&send_message_params).unwrap();
-        } else if command == "global_create_link" {
-            let send_message_params = set_global_template_create_link_keyboard(message);
-            api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("global_substring") {
+        } else if command.starts_with(SetGlobalTemplateInlineKeyboard::create_link()) {
             api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_substring_keyboard(message);
+            let send_message_params =
+                SetGlobalTemplateInlineKeyboard::set_global_template_create_link_keyboard(message);
             api.send_message(&send_message_params).unwrap();
-        } else if command.starts_with("/unsubscribe") {
-            let feed_id = Self::parse_int_from_string(&command);
-            let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id);
-            let text = command.replace(&feed_id.to_string(), &feed_url);
+        } else if command.starts_with(SetGlobalTemplateInlineKeyboard::substring()) {
+            api.delete_message(&delete_message_params).unwrap();
+            let send_message_params =
+                SetGlobalTemplateInlineKeyboard::set_global_template_substring_keyboard(message);
+            api.send_message(&send_message_params).unwrap();
+        } else if command.starts_with(SetGlobalTemplateInlineKeyboard::default_template()) {
+            api.delete_message(&delete_message_params).unwrap();
+            message.text = Some(format!("/set_global_template {}", DEFAULT_TEMPLATE));
+            SetGlobalTemplate::execute(db_pool, api, message);
+        } else if command.starts_with(Unsubscribe::command()) {
+            let feed_id = Self::parse_int_from_string(command);
+            let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.clone());
+            let text = command.replace(&feed_id, &feed_url);
             message.text = Some(text.trim().to_string());
             Unsubscribe::execute(db_pool, api, message);
-        } else if command.starts_with("unsubscribe") {
-            let feed_id = Self::parse_int_from_string(&command);
-            let feed_url = get_feed_url_by_id(db_pool.clone(), feed_id);
-            message.text = Some(format!("/unsubscribe {}", feed_url));
-            Unsubscribe::execute(db_pool, api, message);
-        } else if command == "back to menu" {
+        } else if command.starts_with(Unsubscribe::callback()) {
+            let feed_id = Self::parse_int_from_string(command);
+            if feed_id == "none" {
+                Unsubscribe::execute(db_pool, api, message);
+            } else {
+                let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id);
+                message.text = Some(format!("/unsubscribe {}", feed_url));
+                Unsubscribe::execute(db_pool, api, message);
+            }
+        } else if command.starts_with(ListSubscriptionsInlineKeyboard::back_to_menu()) {
             api.delete_message(&delete_message_params).unwrap();
-            let send_message_params = set_global_template_keyboard(message);
+            let send_message_params =
+                SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
             api.send_message(&send_message_params).unwrap();
-        } else if command == "Back to subscription list" {
-            message.text = Some("/set_template".to_string());
-            SetTemplate::execute(db_pool, api, message);
         } else {
             UnknownCommand::execute(db_pool, api, message)
         }
-
-        fn list_feed_id(db_connection: &mut PgConnection, message: &Message) -> String {
-            match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
-                Err(_) => "Couldn't fetch your subscriptions".to_string(),
-                Ok(feeds) => {
-                    if feeds.is_empty() {
-                        "You don't have any subscriptions".to_string()
-                    } else {
-                        feeds
-                            .into_iter()
-                            .map(|feed| feed.id.to_string())
-                            .collect::<Vec<String>>()
-                            .join("\n")
-                    }
-                }
-            }
-        }
     }
-    fn parse_int_from_string(command: &str) -> i64 {
+
+    fn parse_int_from_string(command: &str) -> String {
         let re = Regex::new(
             r"(?x)
-            (?P<name>\d+)  # the name
-        ",
+                (?P<name>\d+)  # the name
+            ",
         )
         .unwrap();
-        let caps = re.captures(command).unwrap();
-        let feed = caps["name"].trim().to_string();
-        let feed_id: i64 = feed.parse().unwrap();
-        feed_id
-    }
-}
-pub fn get_feed_url_by_id(db_pool: Pool<ConnectionManager<PgConnection>>, data: i64) -> String {
-    // println!("feed id from command replace {}", data);
-    match fetch_db_connection(db_pool) {
-        Ok(mut connection) => {
-            let feeds = find(&mut *connection, data).unwrap();
-            let data = feeds;
-            data.link
-        }
-        Err(_error_message) => "error fetching message".to_string(),
-    }
-}
-pub fn fetch_db_connection(
-    db_pool: Pool<ConnectionManager<PgConnection>>,
-) -> Result<PooledConnection<ConnectionManager<PgConnection>>, String> {
-    match db_pool.get() {
-        Ok(connection) => Ok(connection),
-        Err(err) => {
-            error!("Failed to fetch a connection from the pool {:?}", err);
+        let data = match re.captures(command) {
+            Some(s) => s["name"].to_string(),
+            None => "none".to_string(),
+        };
 
-            Err("Failed to process your command. Please contact @Ayrat555".to_string())
+        data
+    }
+    pub fn get_feed_url_by_id(
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+        data: String,
+    ) -> String {
+        let feed_id: i64 = data.parse().unwrap();
+        match Self::fetch_db_connection(db_pool) {
+            Ok(mut connection) => {
+                let feeds = find(&mut *connection, feed_id).unwrap();
+                let data = feeds;
+                data.link
+            }
+            Err(_error_message) => "error fetching message".to_string(),
+        }
+    }
+    pub fn fetch_db_connection(
+        db_pool: Pool<ConnectionManager<PgConnection>>,
+    ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, String> {
+        match db_pool.get() {
+            Ok(connection) => Ok(connection),
+            Err(err) => {
+                error!("Failed to fetch a connection from the pool {:?}", err);
+
+                Err("Failed to process your command. Please contact @Ayrat555".to_string())
+            }
         }
     }
 }

@@ -11,6 +11,10 @@ impl Config {
         Self::read_var("DATABASE_URL")
     }
 
+    pub fn telegram_bot_name() -> String {
+        Self::read_var("BOT_NAME")
+    }
+
     pub fn telegram_base_url() -> String {
         Self::read_var_with_default("TELEGRAM_BASE_URL", "https://api.telegram.org/bot")
     }

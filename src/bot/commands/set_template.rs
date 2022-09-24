@@ -8,7 +8,8 @@ use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
 static COMMAND: &str = "/set_template";
-
+static CALLBACK: &str = "set_template";
+static DEFAULT_TEMPLATE: &str = "set_default_template";
 pub struct SetTemplate {}
 
 impl SetTemplate {
@@ -59,6 +60,14 @@ impl SetTemplate {
 
     pub fn command() -> &'static str {
         COMMAND
+    }
+
+    pub fn callback() -> &'static str {
+        CALLBACK
+    }
+
+    pub fn default_template() -> &'static str {
+        DEFAULT_TEMPLATE
     }
 }
 

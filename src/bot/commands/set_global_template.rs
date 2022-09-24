@@ -24,7 +24,7 @@ impl SetGlobalTemplate {
         template: String,
     ) -> String {
         if template.is_empty() {
-            "".to_string();
+            return "Template can not be empty".to_string();
         }
 
         let chat = match telegram::find_chat(db_connection, message.chat.id) {
