@@ -25,7 +25,9 @@ const BOLD_HELPER: &str = "bold";
 const ITALIC_HELPER: &str = "italic";
 
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
-const MAX_CHARS: usize = 4000;
+const MAX_MESSAGE_CHARS: usize = 4000;
+const MAX_ITEM_CHARS: usize = 3000;
+const MAX_LINK_CHARS: usize = 1000;
 
 const RENDER_ERROR: &str = "Failed to render template";
 const EMPTY_MESSAGE_ERROR: &str = "According to your template the message is empty. Telegram doesn't support empty messages. That's why we're sending this placeholder message.";
@@ -123,8 +125,9 @@ impl MessageRenderer {
     fn maybe_remove_html(&self, value_option: &Option<String>) -> Option<String> {
         if let Some(value) = value_option {
             let without_html = remove_html(value);
+            let truncated = truncate(&without_html, MAX_ITEM_CHARS);
 
-            return Some(without_html);
+            return Some(truncated);
         }
 
         None
@@ -161,7 +164,7 @@ fn render_link(s: &str, l: &str) -> String {
     let value = if s.is_empty() {
         "link".to_string()
     } else {
-        truncate(s, 1000)
+        truncate(s, MAX_LINK_CHARS)
     };
     format!("<a href=\"{}\">{}</a>", l, value)
 }
@@ -172,7 +175,7 @@ fn truncate_and_check(s: &str) -> String {
         Err(_) => return RENDER_ERROR.to_string(),
     };
 
-    let truncated_result = truncate(&escaped_data, MAX_CHARS);
+    let truncated_result = truncate(&escaped_data, MAX_MESSAGE_CHARS);
 
     if truncated_result.is_empty() {
         EMPTY_MESSAGE_ERROR.to_string()
