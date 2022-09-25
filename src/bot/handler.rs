@@ -88,7 +88,8 @@ impl Handler {
         api: Api,
         update: Update,
     ) {
-        let bot_name = Config::telegram_bot_name();
+        let bot_name = Config::telegram_bot_handle();
+        println!("bot name {:?}",bot_name);
         let message = match update.content {
             UpdateContent::Message(message) => message,
             UpdateContent::ChannelPost(channel_post) => channel_post,
@@ -177,7 +178,7 @@ impl Handler {
         api: Api,
         update: Update,
     ) {
-        let bot_name = Config::telegram_bot_name();
+        let bot_name = Config::telegram_bot_handle();
         let query = match update.content {
             UpdateContent::CallbackQuery(callback_query) => callback_query,
             _ => return,

@@ -1,4 +1,5 @@
 use super::MessageRenderer;
+use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -63,7 +64,7 @@ impl DeliverChatUpdatesJob {
     pub fn deliver(&self, db_connection: &mut PgConnection) -> Result<(), FangError> {
         let subscriptions =
             telegram::find_unread_subscriptions_for_chat(db_connection, self.chat_id)?;
-        let api = Api::default();
+        let api = telegram_client::api();
 
         for subscription in subscriptions {
             match self.deliver_subscription_updates(&subscription, db_connection, &api) {

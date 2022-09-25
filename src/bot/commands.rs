@@ -187,7 +187,7 @@ pub trait Command {
     fn command(&self) -> &str;
 
     fn parse_argument(&self, full_command: &str) -> String {
-        let bot_name = Config::telegram_bot_name();
+        let bot_name = Config::telegram_bot_handle();
         let command = self.command();
         let handle = Config::telegram_bot_handle();
         let command_with_handle = format!("{}@{}", command, handle);
