@@ -72,6 +72,21 @@
             <div class="toc-sticky">
                 
                 <div class="toc-item">
+                    <a class="subtext" href="https://elmonitorro.badykov.com/changelog/#0-11-0-2022-09-24">0.11.0 (2022-09-24)</a>
+                </div>
+                
+                
+                <div class="toc-item-child">
+                    <a class="subtext" href="https://elmonitorro.badykov.com/changelog/#improved"><small>- Improved</small></a>
+                </div>
+                
+                <div class="toc-item-child">
+                    <a class="subtext" href="https://elmonitorro.badykov.com/changelog/#fixed"><small>- Fixed</small></a>
+                </div>
+                
+                
+                
+                <div class="toc-item">
                     <a class="subtext" href="https://elmonitorro.badykov.com/changelog/#0-10-0-2022-09-04">0.10.0 (2022-09-04)</a>
                 </div>
                 
@@ -81,7 +96,7 @@
                 </div>
                 
                 <div class="toc-item-child">
-                    <a class="subtext" href="https://elmonitorro.badykov.com/changelog/#improved"><small>- Improved</small></a>
+                    <a class="subtext" href="https://elmonitorro.badykov.com/changelog/#improved-1"><small>- Improved</small></a>
                 </div>
                 
                 
@@ -216,12 +231,24 @@
         <div class="content text">
             
 <div class="heading-text">Changelog</div>
+<h2 id="0-11-0-2022-09-24">0.11.0 (2022-09-24)</h2>
+<h3 id="improved">Improved</h3>
+<ul>
+<li>Optimize filter word matching using the ahocorasick crate (<a href="https://github.com/ayrat555/el_monitorro/pull/263">#263</a>)</li>
+<li>Configure the max number of filter words with the env var (<a href="https://github.com/ayrat555/el_monitorro/pull/264">#264</a>)</li>
+<li>Re-use the http client for all requests (<a href="https://github.com/ayrat555/el_monitorro/pull/265">#265</a>)</li>
+<li>Parse links along with their content   (<a href="https://github.com/ayrat555/el_monitorro/pull/266">#266</a>)</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li>Fix long links in templates (<a href="https://github.com/ayrat555/el_monitorro/pull/257">#257</a>)</li>
+</ul>
 <h2 id="0-10-0-2022-09-04">0.10.0 (2022-09-04)</h2>
 <h3 id="added">Added</h3>
 <ul>
 <li>Add template helpers (html links, text formatting) (<a href="https://github.com/ayrat555/el_monitorro/pull/244">#244</a>)</li>
 </ul>
-<h3 id="improved">Improved</h3>
+<h3 id="improved-1">Improved</h3>
 <ul>
 <li>Update diesel crate to 2.0 version. (<a href="https://github.com/ayrat555/el_monitorro/pull/247">#247</a>)</li>
 <li>Update fang crate to 0.9.0 version. (<a href="https://github.com/ayrat555/el_monitorro/pull/247">#247</a>)</li>
