@@ -32,7 +32,8 @@ impl Config {
     }
 
     pub fn telegram_bot_handle() -> String {
-        Self::read_var_with_default("TELEGRAM_BOT_HANDLE", "@sasaathulbot ")
+        Self::read_var_with_default("TELEGRAM_BOT_HANDLE", " @el_monitorro_bot ")
+        //add a space after the bot name
     }
 
     pub fn deliver_workers_number() -> u32 {

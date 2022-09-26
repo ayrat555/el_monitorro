@@ -8,7 +8,10 @@ use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
 static COMMAND: &str = "/set_global_template";
-
+static SET_GLOBAL_TEMPLATE_CREATE_LINK_DESCRIPTION: &str =
+    "/set_global_template create_link_description";
+static SET_GLOBAL_TEMPLATE_CREATE_LINK_BOT_ITEM_NAME: &str =
+    "/set_global_template create_link_item_name";
 pub struct SetGlobalTemplate {}
 
 impl SetGlobalTemplate {
@@ -49,6 +52,14 @@ impl SetGlobalTemplate {
 
     pub fn command() -> &'static str {
         COMMAND
+    }
+
+    pub fn create_link_description() -> &'static str {
+        SET_GLOBAL_TEMPLATE_CREATE_LINK_DESCRIPTION
+    }
+
+    pub fn create_link_item_name() -> &'static str {
+        SET_GLOBAL_TEMPLATE_CREATE_LINK_BOT_ITEM_NAME
     }
 }
 

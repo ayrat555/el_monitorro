@@ -98,6 +98,7 @@ impl ListSubscriptionsInlineKeyboard {
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
         for feed in feed_ids.clone() {
+            println!("feed id {}", feed);
             let mut row: Vec<InlineKeyboardButton> = Vec::new();
             let name = format!(
                 "{} ",

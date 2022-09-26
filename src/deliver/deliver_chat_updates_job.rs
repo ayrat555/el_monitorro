@@ -67,7 +67,7 @@ impl DeliverChatUpdatesJob {
         let api = telegram_client::api();
 
         for subscription in subscriptions {
-            match self.deliver_subscription_updates(&subscription, db_connection, &api) {
+            match self.deliver_subscription_updates(&subscription, db_connection, api) {
                 Ok(()) => {
                     telegram::mark_subscription_delivered(db_connection, &subscription)?;
                 }

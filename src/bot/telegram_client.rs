@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::http_client;
 use fang::FangError;
 use frankenstein::AllowedUpdate;
 use frankenstein::ErrorResponse;
@@ -58,7 +59,11 @@ impl Api {
         let http_client = http_client::client().clone();
 
         let update_params = GetUpdatesParams::builder()
-            .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
+            .allowed_updates(vec![
+                AllowedUpdate::Message,
+                AllowedUpdate::ChannelPost,
+                AllowedUpdate::CallbackQuery,
+            ])
             .build();
 
         Api {

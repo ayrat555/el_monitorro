@@ -50,7 +50,7 @@ pub mod unknown_command;
 pub mod unsubscribe;
 pub mod unsubscribe_inline_keyboard;
 
-enum IncomingCommand {
+enum Commands {
     Subscribe,
     Unsubscribe,
     SetGlobalTemplate,
@@ -78,17 +78,17 @@ impl From<Chat> for NewTelegramChat {
         }
     }
 }
-impl FromStr for IncomingCommand {
+impl FromStr for Commands {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let result = match s.trim() {
-            "/subscribe" => IncomingCommand::Subscribe,
-            "/unsubscribe" => IncomingCommand::Unsubscribe,
-            "/set_template" => IncomingCommand::SetTemplate,
-            "/set_global_template" => IncomingCommand::SetGlobalTemplate,
-            "/list_subscriptions" => IncomingCommand::ListSubscriptions,
-            _ => IncomingCommand::UnknownCommand(s.to_string()),
+            "/subscribe" => Commands::Subscribe,
+            "/unsubscribe" => Commands::Unsubscribe,
+            "/set_template" => Commands::SetTemplate,
+            "/set_global_template" => Commands::SetGlobalTemplate,
+            "/list_subscriptions" => Commands::ListSubscriptions,
+            _ => Commands::UnknownCommand(s.to_string()),
         };
 
         Ok(result)
@@ -116,7 +116,7 @@ pub trait Command {
         );
 
         let text: &str = message.text.as_ref().unwrap();
-        let command = IncomingCommand::from_str(text).unwrap();
+        let command = Commands::from_str(text).unwrap();
         let data = match self.fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
             Err(_error_message) => "error fetching data".to_string(),
@@ -136,22 +136,22 @@ pub trait Command {
             .build();
 
         match command {
-            IncomingCommand::Subscribe => {
+            Commands::Subscribe => {
                 let send_message_params = SubscribeInlineKeyboard::set_subscribe_keyboard(message);
                 api.send_message(&send_message_params).unwrap();
             }
-            IncomingCommand::Unsubscribe => {
+            Commands::Unsubscribe => {
                 let send_message_params =
                     UnsubscribeInlineKeyboard::set_unsubscribe_keyboard(message, feeds, feed_id);
                 api.send_message(&send_message_params).unwrap();
             }
-            IncomingCommand::SetGlobalTemplate => {
+            Commands::SetGlobalTemplate => {
                 api.delete_message(&delete_message_params).unwrap();
                 let send_message_params =
                     SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
                 api.send_message(&send_message_params).unwrap();
             }
-            IncomingCommand::ListSubscriptions => {
+            Commands::ListSubscriptions => {
                 if data == "You don't have any subscriptions" {
                     self.reply_to_message(api, message, data);
                 } else {
@@ -160,7 +160,7 @@ pub trait Command {
                     api.send_message(&send_message_params).unwrap();
                 }
             }
-            IncomingCommand::SetTemplate => {
+            Commands::SetTemplate => {
                 if data == "You don't have any subscriptions" {
                     message.text = Some("/list_subscriptions".to_string());
                     self.reply_to_message(api, message, data);
