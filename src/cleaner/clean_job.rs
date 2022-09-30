@@ -88,6 +88,10 @@ impl Runnable for CleanJob {
         super::JOB_TYPE.to_string()
     }
 
+    fn max_retries(&self) -> i32 {
+        0
+    }
+
     fn cron(&self) -> Option<Scheduled> {
         Some(Scheduled::CronPattern(Config::clean_cron_pattern()))
     }

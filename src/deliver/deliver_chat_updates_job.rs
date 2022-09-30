@@ -300,6 +300,10 @@ impl Runnable for DeliverChatUpdatesJob {
         true
     }
 
+    fn max_retries(&self) -> i32 {
+        0
+    }
+
     fn task_type(&self) -> String {
         JOB_TYPE.to_string()
     }
