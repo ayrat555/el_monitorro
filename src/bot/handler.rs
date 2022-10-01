@@ -116,7 +116,13 @@ impl Handler {
                 .build()
                 .run(),
 
-            BotCommand::SetFilter(args) => SetFilter::execute(db_pool, api, message, args),
+            BotCommand::SetFilter(args) => SetFilter::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
             BotCommand::GetFilter(args) => {
                 GetFilter::builder()
@@ -146,16 +152,28 @@ impl Handler {
                 .build()
                 .run(),
 
-            BotCommand::RemoveTemplate(args) => {
-                RemoveTemplate::execute(db_pool, api, message, args)
-            }
-            BotCommand::SetGlobalTemplate(args) => {
-                SetGlobalTemplate::execute(db_pool, api, message, args)
-            }
+            BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
-            BotCommand::RemoveGlobalTemplate => {
-                RemoveGlobalTemplate::execute(db_pool, api, message)
-            }
+            BotCommand::SetGlobalTemplate(args) => SetGlobalTemplate::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::RemoveGlobalTemplate => RemoveGlobalTemplate::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
             BotCommand::GetGlobalTemplate => GetGlobalTemplate::builder()
                 .db_pool(db_pool)
@@ -164,9 +182,13 @@ impl Handler {
                 .build()
                 .run(),
 
-            BotCommand::SetGlobalFilter(args) => {
-                SetGlobalFilter::execute(db_pool, api, message, args)
-            }
+            BotCommand::SetGlobalFilter(args) => SetGlobalFilter::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
             BotCommand::GetGlobalFilter => GetGlobalFilter::builder()
                 .db_pool(db_pool)
@@ -189,15 +211,15 @@ impl Handler {
                 .build()
                 .run(),
 
-            BotCommand::SetContentFields(args) => Info::builder()
+            BotCommand::SetContentFields(args) => SetContentFields::builder()
                 .db_pool(db_pool)
                 .api(api)
                 .message(message)
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::UnknownCommand(args) => UnknownCommand::builder()
-                .db_pool(db_pool)
                 .api(api)
                 .message(message)
                 .args(args)

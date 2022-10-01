@@ -5,23 +5,25 @@ use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/set_filter";
 
-pub struct SetFilter {}
+#[derive(TypedBuilder)]
+pub struct SetFilter {
+    db_pool: Pool<ConnectionManager<PgConnection>>,
+    api: Api,
+    message: Message,
+    args: String,
+}
 
 impl SetFilter {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.api, &self.message);
     }
 
-    pub fn set_filter(
-        &self,
-        db_connection: &mut PgConnection,
-        message: &Message,
-        params: String,
-    ) -> String {
-        let vec: Vec<&str> = params.splitn(2, ' ').collect();
+    pub fn set_filter(&self, db_connection: &mut PgConnection) -> String {
+        let vec: Vec<&str> = self.args.splitn(2, ' ').collect();
 
         if vec.len() != 2 {
             return "Wrong number of parameters".to_string();
@@ -37,7 +39,7 @@ impl SetFilter {
         };
 
         let subscription =
-            match self.find_subscription(db_connection, message.chat.id, vec[0].to_string()) {
+            match self.find_subscription(db_connection, self.message.chat.id, vec[0].to_string()) {
                 Err(message) => return message,
                 Ok(subscription) => subscription,
             };
@@ -54,23 +56,10 @@ impl SetFilter {
 }
 
 impl Command for SetFilter {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
+    fn response(&self) -> String {
         match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => {
-                let text = message.text.as_ref().unwrap();
-                let argument = self.parse_argument(text);
-                self.set_filter(&mut connection, message, argument)
-            }
+            Ok(mut connection) => self.set_filter(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

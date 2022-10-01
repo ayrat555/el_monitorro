@@ -68,7 +68,6 @@ impl Info {
 
     fn unknown_command(&self) {
         UnknownCommand::builder()
-            .db_pool(self.db_pool.clone())
             .api(self.api.clone())
             .message(self.message.clone())
             .args(self.message.text.unwrap())

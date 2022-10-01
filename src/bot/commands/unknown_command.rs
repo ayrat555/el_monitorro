@@ -14,7 +14,6 @@ static COMMAND: &str = "";
 
 #[derive(TypedBuilder)]
 pub struct UnknownCommand {
-    db_pool: Pool<ConnectionManager<PgConnection>>,
     api: Api,
     message: Message,
     args: String,
