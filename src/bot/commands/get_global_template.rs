@@ -38,13 +38,9 @@ impl GetGlobalTemplate {
 
 impl Command for GetGlobalTemplate {
     fn response(&self) -> String {
-        match self.fetch_db_connection(db_pool) {
+        match self.fetch_db_connection(self.db_pool) {
             Ok(mut connection) => self.get_global_template(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

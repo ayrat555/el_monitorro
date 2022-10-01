@@ -1,26 +1,26 @@
-use super::commands::get_global_filter::GetGlobalFilter;
-use super::commands::get_global_template::GetGlobalTemplate;
-use super::commands::get_template::GetTemplate;
-use super::commands::get_timezone::GetTimezone;
-use super::commands::help::Help;
-use super::commands::info::Info;
-use super::commands::list_subscriptions::ListSubscriptions;
-use super::commands::remove_filter::RemoveFilter;
-use super::commands::remove_global_filter::RemoveGlobalFilter;
-use super::commands::remove_global_template::RemoveGlobalTemplate;
-use super::commands::remove_template::RemoveTemplate;
-use super::commands::set_content_fields::SetContentFields;
-use super::commands::set_filter::SetFilter;
-use super::commands::set_global_filter::SetGlobalFilter;
-use super::commands::set_global_template::SetGlobalTemplate;
-use super::commands::set_template::SetTemplate;
-use super::commands::set_timezone::SetTimezone;
-use super::commands::start::Start;
-use super::commands::subscribe::Subscribe;
-use super::commands::unknown_command::UnknownCommand;
-use super::commands::unsubscribe::Unsubscribe;
 use super::commands::BotCommand;
 use super::commands::GetFilter;
+use super::commands::GetGlobalFilter;
+use super::commands::GetGlobalTemplate;
+use super::commands::GetTemplate;
+use super::commands::GetTimezone;
+use super::commands::Help;
+use super::commands::Info;
+use super::commands::ListSubscriptions;
+use super::commands::RemoveFilter;
+use super::commands::RemoveGlobalFilter;
+use super::commands::RemoveGlobalTemplate;
+use super::commands::RemoveTemplate;
+use super::commands::SetContentFields;
+use super::commands::SetFilter;
+use super::commands::SetGlobalFilter;
+use super::commands::SetGlobalTemplate;
+use super::commands::SetTemplate;
+use super::commands::SetTimezone;
+use super::commands::Start;
+use super::commands::Subscribe;
+use super::commands::UnknownCommand;
+use super::commands::Unsubscribe;
 use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
@@ -90,35 +90,61 @@ impl Handler {
         match command {
             BotCommand::Subscribe(args) => Subscribe::execute(db_pool, api, message, args),
 
-            BotCommand::Help => Help::execute(db_pool, api, message),
+            BotCommand::Help => {
+                let command = Help::builder().api(api).message(message).build();
+
+                command.run();
+            }
 
             BotCommand::Unsubscribe(args) => Unsubscribe::execute(db_pool, api, message, args),
 
-            BotCommand::ListSubscriptions => ListSubscriptions::execute(db_pool, api, message),
+            BotCommand::ListSubscriptions => ListSubscriptions::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
             BotCommand::Start => Start::execute(db_pool, api, message),
 
             BotCommand::SetTimezone(args) => SetTimezone::execute(db_pool, api, message, args),
 
-            BotCommand::GetTimezone => GetTimezone::execute(db_pool, api, message, args),
+            BotCommand::GetTimezone => GetTimezone::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
             BotCommand::SetFilter(args) => SetFilter::execute(db_pool, api, message, args),
 
             BotCommand::GetFilter(args) => {
-                let get_filter = GetFilter::builder()
+                GetFilter::builder()
                     .db_pool(db_pool)
                     .api(api)
                     .message(message)
                     .args(args)
-                    .build();
-
-                get_filter.run();
+                    .build()
+                    .run();
             }
-            BotCommand::RemoveFilter(args) => RemoveFilter::execute(db_pool, api, message, args),
+
+            BotCommand::RemoveFilter(args) => RemoveFilter::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
             BotCommand::SetTemplate(args) => SetTemplate::execute(db_pool, api, message, args),
 
-            BotCommand::GetTemplate(args) => GetTemplate::execute(db_pool, api, message, args),
+            BotCommand::GetTemplate(args) => GetTemplate::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
             BotCommand::RemoveTemplate(args) => {
                 RemoveTemplate::execute(db_pool, api, message, args)
@@ -131,33 +157,52 @@ impl Handler {
                 RemoveGlobalTemplate::execute(db_pool, api, message)
             }
 
-            BotCommand::GetGlobalTemplate => GetGlobalTemplate::execute(db_pool, api, message),
+            BotCommand::GetGlobalTemplate => GetGlobalTemplate::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
             BotCommand::SetGlobalFilter(args) => {
                 SetGlobalFilter::execute(db_pool, api, message, args)
             }
 
-            BotCommand::GetGlobalFilter => {
-                let get_filter = GetGlobalFilter::builder()
-                    .db_pool(db_pool)
-                    .api(api)
-                    .message(message)
-                    .build();
+            BotCommand::GetGlobalFilter => GetGlobalFilter::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
-                get_filter.run();
-            }
+            BotCommand::RemoveGlobalFilter => RemoveGlobalFilter::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
-            BotCommand::RemoveGlobalFilter => RemoveGlobalFilter::execute(db_pool, api, message),
+            BotCommand::Info => Info::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
-            BotCommand::Info => Info::execute(db_pool, api, message),
+            BotCommand::SetContentFields(args) => Info::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
-            BotCommand::SetContentFields(args) => {
-                SetContentFields::execute(db_pool, api, message, args)
-            }
-
-            BotCommand::UnknownCommand(args) => {
-                UnknownCommand::execute(db_pool, api, message, args)
-            }
+            BotCommand::UnknownCommand(args) => UnknownCommand::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
         };
     }
 

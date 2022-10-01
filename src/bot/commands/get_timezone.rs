@@ -5,18 +5,24 @@ use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/get_timezone";
 
-pub struct GetTimezone {}
+#[derive(TypedBuilder)]
+pub struct GetTimezone {
+    db_pool: Pool<ConnectionManager<PgConnection>>,
+    api: Api,
+    message: Message,
+}
 
 impl GetTimezone {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.api, &self.message);
     }
 
-    fn get_timezone(&self, db_connection: &mut PgConnection, message: &Message) -> String {
-        match telegram::find_chat(db_connection, message.chat.id) {
+    fn get_timezone(&self, db_connection: &mut PgConnection) -> String {
+        match telegram::find_chat(db_connection, self.message.chat.id) {
             None => "You don't have timezone set".to_string(),
             Some(chat) => match chat.utc_offset_minutes {
                 None => "You don't have timezone set".to_string(),
@@ -31,19 +37,10 @@ impl GetTimezone {
 }
 
 impl Command for GetTimezone {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => self.get_timezone(&mut connection, message),
+    fn response(&self) -> String {
+        match self.fetch_db_connection(self.db_pool) {
+            Ok(mut connection) => self.get_timezone(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

@@ -8,17 +8,23 @@ use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/info";
 
-pub struct Info {}
+#[derive(TypedBuilder)]
+pub struct Info {
+    db_pool: Pool<ConnectionManager<PgConnection>>,
+    api: Api,
+    message: Message,
+}
 
 impl Info {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.api, &self.message);
     }
 
-    fn info(&self, db_connection: &mut PgConnection, _message: &Message) -> String {
+    fn info(&self, db_connection: &mut PgConnection) -> String {
         let total_feeds = match feeds::count_feeds_with_subscriptions(db_connection) {
             Ok(res) => res,
             Err(err) => {
@@ -59,12 +65,22 @@ impl Info {
     pub fn command() -> &'static str {
         COMMAND
     }
+
+    fn unknown_command(&self) {
+        UnknownCommand::builder()
+            .db_pool(self.db_pool.clone())
+            .api(self.api.clone())
+            .message(self.message.clone())
+            .args(self.message.text.unwrap())
+            .build()
+            .run();
+    }
 }
 
 impl Command for Info {
-    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+    fn execute(&self, api: &Api, message: &Message) {
         match Config::admin_telegram_id() {
-            None => UnknownCommand::execute(db_pool, api, message),
+            None => self.unknown_command(),
             Some(id) => {
                 if id == message.chat.id {
                     info!(
@@ -73,29 +89,20 @@ impl Command for Info {
                         message.text.as_ref().unwrap()
                     );
 
-                    let text = self.response(db_pool, &message, &api);
+                    let text = self.response();
 
                     self.reply_to_message(api, message, text)
                 } else {
-                    UnknownCommand::execute(db_pool, api, message)
+                    self.unknown_command();
                 }
             }
         }
     }
 
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => self.info(&mut connection, message),
+    fn response(&self) -> String {
+        match self.fetch_db_connection(self.db_pool) {
+            Ok(mut connection) => self.info(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

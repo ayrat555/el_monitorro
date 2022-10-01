@@ -4,6 +4,7 @@ use crate::bot::telegram_client::Api;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static HELP: &str =
         "/start - show the description of the bot and its contact information\n\n\
@@ -40,11 +41,15 @@ static HELP: &str =
 
 static COMMAND: &str = "/help";
 
-pub struct Help {}
+#[derive(TypedBuilder)]
+pub struct Help {
+    api: Api,
+    message: Message,
+}
 
 impl Help {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.api, &self.message);
     }
 
     pub fn command() -> &'static str {
@@ -53,16 +58,7 @@ impl Help {
 }
 
 impl Command for Help {
-    fn response(
-        &self,
-        _db_pool: Pool<ConnectionManager<PgConnection>>,
-        _message: &Message,
-        _api: &Api,
-    ) -> String {
+    fn response(&self) -> String {
         HELP.to_string()
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

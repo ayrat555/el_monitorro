@@ -5,26 +5,29 @@ use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/remove_filter";
 
-pub struct RemoveFilter {}
+#[derive(TypedBuilder)]
+pub struct RemoveFilter {
+    db_pool: Pool<ConnectionManager<PgConnection>>,
+    api: Api,
+    message: Message,
+    args: String,
+}
 
 impl RemoveFilter {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.api, &self.message);
     }
 
-    pub fn remove_filter(
-        &self,
-        db_connection: &mut PgConnection,
-        message: &Message,
-        feed_url: String,
-    ) -> String {
-        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
-            Err(message) => return message,
-            Ok(subscription) => subscription,
-        };
+    pub fn remove_filter(&self, db_connection: &mut PgConnection) -> String {
+        let subscription =
+            match self.find_subscription(db_connection, self.message.chat.id, self.args) {
+                Err(message) => return message,
+                Ok(subscription) => subscription,
+            };
 
         match telegram::set_filter(db_connection, &subscription, None) {
             Ok(_) => "The filter was removed".to_string(),
@@ -38,23 +41,10 @@ impl RemoveFilter {
 }
 
 impl Command for RemoveFilter {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => {
-                let text = message.text.as_ref().unwrap();
-                let argument = self.parse_argument(text);
-                self.remove_filter(&mut connection, message, argument)
-            }
+    fn response(&self) -> String {
+        match self.fetch_db_connection(self.db_pool) {
+            Ok(mut connection) => self.remove_filter(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }
