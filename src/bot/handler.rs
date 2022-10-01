@@ -88,15 +88,23 @@ impl Handler {
         let command = BotCommand::from_str(&text.unwrap()).unwrap();
 
         match command {
-            BotCommand::Subscribe(args) => Subscribe::execute(db_pool, api, message, args),
+            BotCommand::Subscribe(args) => Subscribe::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
-            BotCommand::Help => {
-                let command = Help::builder().api(api).message(message).build();
+            BotCommand::Help => Help::builder().api(api).message(message).build().run(),
 
-                command.run();
-            }
-
-            BotCommand::Unsubscribe(args) => Unsubscribe::execute(db_pool, api, message, args),
+            BotCommand::Unsubscribe(args) => Unsubscribe::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
             BotCommand::ListSubscriptions => ListSubscriptions::builder()
                 .db_pool(db_pool)
@@ -105,9 +113,20 @@ impl Handler {
                 .build()
                 .run(),
 
-            BotCommand::Start => Start::execute(db_pool, api, message),
+            BotCommand::Start => Info::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .build()
+                .run(),
 
-            BotCommand::SetTimezone(args) => SetTimezone::execute(db_pool, api, message, args),
+            BotCommand::SetTimezone(args) => SetTimezone::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
             BotCommand::GetTimezone => GetTimezone::builder()
                 .db_pool(db_pool)
@@ -124,15 +143,13 @@ impl Handler {
                 .build()
                 .run(),
 
-            BotCommand::GetFilter(args) => {
-                GetFilter::builder()
-                    .db_pool(db_pool)
-                    .api(api)
-                    .message(message)
-                    .args(args)
-                    .build()
-                    .run();
-            }
+            BotCommand::GetFilter(args) => GetFilter::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
             BotCommand::RemoveFilter(args) => RemoveFilter::builder()
                 .db_pool(db_pool)
@@ -142,7 +159,13 @@ impl Handler {
                 .build()
                 .run(),
 
-            BotCommand::SetTemplate(args) => SetTemplate::execute(db_pool, api, message, args),
+            BotCommand::SetTemplate(args) => SetTemplate::builder()
+                .db_pool(db_pool)
+                .api(api)
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
 
             BotCommand::GetTemplate(args) => GetTemplate::builder()
                 .db_pool(db_pool)

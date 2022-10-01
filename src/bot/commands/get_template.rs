@@ -38,7 +38,7 @@ impl GetTemplate {
 
 impl Command for GetTemplate {
     fn response(&self) -> String {
-        match self.fetch_db_connection(self.db_pool) {
+        match self.fetch_db_connection(&self.db_pool) {
             Ok(mut connection) => self.get_template(&mut connection),
             Err(error_message) => error_message,
         }

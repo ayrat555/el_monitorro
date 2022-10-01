@@ -5,37 +5,34 @@ use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/set_timezone";
 
-pub struct SetTimezone {}
+#[derive(TypedBuilder)]
+pub struct SetTimezone {
+    db_pool: Pool<ConnectionManager<PgConnection>>,
+    api: Api,
+    message: Message,
+    args: String,
+}
 
 impl SetTimezone {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.api, &self.message);
     }
 
-    fn set_timezone(
-        &self,
-        db_connection: &mut PgConnection,
-        message: &Message,
-        data: String,
-    ) -> String {
-        match self.update_timezone(db_connection, message, data) {
+    fn set_timezone(&self, db_connection: &mut PgConnection) -> String {
+        match self.update_timezone(db_connection) {
             Ok(_) => "Your timezone was updated".to_string(),
             Err(err_string) => err_string.to_string(),
         }
     }
 
-    fn update_timezone(
-        &self,
-        db_connection: &mut PgConnection,
-        message: &Message,
-        data: String,
-    ) -> Result<(), &str> {
-        let offset = self.validate_offset(data)?;
+    fn update_timezone(&self, db_connection: &mut PgConnection) -> Result<(), &str> {
+        let offset = self.validate_offset(self.args)?;
 
-        match telegram::find_chat(db_connection, message.chat.id) {
+        match telegram::find_chat(db_connection, self.message.chat.id) {
             None => Err(
                 "You'll be able to set your timezone only after you'll have at least one subscription",
             ),
@@ -69,23 +66,10 @@ impl SetTimezone {
 }
 
 impl Command for SetTimezone {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => {
-                let text = message.text.as_ref().unwrap();
-                let argument = self.parse_argument(text);
-                self.set_timezone(&mut connection, message, argument)
-            }
+    fn response(&self) -> String {
+        match self.fetch_db_connection(&self.db_pool) {
+            Ok(mut connection) => self.set_timezone(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

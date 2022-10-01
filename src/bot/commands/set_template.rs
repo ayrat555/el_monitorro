@@ -6,24 +6,25 @@ use crate::deliver::render_template_example;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/set_template";
 
-pub struct SetTemplate {}
+#[derive(TypedBuilder)]
+pub struct SetTemplate {
+    db_pool: Pool<ConnectionManager<PgConnection>>,
+    api: Api,
+    message: Message,
+    args: String,
+}
 
 impl SetTemplate {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.api, &self.message);
     }
 
-    fn set_template(
-        &self,
-        api: &Api,
-        db_connection: &mut PgConnection,
-        message: &Message,
-        params: String,
-    ) -> String {
-        let vec: Vec<&str> = params.splitn(2, ' ').collect();
+    fn set_template(&self, db_connection: &mut PgConnection) -> String {
+        let vec: Vec<&str> = self.args.splitn(2, ' ').collect();
 
         if vec.len() != 2 {
             return "Wrong number of parameters".to_string();
@@ -36,17 +37,22 @@ impl SetTemplate {
         let feed_url = vec[0].to_string();
         let template = vec[1];
 
-        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
-            Err(message) => return message,
-            Ok(subscription) => subscription,
-        };
+        let subscription =
+            match self.find_subscription(db_connection, self.message.chat.id, feed_url) {
+                Err(message) => return message,
+                Ok(subscription) => subscription,
+            };
 
         let example = match render_template_example(template) {
             Ok(example) => format!("Your messages will look like:\n\n{}", example),
             Err(_) => return "The template is invalid".to_string(),
         };
 
-        if api.send_text_message(message.chat.id, example).is_err() {
+        if self
+            .api
+            .send_text_message(self.message.chat.id, example)
+            .is_err()
+        {
             return "The template is invalid".to_string();
         }
 
@@ -62,23 +68,10 @@ impl SetTemplate {
 }
 
 impl Command for SetTemplate {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => {
-                let text = message.text.as_ref().unwrap();
-                let argument = self.parse_argument(text);
-                self.set_template(api, &mut connection, message, argument)
-            }
+    fn response(&self) -> String {
+        match self.fetch_db_connection(&self.db_pool) {
+            Ok(mut connection) => self.set_template(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

@@ -40,7 +40,7 @@ impl RemoveGlobalTemplate {
 
 impl Command for RemoveGlobalTemplate {
     fn response(&self) -> String {
-        match self.fetch_db_connection(self.db_pool) {
+        match self.fetch_db_connection(&self.db_pool) {
             Ok(mut connection) => self.remove_global_template(&mut connection),
             Err(error_message) => error_message,
         }

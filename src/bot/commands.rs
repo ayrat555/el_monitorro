@@ -224,7 +224,7 @@ pub trait Command {
 
     fn fetch_db_connection(
         &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
+        db_pool: &Pool<ConnectionManager<PgConnection>>,
     ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, String> {
         match db_pool.get() {
             Ok(connection) => Ok(connection),

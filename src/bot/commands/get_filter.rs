@@ -38,7 +38,7 @@ impl GetFilter {
 
 impl Command for GetFilter {
     fn response(&self) -> String {
-        match self.fetch_db_connection(self.db_pool) {
+        match self.fetch_db_connection(&self.db_pool) {
             Ok(mut connection) => self.get_filter(&mut connection),
 
             Err(error_message) => error_message,
