@@ -10,7 +10,7 @@ use handlebars::Handlebars;
 use handlebars::JsonValue;
 use htmlescape::decode_html;
 use serde_json::value::Map;
-use typed_builder::TypedBuilder as Builder;
+use typed_builder::TypedBuilder;
 
 const BOT_FEED_NAME: &str = "bot_feed_name";
 const BOT_ITEM_NAME: &str = "bot_item_name";
@@ -37,7 +37,7 @@ handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
 handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
-#[derive(Builder)]
+#[derive(TypedBuilder)]
 pub struct MessageRenderer {
     #[builder(setter(into), default)]
     bot_feed_name: Option<String>,

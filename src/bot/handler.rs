@@ -1,4 +1,3 @@
-use super::commands::get_filter::GetFilter;
 use super::commands::get_global_filter::GetGlobalFilter;
 use super::commands::get_global_template::GetGlobalTemplate;
 use super::commands::get_template::GetTemplate;
@@ -20,6 +19,8 @@ use super::commands::start::Start;
 use super::commands::subscribe::Subscribe;
 use super::commands::unknown_command::UnknownCommand;
 use super::commands::unsubscribe::Unsubscribe;
+use super::commands::BotCommand;
+use super::commands::GetFilter;
 use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
@@ -27,6 +28,7 @@ use diesel::r2d2;
 use diesel::PgConnection;
 use frankenstein::Update;
 use frankenstein::UpdateContent;
+use std::str::FromStr;
 use std::thread;
 
 pub struct Handler {}
@@ -83,55 +85,80 @@ impl Handler {
             return;
         }
 
-        let command = &text.unwrap();
+        let command = BotCommand::from_str(&text.unwrap()).unwrap();
 
-        if !command.starts_with('/') {
-            UnknownCommand::execute(db_pool, api, message);
-        } else if command.starts_with(Subscribe::command()) {
-            Subscribe::execute(db_pool, api, message);
-        } else if command.starts_with(Help::command()) {
-            Help::execute(db_pool, api, message);
-        } else if command.starts_with(Unsubscribe::command()) {
-            Unsubscribe::execute(db_pool, api, message);
-        } else if command.starts_with(ListSubscriptions::command()) {
-            ListSubscriptions::execute(db_pool, api, message);
-        } else if command.starts_with(Start::command()) {
-            Start::execute(db_pool, api, message);
-        } else if command.starts_with(SetTimezone::command()) {
-            SetTimezone::execute(db_pool, api, message);
-        } else if command.starts_with(GetTimezone::command()) {
-            GetTimezone::execute(db_pool, api, message);
-        } else if command.starts_with(SetFilter::command()) {
-            SetFilter::execute(db_pool, api, message);
-        } else if command.starts_with(GetFilter::command()) {
-            GetFilter::execute(db_pool, api, message);
-        } else if command.starts_with(RemoveFilter::command()) {
-            RemoveFilter::execute(db_pool, api, message);
-        } else if command.starts_with(SetTemplate::command()) {
-            SetTemplate::execute(db_pool, api, message);
-        } else if command.starts_with(GetTemplate::command()) {
-            GetTemplate::execute(db_pool, api, message);
-        } else if command.starts_with(RemoveTemplate::command()) {
-            RemoveTemplate::execute(db_pool, api, message);
-        } else if command.starts_with(SetGlobalTemplate::command()) {
-            SetGlobalTemplate::execute(db_pool, api, message);
-        } else if command.starts_with(RemoveGlobalTemplate::command()) {
-            RemoveGlobalTemplate::execute(db_pool, api, message);
-        } else if command.starts_with(GetGlobalTemplate::command()) {
-            GetGlobalTemplate::execute(db_pool, api, message);
-        } else if command.starts_with(SetGlobalFilter::command()) {
-            SetGlobalFilter::execute(db_pool, api, message);
-        } else if command.starts_with(GetGlobalFilter::command()) {
-            GetGlobalFilter::execute(db_pool, api, message);
-        } else if command.starts_with(RemoveGlobalFilter::command()) {
-            RemoveGlobalFilter::execute(db_pool, api, message);
-        } else if command.starts_with(Info::command()) {
-            Info::execute(db_pool, api, message);
-        } else if command.starts_with(SetContentFields::command()) {
-            SetContentFields::execute(db_pool, api, message);
-        } else {
-            UnknownCommand::execute(db_pool, api, message);
-        }
+        match command {
+            BotCommand::Subscribe(args) => Subscribe::execute(db_pool, api, message, args),
+
+            BotCommand::Help => Help::execute(db_pool, api, message),
+
+            BotCommand::Unsubscribe(args) => Unsubscribe::execute(db_pool, api, message, args),
+
+            BotCommand::ListSubscriptions => ListSubscriptions::execute(db_pool, api, message),
+
+            BotCommand::Start => Start::execute(db_pool, api, message),
+
+            BotCommand::SetTimezone(args) => SetTimezone::execute(db_pool, api, message, args),
+
+            BotCommand::GetTimezone => GetTimezone::execute(db_pool, api, message, args),
+
+            BotCommand::SetFilter(args) => SetFilter::execute(db_pool, api, message, args),
+
+            BotCommand::GetFilter(args) => {
+                let get_filter = GetFilter::builder()
+                    .db_pool(db_pool)
+                    .api(api)
+                    .message(message)
+                    .args(args)
+                    .build();
+
+                get_filter.run();
+            }
+            BotCommand::RemoveFilter(args) => RemoveFilter::execute(db_pool, api, message, args),
+
+            BotCommand::SetTemplate(args) => SetTemplate::execute(db_pool, api, message, args),
+
+            BotCommand::GetTemplate(args) => GetTemplate::execute(db_pool, api, message, args),
+
+            BotCommand::RemoveTemplate(args) => {
+                RemoveTemplate::execute(db_pool, api, message, args)
+            }
+            BotCommand::SetGlobalTemplate(args) => {
+                SetGlobalTemplate::execute(db_pool, api, message, args)
+            }
+
+            BotCommand::RemoveGlobalTemplate => {
+                RemoveGlobalTemplate::execute(db_pool, api, message)
+            }
+
+            BotCommand::GetGlobalTemplate => GetGlobalTemplate::execute(db_pool, api, message),
+
+            BotCommand::SetGlobalFilter(args) => {
+                SetGlobalFilter::execute(db_pool, api, message, args)
+            }
+
+            BotCommand::GetGlobalFilter => {
+                let get_filter = GetGlobalFilter::builder()
+                    .db_pool(db_pool)
+                    .api(api)
+                    .message(message)
+                    .build();
+
+                get_filter.run();
+            }
+
+            BotCommand::RemoveGlobalFilter => RemoveGlobalFilter::execute(db_pool, api, message),
+
+            BotCommand::Info => Info::execute(db_pool, api, message),
+
+            BotCommand::SetContentFields(args) => {
+                SetContentFields::execute(db_pool, api, message, args)
+            }
+
+            BotCommand::UnknownCommand(args) => {
+                UnknownCommand::execute(db_pool, api, message, args)
+            }
+        };
     }
 
     fn owner_telegram_id() -> Option<i64> {
