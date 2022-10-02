@@ -1,16 +1,18 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/unsubscribe";
 
-pub struct Unsubscribe {}
+#[derive(TypedBuilder)]
+pub struct Unsubscribe {
+    message: Message,
+    args: String,
+}
 
 enum DeleteSubscriptionError {
     FeedNotFound,
@@ -20,19 +22,16 @@ enum DeleteSubscriptionError {
 }
 
 impl Unsubscribe {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.message);
     }
 
-    fn unsubscribe(
-        &self,
-        db_connection: &mut PgConnection,
-        message: &Message,
-        url: String,
-    ) -> String {
-        match self.delete_subscription(db_connection, message, url.clone()) {
-            Ok(_) => format!("Successfully unsubscribed from {}", url),
-            Err(DeleteSubscriptionError::DbError) => format!("Failed to unsubscribe from {}", url),
+    fn unsubscribe(&self, db_connection: &mut PgConnection) -> String {
+        match self.delete_subscription(db_connection) {
+            Ok(_) => format!("Successfully unsubscribed from {}", self.args),
+            Err(DeleteSubscriptionError::DbError) => {
+                format!("Failed to unsubscribe from {}", self.args)
+            }
             _ => "The subscription does not exist".to_string(),
         }
     }
@@ -40,15 +39,13 @@ impl Unsubscribe {
     fn delete_subscription(
         &self,
         db_connection: &mut PgConnection,
-        message: &Message,
-        link: String,
     ) -> Result<(), DeleteSubscriptionError> {
-        let feed = match feeds::find_by_link(db_connection, link) {
+        let feed = match feeds::find_by_link(db_connection, &self.args) {
             Some(feed) => feed,
             None => return Err(DeleteSubscriptionError::FeedNotFound),
         };
 
-        let chat = match telegram::find_chat(db_connection, message.chat.id) {
+        let chat = match telegram::find_chat(db_connection, self.message.chat.id) {
             Some(chat) => chat,
             None => return Err(DeleteSubscriptionError::ChatNotFound),
         };
@@ -76,24 +73,11 @@ impl Unsubscribe {
 }
 
 impl Command for Unsubscribe {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => {
-                let text = message.text.as_ref().unwrap();
-                let argument = self.parse_argument(text);
-                self.unsubscribe(&mut connection, message, argument)
-            }
+    fn response(&self) -> String {
+        match self.fetch_db_connection() {
+            Ok(mut connection) => self.unsubscribe(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }
 
@@ -125,7 +109,7 @@ mod unsubscribe_tests {
                 title: None,
             };
             let chat = telegram::create_chat(connection, new_chat).unwrap();
-            let feed = feeds::create(connection, link.clone(), "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, &link, "rss".to_string()).unwrap();
 
             let new_subscription = NewTelegramSubscription {
                 feed_id: feed.id,
@@ -146,7 +130,11 @@ mod unsubscribe_tests {
                 .chat(chat)
                 .build();
 
-            let result = Unsubscribe {}.unsubscribe(connection, &message, link.clone());
+            let result = Unsubscribe::builder()
+                .message(message)
+                .args(link.clone())
+                .build()
+                .unsubscribe(connection);
 
             assert_eq!(format!("Successfully unsubscribed from {}", link), result);
 
@@ -171,7 +159,11 @@ mod unsubscribe_tests {
                 .chat(chat)
                 .build();
 
-            let result = Unsubscribe {}.unsubscribe(connection, &message, link.clone());
+            let result = Unsubscribe::builder()
+                .message(message)
+                .args(link.clone())
+                .build()
+                .unsubscribe(connection);
 
             assert_eq!("The subscription does not exist", result);
 

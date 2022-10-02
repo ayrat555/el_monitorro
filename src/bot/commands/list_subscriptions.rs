@@ -1,22 +1,23 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::db::telegram;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/list_subscriptions";
 
-pub struct ListSubscriptions {}
+#[derive(TypedBuilder)]
+pub struct ListSubscriptions {
+    message: Message,
+}
 
 impl ListSubscriptions {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.message);
     }
 
-    fn list_subscriptions(&self, db_connection: &mut PgConnection, message: &Message) -> String {
-        match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
+    fn list_subscriptions(&self, db_connection: &mut PgConnection) -> String {
+        match telegram::find_feeds_by_chat_id(db_connection, self.message.chat.id) {
             Err(_) => "Couldn't fetch your subscriptions".to_string(),
             Ok(feeds) => {
                 if feeds.is_empty() {
@@ -38,20 +39,11 @@ impl ListSubscriptions {
 }
 
 impl Command for ListSubscriptions {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => self.list_subscriptions(&mut connection, message),
+    fn response(&self) -> String {
+        match self.fetch_db_connection() {
+            Ok(mut connection) => self.list_subscriptions(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }
 
@@ -84,7 +76,7 @@ mod list_subscriptions_tests {
             let chat = telegram::create_chat(connection, new_chat).unwrap();
 
             for link in ["link1", "link2"] {
-                let feed = feeds::create(connection, link.to_string(), "rss".to_string()).unwrap();
+                let feed = feeds::create(connection, link, "rss".to_string()).unwrap();
 
                 let new_subscription = NewTelegramSubscription {
                     feed_id: feed.id,
@@ -101,7 +93,10 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
+            let result = ListSubscriptions::builder()
+                .message(message)
+                .build()
+                .list_subscriptions(connection);
 
             assert_eq!("link1\nlink2", result);
 
@@ -130,7 +125,10 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
+            let result = ListSubscriptions::builder()
+                .message(message)
+                .build()
+                .list_subscriptions(connection);
 
             assert_eq!("You don't have any subscriptions", result);
 
@@ -150,7 +148,10 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
+            let result = ListSubscriptions::builder()
+                .message(message)
+                .build()
+                .list_subscriptions(connection);
 
             assert_eq!("You don't have any subscriptions", result);
 

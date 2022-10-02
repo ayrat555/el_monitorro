@@ -309,7 +309,7 @@ mod tests {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<(), (), _>(|connection| {
-            let feed = feeds::create(connection, link, "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, &link, "rss".to_string()).unwrap();
             let sync_job = SyncFeedJob { feed_id: feed.id };
 
             sync_job.execute(connection).unwrap();

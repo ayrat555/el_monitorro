@@ -1,30 +1,28 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::db::telegram;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/remove_template";
 
-pub struct RemoveTemplate {}
+#[derive(TypedBuilder)]
+pub struct RemoveTemplate {
+    message: Message,
+    args: String,
+}
 
 impl RemoveTemplate {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.message);
     }
 
-    fn remove_template(
-        &self,
-        db_connection: &mut PgConnection,
-        message: &Message,
-        feed_url: String,
-    ) -> String {
-        let subscription = match self.find_subscription(db_connection, message.chat.id, feed_url) {
-            Err(message) => return message,
-            Ok(subscription) => subscription,
-        };
+    fn remove_template(&self, db_connection: &mut PgConnection) -> String {
+        let subscription =
+            match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
+                Err(message) => return message,
+                Ok(subscription) => subscription,
+            };
 
         match telegram::set_template(db_connection, &subscription, None) {
             Ok(_) => "The template was removed".to_string(),
@@ -38,23 +36,10 @@ impl RemoveTemplate {
 }
 
 impl Command for RemoveTemplate {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => {
-                let text = message.text.as_ref().unwrap();
-                let argument = self.parse_argument(text);
-                self.remove_template(&mut connection, message, argument)
-            }
+    fn response(&self) -> String {
+        match self.fetch_db_connection() {
+            Ok(mut connection) => self.remove_template(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

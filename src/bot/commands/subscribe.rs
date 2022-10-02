@@ -1,6 +1,5 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -9,15 +8,18 @@ use crate::deliver::DeliverChatUpdatesJob;
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::sync::reader;
 use crate::sync::SyncFeedJob;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::Connection;
 use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 use url::Url;
 
 static COMMAND: &str = "/subscribe";
 
-pub struct Subscribe {}
+#[derive(TypedBuilder)]
+pub struct Subscribe {
+    message: Message,
+    args: String,
+}
 
 #[derive(Debug, PartialEq)]
 enum SubscriptionError {
@@ -36,18 +38,13 @@ impl From<diesel::result::Error> for SubscriptionError {
 }
 
 impl Subscribe {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.message);
     }
 
-    fn subscribe(
-        &self,
-        db_connection: &mut PgConnection,
-        message: &Message,
-        url: String,
-    ) -> String {
-        match self.create_subscription(db_connection, message, url.clone()) {
-            Ok(_subscription) => format!("Successfully subscribed to {}", url),
+    fn subscribe(&self, db_connection: &mut PgConnection) -> String {
+        match self.create_subscription(db_connection) {
+            Ok(_subscription) => format!("Successfully subscribed to {}", self.args),
             Err(SubscriptionError::DbError(_)) => {
                 "Something went wrong with the bot's storage".to_string()
             }
@@ -66,15 +63,13 @@ impl Subscribe {
     fn create_subscription(
         &self,
         db_connection: &mut PgConnection,
-        message: &Message,
-        url: String,
     ) -> Result<TelegramSubscription, SubscriptionError> {
-        let feed_type = self.validate_rss_url(&url)?;
+        let feed_type = self.validate_rss_url()?;
 
         db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|db_connection| {
             let chat =
-                telegram::create_chat(db_connection, (*message.chat.clone()).into()).unwrap();
-            let feed = feeds::create(db_connection, url, feed_type).unwrap();
+                telegram::create_chat(db_connection, (*self.message.chat.clone()).into()).unwrap();
+            let feed = feeds::create(db_connection, &self.args, feed_type).unwrap();
 
             let new_telegram_subscription = NewTelegramSubscription {
                 chat_id: chat.id,
@@ -109,9 +104,9 @@ impl Subscribe {
             Some(_) => Err(SubscriptionError::SubscriptionAlreadyExists),
         }
     }
-    fn validate_rss_url(&self, rss_url: &str) -> Result<String, SubscriptionError> {
-        match Url::parse(rss_url) {
-            Ok(_) => match reader::validate_rss_url(rss_url) {
+    fn validate_rss_url(&self) -> Result<String, SubscriptionError> {
+        match Url::parse(&self.args) {
+            Ok(_) => match reader::validate_rss_url(&self.args) {
                 Ok(feed_type) => Ok(feed_type),
                 _ => Err(SubscriptionError::UrlIsNotFeed),
             },
@@ -143,24 +138,11 @@ impl Subscribe {
 }
 
 impl Command for Subscribe {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        _api: &Api,
-    ) -> String {
-        match self.fetch_db_connection(db_pool) {
-            Ok(mut connection) => {
-                let text = message.text.as_ref().unwrap();
-                let argument = self.parse_argument(text);
-                self.subscribe(&mut connection, message, argument)
-            }
+    fn response(&self) -> String {
+        match self.fetch_db_connection() {
+            Ok(mut connection) => self.subscribe(&mut connection),
             Err(error_message) => error_message,
         }
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }
 
@@ -204,7 +186,11 @@ mod subscribe_tests {
         let _m = set_deliver_server_response();
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(db_connection, &message, feed_url.clone());
+            let result = Subscribe::builder()
+                .message(message.clone())
+                .args(feed_url.clone())
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!(result, format!("Successfully subscribed to {}", feed_url));
 
@@ -212,7 +198,7 @@ mod subscribe_tests {
 
             assert_eq!(1, subscriptions.len());
             assert_eq!(message.chat.id, subscriptions[0].chat_id);
-            assert!(feeds::find_by_link(db_connection, feed_url).is_some());
+            assert!(feeds::find_by_link(db_connection, &feed_url).is_some());
 
             Ok(())
         });
@@ -224,7 +210,11 @@ mod subscribe_tests {
         let message = create_message();
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(db_connection, &message, "11".to_string());
+            let result = Subscribe::builder()
+                .message(message)
+                .args("11".to_string())
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!(result, "Invalid url".to_string());
 
@@ -248,7 +238,11 @@ mod subscribe_tests {
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(db_connection, &message, feed_url);
+            let result = Subscribe::builder()
+                .message(message)
+                .args(feed_url)
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!(result, "Url is not a feed".to_string());
 
@@ -275,9 +269,17 @@ mod subscribe_tests {
         let _m = set_deliver_server_response();
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
-            Subscribe {}.subscribe(db_connection, &message, feed_url.clone());
+            Subscribe::builder()
+                .message(message.clone())
+                .args(feed_url.clone())
+                .build()
+                .subscribe(db_connection);
 
-            let result = Subscribe {}.subscribe(db_connection, &message, feed_url);
+            let result = Subscribe::builder()
+                .message(message)
+                .args(feed_url)
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!(result, "The subscription already exists".to_string());
 
@@ -323,12 +325,20 @@ mod subscribe_tests {
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
             for rss_url in [feed_url1, feed_url2] {
-                let result = Subscribe {}.subscribe(db_connection, &message, rss_url.clone());
+                let result = Subscribe::builder()
+                    .message(message.clone())
+                    .args(rss_url.clone())
+                    .build()
+                    .subscribe(db_connection);
 
                 assert_eq!(format!("Successfully subscribed to {}", rss_url), result);
             }
 
-            let result = Subscribe {}.subscribe(db_connection, &message, feed_url3.clone());
+            let result = Subscribe::builder()
+                .message(message)
+                .args(feed_url3.clone())
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!("You exceeded the number of subscriptions", result);
 
