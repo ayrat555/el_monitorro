@@ -76,7 +76,7 @@ mod list_subscriptions_tests {
             let chat = telegram::create_chat(connection, new_chat).unwrap();
 
             for link in ["link1", "link2"] {
-                let feed = feeds::create(connection, link.to_string(), "rss".to_string()).unwrap();
+                let feed = feeds::create(connection, link, "rss".to_string()).unwrap();
 
                 let new_subscription = NewTelegramSubscription {
                     feed_id: feed.id,
@@ -93,7 +93,10 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
+            let result = ListSubscriptions::builder()
+                .message(message)
+                .build()
+                .list_subscriptions(connection);
 
             assert_eq!("link1\nlink2", result);
 
@@ -122,7 +125,10 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
+            let result = ListSubscriptions::builder()
+                .message(message)
+                .build()
+                .list_subscriptions(connection);
 
             assert_eq!("You don't have any subscriptions", result);
 
@@ -142,7 +148,10 @@ mod list_subscriptions_tests {
                 .chat(chat)
                 .build();
 
-            let result = ListSubscriptions {}.list_subscriptions(connection, &message);
+            let result = ListSubscriptions::builder()
+                .message(message)
+                .build()
+                .list_subscriptions(connection);
 
             assert_eq!("You don't have any subscriptions", result);
 

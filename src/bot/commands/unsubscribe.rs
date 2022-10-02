@@ -109,7 +109,7 @@ mod unsubscribe_tests {
                 title: None,
             };
             let chat = telegram::create_chat(connection, new_chat).unwrap();
-            let feed = feeds::create(connection, link.clone(), "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, &link, "rss".to_string()).unwrap();
 
             let new_subscription = NewTelegramSubscription {
                 feed_id: feed.id,
@@ -130,7 +130,11 @@ mod unsubscribe_tests {
                 .chat(chat)
                 .build();
 
-            let result = Unsubscribe {}.unsubscribe(connection, &message, link.clone());
+            let result = Unsubscribe::builder()
+                .message(message)
+                .args(link.clone())
+                .build()
+                .unsubscribe(connection);
 
             assert_eq!(format!("Successfully unsubscribed from {}", link), result);
 
@@ -155,7 +159,11 @@ mod unsubscribe_tests {
                 .chat(chat)
                 .build();
 
-            let result = Unsubscribe {}.unsubscribe(connection, &message, link.clone());
+            let result = Unsubscribe::builder()
+                .message(message)
+                .args(link.clone())
+                .build()
+                .unsubscribe(connection);
 
             assert_eq!("The subscription does not exist", result);
 

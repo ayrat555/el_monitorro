@@ -186,7 +186,11 @@ mod subscribe_tests {
         let _m = set_deliver_server_response();
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(db_connection, &message, feed_url.clone());
+            let result = Subscribe::builder()
+                .message(message.clone())
+                .args(feed_url.clone())
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!(result, format!("Successfully subscribed to {}", feed_url));
 
@@ -194,7 +198,7 @@ mod subscribe_tests {
 
             assert_eq!(1, subscriptions.len());
             assert_eq!(message.chat.id, subscriptions[0].chat_id);
-            assert!(feeds::find_by_link(db_connection, feed_url).is_some());
+            assert!(feeds::find_by_link(db_connection, &feed_url).is_some());
 
             Ok(())
         });
@@ -206,7 +210,11 @@ mod subscribe_tests {
         let message = create_message();
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(db_connection, &message, "11".to_string());
+            let result = Subscribe::builder()
+                .message(message)
+                .args("11".to_string())
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!(result, "Invalid url".to_string());
 
@@ -230,7 +238,11 @@ mod subscribe_tests {
         let feed_url = format!("{}{}", mockito::server_url(), path);
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
-            let result = Subscribe {}.subscribe(db_connection, &message, feed_url);
+            let result = Subscribe::builder()
+                .message(message)
+                .args(feed_url)
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!(result, "Url is not a feed".to_string());
 
@@ -257,9 +269,17 @@ mod subscribe_tests {
         let _m = set_deliver_server_response();
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
-            Subscribe {}.subscribe(db_connection, &message, feed_url.clone());
+            Subscribe::builder()
+                .message(message.clone())
+                .args(feed_url.clone())
+                .build()
+                .subscribe(db_connection);
 
-            let result = Subscribe {}.subscribe(db_connection, &message, feed_url);
+            let result = Subscribe::builder()
+                .message(message)
+                .args(feed_url)
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!(result, "The subscription already exists".to_string());
 
@@ -305,12 +325,20 @@ mod subscribe_tests {
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
             for rss_url in [feed_url1, feed_url2] {
-                let result = Subscribe {}.subscribe(db_connection, &message, rss_url.clone());
+                let result = Subscribe::builder()
+                    .message(message.clone())
+                    .args(rss_url.clone())
+                    .build()
+                    .subscribe(db_connection);
 
                 assert_eq!(format!("Successfully subscribed to {}", rss_url), result);
             }
 
-            let result = Subscribe {}.subscribe(db_connection, &message, feed_url3.clone());
+            let result = Subscribe::builder()
+                .message(message)
+                .args(feed_url3.clone())
+                .build()
+                .subscribe(db_connection);
 
             assert_eq!("You exceeded the number of subscriptions", result);
 
