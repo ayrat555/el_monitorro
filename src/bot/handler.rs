@@ -113,12 +113,7 @@ impl Handler {
                 .build()
                 .run(),
 
-            BotCommand::Start => Info::builder()
-                .db_pool(db_pool)
-                .api(api)
-                .message(message)
-                .build()
-                .run(),
+            BotCommand::Start => Start::builder().api(api).message(message).build().run(),
 
             BotCommand::SetTimezone(args) => SetTimezone::builder()
                 .db_pool(db_pool)

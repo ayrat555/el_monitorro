@@ -22,7 +22,7 @@ impl GetFilter {
     }
 
     fn get_filter(&self, db_connection: &mut PgConnection) -> String {
-        match self.find_subscription(db_connection, self.message.chat.id, self.args) {
+        match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
             Err(message) => message,
             Ok(subscription) => match subscription.filter_words {
                 None => "You did not set a filter for this subcription".to_string(),

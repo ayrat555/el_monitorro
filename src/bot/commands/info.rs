@@ -70,7 +70,7 @@ impl Info {
         UnknownCommand::builder()
             .api(self.api.clone())
             .message(self.message.clone())
-            .args(self.message.text.unwrap())
+            .args(self.message.text.clone().unwrap())
             .build()
             .run();
     }

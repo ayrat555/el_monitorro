@@ -34,7 +34,7 @@ impl SetTemplate {
             return "Template can not be empty".to_string();
         }
 
-        let feed_url = vec[0].to_string();
+        let feed_url = vec[0];
         let template = vec[1];
 
         let subscription =

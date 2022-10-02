@@ -18,7 +18,7 @@ struct NewFeed {
     feed_type: String,
 }
 
-pub fn create(conn: &mut PgConnection, link: String, feed_type: String) -> Result<Feed, Error> {
+pub fn create(conn: &mut PgConnection, link: &str, feed_type: String) -> Result<Feed, Error> {
     if feed_type != *"atom" && feed_type != *"rss" && feed_type != *"json" {
         unimplemented!()
     }
@@ -81,7 +81,7 @@ pub fn find(conn: &mut PgConnection, id: i64) -> Option<Feed> {
     }
 }
 
-pub fn find_by_link(conn: &mut PgConnection, link: String) -> Option<Feed> {
+pub fn find_by_link(conn: &mut PgConnection, link: &str) -> Option<Feed> {
     match feeds::table
         .filter(feeds::link.eq(link))
         .first::<Feed>(conn)

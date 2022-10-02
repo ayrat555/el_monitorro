@@ -45,7 +45,7 @@ impl Unsubscribe {
         &self,
         db_connection: &mut PgConnection,
     ) -> Result<(), DeleteSubscriptionError> {
-        let feed = match feeds::find_by_link(db_connection, self.args) {
+        let feed = match feeds::find_by_link(db_connection, &self.args) {
             Some(feed) => feed,
             None => return Err(DeleteSubscriptionError::FeedNotFound),
         };

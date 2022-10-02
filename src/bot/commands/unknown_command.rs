@@ -1,9 +1,6 @@
 use super::Command;
 use super::Message;
 use crate::bot::telegram_client::Api;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
-use diesel::PgConnection;
 use frankenstein::ChatType;
 use typed_builder::TypedBuilder;
 
@@ -48,11 +45,7 @@ impl Command for UnknownCommand {
 
     fn execute(&self, api: &Api, message: &Message) {
         if message.chat.type_field != ChatType::Channel {
-            info!(
-                "{:?} wrote: {}",
-                message.chat.id,
-                message.text.as_ref().unwrap()
-            );
+            info!("{:?} wrote: {}", message.chat.id, self.args);
         }
 
         let text = self.response();

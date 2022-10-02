@@ -43,7 +43,7 @@ impl SetContentFields {
             return "Filter can not be empty".to_string();
         }
 
-        let feed = match self.find_feed(db_connection, vec[0].to_string()) {
+        let feed = match self.find_feed(db_connection, vec[0]) {
             Err(message) => return message,
             Ok(feed) => feed,
         };
@@ -75,7 +75,7 @@ impl SetContentFields {
         UnknownCommand::builder()
             .api(self.api.clone())
             .message(self.message.clone())
-            .args(self.message.text.unwrap())
+            .args(self.message.text.clone().unwrap())
             .build()
             .run();
     }

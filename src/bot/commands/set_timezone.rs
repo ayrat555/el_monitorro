@@ -30,7 +30,7 @@ impl SetTimezone {
     }
 
     fn update_timezone(&self, db_connection: &mut PgConnection) -> Result<(), &str> {
-        let offset = self.validate_offset(self.args)?;
+        let offset = self.validate_offset()?;
 
         match telegram::find_chat(db_connection, self.message.chat.id) {
             None => Err(
@@ -43,8 +43,8 @@ impl SetTimezone {
         }
     }
 
-    fn validate_offset(&self, offset_string: String) -> Result<i32, &'static str> {
-        let offset = match offset_string.parse::<i32>() {
+    fn validate_offset(&self) -> Result<i32, &'static str> {
+        let offset = match self.args.parse::<i32>() {
             Ok(result) => result,
             Err(_) => return Err("The value is not a number"),
         };

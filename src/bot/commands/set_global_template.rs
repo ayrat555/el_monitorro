@@ -46,7 +46,7 @@ impl SetGlobalTemplate {
             return "The template is invalid".to_string();
         }
 
-        match telegram::set_global_template(db_connection, &chat, Some(self.args)) {
+        match telegram::set_global_template(db_connection, &chat, Some(self.args.clone())) {
             Ok(_) => "The global template was updated".to_string(),
             Err(_) => "Failed to update the template".to_string(),
         }

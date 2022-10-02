@@ -24,7 +24,7 @@ impl RemoveFilter {
 
     pub fn remove_filter(&self, db_connection: &mut PgConnection) -> String {
         let subscription =
-            match self.find_subscription(db_connection, self.message.chat.id, self.args) {
+            match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
                 Err(message) => return message,
                 Ok(subscription) => subscription,
             };

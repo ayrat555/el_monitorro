@@ -240,7 +240,7 @@ pub trait Command {
         &self,
         db_connection: &mut PgConnection,
         chat_id: i64,
-        feed_url: String,
+        feed_url: &str,
     ) -> Result<TelegramSubscription, String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
         let feed = self.find_feed(db_connection, feed_url)?;
@@ -261,11 +261,7 @@ pub trait Command {
         }
     }
 
-    fn find_feed(
-        &self,
-        db_connection: &mut PgConnection,
-        feed_url: String,
-    ) -> Result<Feed, String> {
+    fn find_feed(&self, db_connection: &mut PgConnection, feed_url: &str) -> Result<Feed, String> {
         match feeds::find_by_link(db_connection, feed_url) {
             Some(feed) => Ok(feed),
             None => Err("Feed does not exist".to_string()),

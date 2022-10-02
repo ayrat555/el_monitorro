@@ -1,9 +1,6 @@
 use super::Command;
 use super::Message;
 use crate::bot::telegram_client::Api;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
-use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
 static START: &str =

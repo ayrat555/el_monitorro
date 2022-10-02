@@ -74,7 +74,7 @@ impl Subscribe {
         db_connection.transaction::<TelegramSubscription, SubscriptionError, _>(|db_connection| {
             let chat =
                 telegram::create_chat(db_connection, (*self.message.chat.clone()).into()).unwrap();
-            let feed = feeds::create(db_connection, self.args, feed_type).unwrap();
+            let feed = feeds::create(db_connection, &self.args, feed_type).unwrap();
 
             let new_telegram_subscription = NewTelegramSubscription {
                 chat_id: chat.id,
