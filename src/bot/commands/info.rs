@@ -1,12 +1,9 @@
 use super::unknown_command::UnknownCommand;
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
@@ -14,14 +11,12 @@ static COMMAND: &str = "/info";
 
 #[derive(TypedBuilder)]
 pub struct Info {
-    db_pool: Pool<ConnectionManager<PgConnection>>,
-    api: Api,
     message: Message,
 }
 
 impl Info {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     fn info(&self, db_connection: &mut PgConnection) -> String {
@@ -68,7 +63,6 @@ impl Info {
 
     fn unknown_command(&self) {
         UnknownCommand::builder()
-            .api(self.api.clone())
             .message(self.message.clone())
             .args(self.message.text.clone().unwrap())
             .build()
@@ -77,7 +71,7 @@ impl Info {
 }
 
 impl Command for Info {
-    fn execute(&self, api: &Api, message: &Message) {
+    fn execute(&self, message: &Message) {
         match Config::admin_telegram_id() {
             None => self.unknown_command(),
             Some(id) => {
@@ -90,7 +84,7 @@ impl Command for Info {
 
                     let text = self.response();
 
-                    self.reply_to_message(api, message, text)
+                    self.reply_to_message(message, text)
                 } else {
                     self.unknown_command();
                 }
@@ -99,7 +93,7 @@ impl Command for Info {
     }
 
     fn response(&self) -> String {
-        match self.fetch_db_connection(&self.db_pool) {
+        match self.fetch_db_connection() {
             Ok(mut connection) => self.info(&mut connection),
             Err(error_message) => error_message,
         }

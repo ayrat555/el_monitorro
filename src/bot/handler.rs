@@ -22,10 +22,7 @@ use super::commands::Subscribe;
 use super::commands::UnknownCommand;
 use super::commands::Unsubscribe;
 use crate::bot::telegram_client;
-use crate::bot::telegram_client::Api;
 use crate::config::Config;
-use diesel::r2d2;
-use diesel::PgConnection;
 use frankenstein::Update;
 use frankenstein::UpdateContent;
 use std::str::FromStr;
@@ -47,22 +44,14 @@ impl Handler {
 
         loop {
             while let Some(update) = api.next_update() {
-                let db_pool = crate::db::pool().clone();
-                let tg_api = api.clone();
-
-                thread_pool
-                    .spawn(move || Self::process_message_or_channel_post(db_pool, tg_api, update));
+                thread_pool.spawn(move || Self::process_message_or_channel_post(update));
             }
 
             thread::sleep(interval);
         }
     }
 
-    fn process_message_or_channel_post(
-        db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
-        api: Api,
-        update: Update,
-    ) {
+    fn process_message_or_channel_post(update: Update) {
         let message = match update.content {
             UpdateContent::Message(message) => message,
             UpdateContent::ChannelPost(channel_post) => channel_post,
@@ -89,156 +78,107 @@ impl Handler {
 
         match command {
             BotCommand::Subscribe(args) => Subscribe::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
-            BotCommand::Help => Help::builder().api(api).message(message).build().run(),
+            BotCommand::Help => Help::builder().message(message).build().run(),
 
             BotCommand::Unsubscribe(args) => Unsubscribe::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
-            BotCommand::ListSubscriptions => ListSubscriptions::builder()
-                .db_pool(db_pool)
-                .api(api)
-                .message(message)
-                .build()
-                .run(),
+            BotCommand::ListSubscriptions => {
+                ListSubscriptions::builder().message(message).build().run()
+            }
 
-            BotCommand::Start => Start::builder().api(api).message(message).build().run(),
+            BotCommand::Start => Start::builder().message(message).build().run(),
 
             BotCommand::SetTimezone(args) => SetTimezone::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
-            BotCommand::GetTimezone => GetTimezone::builder()
-                .db_pool(db_pool)
-                .api(api)
-                .message(message)
-                .build()
-                .run(),
+            BotCommand::GetTimezone => GetTimezone::builder().message(message).build().run(),
 
             BotCommand::SetFilter(args) => SetFilter::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
             BotCommand::GetFilter(args) => GetFilter::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
             BotCommand::RemoveFilter(args) => RemoveFilter::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
             BotCommand::SetTemplate(args) => SetTemplate::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
             BotCommand::GetTemplate(args) => GetTemplate::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
             BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
             BotCommand::SetGlobalTemplate(args) => SetGlobalTemplate::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
             BotCommand::RemoveGlobalTemplate => RemoveGlobalTemplate::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .build()
                 .run(),
 
-            BotCommand::GetGlobalTemplate => GetGlobalTemplate::builder()
-                .db_pool(db_pool)
-                .api(api)
-                .message(message)
-                .build()
-                .run(),
+            BotCommand::GetGlobalTemplate => {
+                GetGlobalTemplate::builder().message(message).build().run()
+            }
 
             BotCommand::SetGlobalFilter(args) => SetGlobalFilter::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
-            BotCommand::GetGlobalFilter => GetGlobalFilter::builder()
-                .db_pool(db_pool)
-                .api(api)
-                .message(message)
-                .build()
-                .run(),
+            BotCommand::GetGlobalFilter => {
+                GetGlobalFilter::builder().message(message).build().run()
+            }
 
-            BotCommand::RemoveGlobalFilter => RemoveGlobalFilter::builder()
-                .db_pool(db_pool)
-                .api(api)
-                .message(message)
-                .build()
-                .run(),
+            BotCommand::RemoveGlobalFilter => {
+                RemoveGlobalFilter::builder().message(message).build().run()
+            }
 
-            BotCommand::Info => Info::builder()
-                .db_pool(db_pool)
-                .api(api)
-                .message(message)
-                .build()
-                .run(),
+            BotCommand::Info => Info::builder().message(message).build().run(),
 
             BotCommand::SetContentFields(args) => SetContentFields::builder()
-                .db_pool(db_pool)
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()
                 .run(),
 
             BotCommand::UnknownCommand(args) => UnknownCommand::builder()
-                .api(api)
                 .message(message)
                 .args(args)
                 .build()

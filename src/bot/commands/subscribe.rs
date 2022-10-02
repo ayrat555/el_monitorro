@@ -1,6 +1,5 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -9,8 +8,6 @@ use crate::deliver::DeliverChatUpdatesJob;
 use crate::models::telegram_subscription::TelegramSubscription;
 use crate::sync::reader;
 use crate::sync::SyncFeedJob;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::Connection;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
@@ -20,8 +17,6 @@ static COMMAND: &str = "/subscribe";
 
 #[derive(TypedBuilder)]
 pub struct Subscribe {
-    db_pool: Pool<ConnectionManager<PgConnection>>,
-    api: Api,
     message: Message,
     args: String,
 }
@@ -44,7 +39,7 @@ impl From<diesel::result::Error> for SubscriptionError {
 
 impl Subscribe {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     fn subscribe(&self, db_connection: &mut PgConnection) -> String {
@@ -144,7 +139,7 @@ impl Subscribe {
 
 impl Command for Subscribe {
     fn response(&self) -> String {
-        match self.fetch_db_connection(&self.db_pool) {
+        match self.fetch_db_connection() {
             Ok(mut connection) => self.subscribe(&mut connection),
             Err(error_message) => error_message,
         }

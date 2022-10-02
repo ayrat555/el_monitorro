@@ -1,3 +1,4 @@
+use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
@@ -7,7 +8,6 @@ use crate::db::telegram::NewTelegramSubscription;
 use crate::models::Feed;
 use crate::models::TelegramSubscription;
 use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::Chat;
@@ -203,7 +203,7 @@ fn parse_args(command: &str, command_with_args: &str) -> String {
 pub trait Command {
     fn response(&self) -> String;
 
-    fn execute(&self, api: &Api, message: &Message) {
+    fn execute(&self, message: &Message) {
         info!(
             "{:?} wrote: {}",
             message.chat.id,
@@ -211,12 +211,13 @@ pub trait Command {
         );
 
         let text = self.response();
-        self.reply_to_message(api, message, text)
+        self.reply_to_message(message, text)
     }
 
-    fn reply_to_message(&self, api: &Api, message: &Message, text: String) {
+    fn reply_to_message(&self, message: &Message, text: String) {
         if let Err(error) =
-            api.reply_with_text_message(message.chat.id, text, Some(message.message_id))
+            self.api()
+                .reply_with_text_message(message.chat.id, text, Some(message.message_id))
         {
             error!("Failed to reply to update {:?} {:?}", error, message);
         }
@@ -224,9 +225,8 @@ pub trait Command {
 
     fn fetch_db_connection(
         &self,
-        db_pool: &Pool<ConnectionManager<PgConnection>>,
     ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, String> {
-        match db_pool.get() {
+        match crate::db::pool().get() {
             Ok(connection) => Ok(connection),
             Err(err) => {
                 error!("Failed to fetch a connection from the pool {:?}", err);
@@ -234,6 +234,10 @@ pub trait Command {
                 Err("Failed to process your command. Please contact @Ayrat555".to_string())
             }
         }
+    }
+
+    fn api(&self) -> Api {
+        telegram_client::api().clone()
     }
 
     fn find_subscription(

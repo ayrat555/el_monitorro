@@ -1,9 +1,6 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::db::telegram;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
@@ -11,14 +8,12 @@ static COMMAND: &str = "/remove_global_filter";
 
 #[derive(TypedBuilder)]
 pub struct RemoveGlobalFilter {
-    db_pool: Pool<ConnectionManager<PgConnection>>,
-    api: Api,
     message: Message,
 }
 
 impl RemoveGlobalFilter {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     fn remove_global_filter(&self, db_connection: &mut PgConnection) -> String {
@@ -40,7 +35,7 @@ impl RemoveGlobalFilter {
 
 impl Command for RemoveGlobalFilter {
     fn response(&self) -> String {
-        match self.fetch_db_connection(&self.db_pool) {
+        match self.fetch_db_connection() {
             Ok(mut connection) => self.remove_global_filter(&mut connection),
             Err(error_message) => error_message,
         }

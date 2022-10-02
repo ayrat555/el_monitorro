@@ -1,6 +1,5 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use typed_builder::TypedBuilder;
 
 static START: &str =
@@ -18,13 +17,12 @@ static COMMAND: &str = "/start";
 
 #[derive(TypedBuilder)]
 pub struct Start {
-    api: Api,
     message: Message,
 }
 
 impl Start {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     pub fn command() -> &'static str {

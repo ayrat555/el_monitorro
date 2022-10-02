@@ -1,9 +1,6 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::db::telegram;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
@@ -11,15 +8,13 @@ static COMMAND: &str = "/remove_template";
 
 #[derive(TypedBuilder)]
 pub struct RemoveTemplate {
-    db_pool: Pool<ConnectionManager<PgConnection>>,
-    api: Api,
     message: Message,
     args: String,
 }
 
 impl RemoveTemplate {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     fn remove_template(&self, db_connection: &mut PgConnection) -> String {
@@ -42,7 +37,7 @@ impl RemoveTemplate {
 
 impl Command for RemoveTemplate {
     fn response(&self) -> String {
-        match self.fetch_db_connection(&self.db_pool) {
+        match self.fetch_db_connection() {
             Ok(mut connection) => self.remove_template(&mut connection),
             Err(error_message) => error_message,
         }

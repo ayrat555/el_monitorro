@@ -1,10 +1,7 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::db::telegram;
 use crate::deliver::render_template_example;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
@@ -12,15 +9,13 @@ static COMMAND: &str = "/set_template";
 
 #[derive(TypedBuilder)]
 pub struct SetTemplate {
-    db_pool: Pool<ConnectionManager<PgConnection>>,
-    api: Api,
     message: Message,
     args: String,
 }
 
 impl SetTemplate {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     fn set_template(&self, db_connection: &mut PgConnection) -> String {
@@ -49,7 +44,7 @@ impl SetTemplate {
         };
 
         if self
-            .api
+            .api()
             .send_text_message(self.message.chat.id, example)
             .is_err()
         {
@@ -69,7 +64,7 @@ impl SetTemplate {
 
 impl Command for SetTemplate {
     fn response(&self) -> String {
-        match self.fetch_db_connection(&self.db_pool) {
+        match self.fetch_db_connection() {
             Ok(mut connection) => self.set_template(&mut connection),
             Err(error_message) => error_message,
         }

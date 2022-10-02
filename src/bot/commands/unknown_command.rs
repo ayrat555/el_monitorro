@@ -1,6 +1,5 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use frankenstein::ChatType;
 use typed_builder::TypedBuilder;
 
@@ -11,14 +10,13 @@ static COMMAND: &str = "";
 
 #[derive(TypedBuilder)]
 pub struct UnknownCommand {
-    api: Api,
     message: Message,
     args: String,
 }
 
 impl UnknownCommand {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     pub fn command() -> &'static str {
@@ -43,7 +41,7 @@ impl Command for UnknownCommand {
         }
     }
 
-    fn execute(&self, api: &Api, message: &Message) {
+    fn execute(&self, message: &Message) {
         if message.chat.type_field != ChatType::Channel {
             info!("{:?} wrote: {}", message.chat.id, self.args);
         }
@@ -51,7 +49,7 @@ impl Command for UnknownCommand {
         let text = self.response();
 
         if !text.is_empty() {
-            self.reply_to_message(api, message, text);
+            self.reply_to_message(message, text);
         }
     }
 }

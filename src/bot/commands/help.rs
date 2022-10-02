@@ -1,6 +1,5 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use typed_builder::TypedBuilder;
 
 static HELP: &str =
@@ -40,13 +39,12 @@ static COMMAND: &str = "/help";
 
 #[derive(TypedBuilder)]
 pub struct Help {
-    api: Api,
     message: Message,
 }
 
 impl Help {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     pub fn command() -> &'static str {

@@ -1,11 +1,8 @@
 use super::unknown_command::UnknownCommand;
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
@@ -21,15 +18,13 @@ static ALLOWED_CONTENT_FIELDS: [&str; 6] = [
 
 #[derive(TypedBuilder)]
 pub struct SetContentFields {
-    db_pool: Pool<ConnectionManager<PgConnection>>,
-    api: Api,
     message: Message,
     args: String,
 }
 
 impl SetContentFields {
     pub fn run(&self) {
-        self.execute(&self.api, &self.message);
+        self.execute(&self.message);
     }
 
     pub fn set_content_fields(&self, db_connection: &mut PgConnection) -> String {
@@ -73,7 +68,6 @@ impl SetContentFields {
 
     fn unknown_command(&self) {
         UnknownCommand::builder()
-            .api(self.api.clone())
             .message(self.message.clone())
             .args(self.message.text.clone().unwrap())
             .build()
@@ -82,7 +76,7 @@ impl SetContentFields {
 }
 
 impl Command for SetContentFields {
-    fn execute(&self, api: &Api, message: &Message) {
+    fn execute(&self, message: &Message) {
         match Config::admin_telegram_id() {
             None => self.unknown_command(),
             Some(id) => {
@@ -95,7 +89,7 @@ impl Command for SetContentFields {
 
                     let text = self.response();
 
-                    self.reply_to_message(api, message, text)
+                    self.reply_to_message(message, text)
                 } else {
                     self.unknown_command()
                 }
@@ -104,7 +98,7 @@ impl Command for SetContentFields {
     }
 
     fn response(&self) -> String {
-        match self.fetch_db_connection(&self.db_pool) {
+        match self.fetch_db_connection() {
             Ok(mut connection) => self.set_content_fields(&mut connection),
             Err(error_message) => error_message,
         }
