@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 use crate::bot::telegram_client;
-=======
-use crate::bot;
-use crate::bot::commands::set_global_template::set_global_template_keyboard;
->>>>>>> 64539e0 (added inline keyboard for setting global template)
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
@@ -18,7 +13,6 @@ use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::Message;
-<<<<<<< HEAD
 use std::str::FromStr;
 
 pub use get_filter::GetFilter;
@@ -43,9 +37,6 @@ pub use start::Start;
 pub use subscribe::Subscribe;
 pub use unknown_command::UnknownCommand;
 pub use unsubscribe::Unsubscribe;
-=======
-use frankenstein::TelegramApi;
->>>>>>> 64539e0 (added inline keyboard for setting global template)
 
 pub mod get_filter;
 pub mod get_global_filter;
@@ -214,7 +205,6 @@ fn parse_args(command: &str, command_with_args: &str) -> String {
 pub trait Command {
     fn response(&self) -> String;
 
-<<<<<<< HEAD
     fn execute(&self, message: &Message) {
         info!(
             "{:?} wrote: {}",
@@ -224,22 +214,6 @@ pub trait Command {
 
         let text = self.response();
         self.reply_to_message(message, text)
-=======
-    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        let messages = message.text.as_ref().unwrap().to_string();
-        let response_message = &messages.replace(BOT_NAME, "");
-        info!("{:?} wrote: {}", message.chat.id, response_message,);
-
-        let text = self.response(db_pool, &message, &api);
-        let api = bot::telegram_client::Api::new();
-
-        if response_message == "/set_global_template" {
-            let send_message_params = set_global_template_keyboard(&message);
-            api.send_message(&send_message_params).unwrap();
-        } else {
-            self.reply_to_message(api, message, text);
-        }
->>>>>>> 64539e0 (added inline keyboard for setting global template)
     }
 
     fn reply_to_message(&self, message: &Message, text: String) {
@@ -251,31 +225,6 @@ pub trait Command {
         }
     }
 
-<<<<<<< HEAD
-=======
-    fn command(&self) -> &str;
-
-    fn parse_argument(&self, full_command: &str) -> String {
-        let command = self.command();
-        let handle = Config::telegram_bot_handle();
-        let command_with_handle = format!("{}@{}", command, handle);
-
-        if full_command.starts_with(&command_with_handle) {
-            full_command
-                .replace(&command_with_handle, "")
-                .replace(BOT_NAME, "")
-                .trim()
-                .to_string()
-        } else {
-            full_command
-                .replace(command, "")
-                .replace(BOT_NAME, "")
-                .trim()
-                .to_string()
-        }
-    }
-
->>>>>>> 64539e0 (added inline keyboard for setting global template)
     fn fetch_db_connection(
         &self,
     ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, String> {

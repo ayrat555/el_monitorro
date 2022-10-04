@@ -220,10 +220,6 @@ dependencies = [
  "cfg-if",
  "crossbeam-utils",
  "memoffset",
-<<<<<<< HEAD
-=======
- "once_cell",
->>>>>>> 64539e0 (added inline keyboard for setting global template)
  "scopeguard",
 ]
 
