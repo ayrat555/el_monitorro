@@ -98,15 +98,19 @@ impl ListSubscriptionsInlineKeyboard {
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
         for feed in feed_ids.clone() {
-            println!("feed id {}", feed);
             let mut row: Vec<InlineKeyboardButton> = Vec::new();
-            let name = format!(
-                "{} ",
-                Handler::get_feed_url_by_id(db_pool.clone(), feed.to_string())
-            );
+            let name =
+                if feed == "You don't have any subscriptions" || feed == "error fetching data" {
+                    feed.to_string()
+                } else {
+                    format!(
+                        "{} ",
+                        Handler::get_feed_url_by_id(db_pool.clone(), feed.to_string())
+                    )
+                };
             let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
                 .text(name.clone())
-                .callback_data(format!("list_subscriptions {}", feed)) //used letter s to identify the callback ,callback data support no of characters
+                .callback_data(format!("list_subscriptions {}", feed))
                 .build();
 
             row.push(unsubscribe_inlinekeyboard);

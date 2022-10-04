@@ -58,6 +58,13 @@ impl Command for ListSubscriptions {
         Self::command()
     }
 }
+//    if data == "You don't have any subscriptions" {
+//                     self.reply_to_message(api, message, data);
+//                 } else {
+//                     let send_message_params =
+//                         ListSubscriptionsInlineKeyboard::select_feed_url_keyboard_list_subscriptions(message, feeds_ids, db_pool);
+//                     api.send_message(&send_message_params).unwrap();
+//                 }
 
 #[cfg(test)]
 mod list_subscriptions_tests {

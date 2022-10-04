@@ -22,6 +22,29 @@ use frankenstein::Message;
 use frankenstein::TelegramApi;
 use std::str::FromStr;
 
+pub use get_filter::GetFilter;
+pub use get_global_filter::GetGlobalFilter;
+pub use get_global_template::GetGlobalTemplate;
+pub use get_template::GetTemplate;
+pub use get_timezone::GetTimezone;
+pub use help::Help;
+pub use info::Info;
+pub use list_subscriptions::ListSubscriptions;
+pub use remove_filter::RemoveFilter;
+pub use remove_global_filter::RemoveGlobalFilter;
+pub use remove_global_template::RemoveGlobalTemplate;
+pub use remove_template::RemoveTemplate;
+pub use set_content_fields::SetContentFields;
+pub use set_filter::SetFilter;
+pub use set_global_filter::SetGlobalFilter;
+pub use set_global_template::SetGlobalTemplate;
+pub use set_template::SetTemplate;
+pub use set_timezone::SetTimezone;
+pub use start::Start;
+pub use subscribe::Subscribe;
+pub use unknown_command::UnknownCommand;
+pub use unsubscribe::Unsubscribe;
+
 pub mod get_filter;
 pub mod get_global_filter;
 pub mod get_global_template;
@@ -50,15 +73,6 @@ pub mod unknown_command;
 pub mod unsubscribe;
 pub mod unsubscribe_inline_keyboard;
 
-enum Commands {
-    Subscribe,
-    Unsubscribe,
-    SetGlobalTemplate,
-    ListSubscriptions,
-    SetTemplate,
-    UnknownCommand(String),
-}
-
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
         let kind = match chat.type_field {
@@ -78,20 +92,122 @@ impl From<Chat> for NewTelegramChat {
         }
     }
 }
-impl FromStr for Commands {
+pub enum BotCommand {
+    UnknownCommand(String),
+    Help,
+    Subscribe(String),
+    Unsubscribe(String),
+    ListSubscriptions,
+    Start,
+    SetTimezone(String),
+    GetTimezone,
+    SetFilter(String),
+    GetFilter(String),
+    RemoveFilter(String),
+    SetTemplate(String),
+    GetTemplate(String),
+    RemoveTemplate(String),
+    GetGlobalFilter,
+    SetGlobalFilter(String),
+    RemoveGlobalFilter,
+    GetGlobalTemplate,
+    SetGlobalTemplate(String),
+    RemoveGlobalTemplate,
+    Info,
+    SetContentFields(String),
+}
+
+impl FromStr for BotCommand {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let result = match s.trim() {
-            "/subscribe" => Commands::Subscribe,
-            "/unsubscribe" => Commands::Unsubscribe,
-            "/set_template" => Commands::SetTemplate,
-            "/set_global_template" => Commands::SetGlobalTemplate,
-            "/list_subscriptions" => Commands::ListSubscriptions,
-            _ => Commands::UnknownCommand(s.to_string()),
+    fn from_str(command: &str) -> Result<Self, Self::Err> {
+        let bot_command = if !command.starts_with('/') {
+            BotCommand::UnknownCommand(command.to_string())
+        } else if command.starts_with(Help::command()) {
+            BotCommand::Help
+        } else if command.starts_with(Subscribe::command()) {
+            let args = parse_args(Subscribe::command(), command);
+
+            BotCommand::Subscribe(args)
+        } else if command.starts_with(Unsubscribe::command()) {
+            let args = parse_args(Unsubscribe::command(), command);
+
+            BotCommand::Unsubscribe(args)
+        } else if command.starts_with(ListSubscriptions::command()) {
+            BotCommand::ListSubscriptions
+        } else if command.starts_with(Start::command()) {
+            BotCommand::Start
+        } else if command.starts_with(SetTimezone::command()) {
+            let args = parse_args(SetTimezone::command(), command);
+
+            BotCommand::SetTimezone(args)
+        } else if command.starts_with(GetTimezone::command()) {
+            BotCommand::GetTimezone
+        } else if command.starts_with(SetFilter::command()) {
+            let args = parse_args(SetFilter::command(), command);
+
+            BotCommand::SetFilter(args)
+        } else if command.starts_with(GetFilter::command()) {
+            let args = parse_args(GetFilter::command(), command);
+
+            BotCommand::GetFilter(args)
+        } else if command.starts_with(RemoveFilter::command()) {
+            let args = parse_args(RemoveFilter::command(), command);
+
+            BotCommand::RemoveFilter(args)
+        } else if command.starts_with(SetTemplate::command()) {
+            let args = parse_args(SetTemplate::command(), command);
+
+            BotCommand::SetTemplate(args)
+        } else if command.starts_with(GetTemplate::command()) {
+            let args = parse_args(GetTemplate::command(), command);
+
+            BotCommand::GetTemplate(args)
+        } else if command.starts_with(RemoveTemplate::command()) {
+            let args = parse_args(RemoveTemplate::command(), command);
+
+            BotCommand::RemoveTemplate(args)
+        } else if command.starts_with(SetGlobalFilter::command()) {
+            let args = parse_args(SetGlobalFilter::command(), command);
+
+            BotCommand::SetGlobalFilter(args)
+        } else if command.starts_with(RemoveGlobalTemplate::command()) {
+            BotCommand::RemoveGlobalTemplate
+        } else if command.starts_with(GetGlobalTemplate::command()) {
+            BotCommand::GetGlobalTemplate
+        } else if command.starts_with(SetGlobalTemplate::command()) {
+            let args = parse_args(SetGlobalTemplate::command(), command);
+
+            BotCommand::SetGlobalTemplate(args)
+        } else if command.starts_with(GetGlobalFilter::command()) {
+            BotCommand::GetGlobalFilter
+        } else if command.starts_with(RemoveGlobalFilter::command()) {
+            BotCommand::RemoveGlobalFilter
+        } else if command.starts_with(Info::command()) {
+            BotCommand::Info
+        } else if command.starts_with(SetContentFields::command()) {
+            let args = parse_args(SetContentFields::command(), command);
+
+            BotCommand::SetContentFields(args)
+        } else {
+            BotCommand::UnknownCommand(command.to_string())
         };
 
-        Ok(result)
+        Ok(bot_command)
+    }
+}
+
+fn parse_args(command: &str, command_with_args: &str) -> String {
+    let handle = Config::telegram_bot_handle();
+    let command_with_handle = format!("{}@{}", command, handle);
+
+    if command_with_args.starts_with(&command_with_handle) {
+        command_with_args
+            .replace(&command_with_handle, "")
+            .trim()
+            .to_string()
+    } else {
+        command_with_args.replace(command, "").trim().to_string()
     }
 }
 
@@ -103,12 +219,7 @@ pub trait Command {
         api: &Api,
     ) -> String;
 
-    fn execute(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        api: Api,
-        mut message: Message,
-    ) {
+    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         info!(
             "{:?} wrote: {}",
             message.chat.id,
@@ -116,7 +227,9 @@ pub trait Command {
         );
 
         let text: &str = message.text.as_ref().unwrap();
-        let command = Commands::from_str(text).unwrap();
+        println!("text from message.text === {}", text);
+        let command = BotCommand::from_str(text).unwrap();
+
         let data = match self.fetch_db_connection(db_pool.clone()) {
             Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
             Err(_error_message) => "error fetching data".to_string(),
@@ -129,50 +242,59 @@ pub trait Command {
 
         let feeds = data.split('\n');
         let feeds_ids = feed_id.split(',').clone();
-        let text = self.response(db_pool.clone(), &message, &api);
+
+        let texts = self.response(db_pool.clone(), &message, &api);
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
             .message_id(message.message_id)
             .build();
 
         match command {
-            Commands::Subscribe => {
-                let send_message_params = SubscribeInlineKeyboard::set_subscribe_keyboard(message);
-                api.send_message(&send_message_params).unwrap();
-            }
-            Commands::Unsubscribe => {
-                let send_message_params =
-                    UnsubscribeInlineKeyboard::set_unsubscribe_keyboard(message, feeds, feed_id);
-                api.send_message(&send_message_params).unwrap();
-            }
-            Commands::SetGlobalTemplate => {
-                api.delete_message(&delete_message_params).unwrap();
-                let send_message_params =
-                    SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
-                api.send_message(&send_message_params).unwrap();
-            }
-            Commands::ListSubscriptions => {
-                if data == "You don't have any subscriptions" {
-                    self.reply_to_message(api, message, data);
-                } else {
+            BotCommand::Subscribe(args) => match args.is_empty() {
+                true => {
                     let send_message_params =
-                        ListSubscriptionsInlineKeyboard::select_feed_url_keyboard_list_subscriptions(message, feeds_ids, db_pool);
+                        SubscribeInlineKeyboard::set_subscribe_keyboard(message);
                     api.send_message(&send_message_params).unwrap();
                 }
+                false => self.reply_to_message(api, message, texts),
+            },
+            BotCommand::Unsubscribe(args) => match args.is_empty() {
+                true => {
+                    api.delete_message(&delete_message_params).unwrap();
+                    let send_message_params = UnsubscribeInlineKeyboard::set_unsubscribe_keyboard(
+                        message, feeds, feed_id,
+                    );
+                    api.send_message(&send_message_params).unwrap();
+                }
+                false => self.reply_to_message(api, message, texts),
+            },
+            BotCommand::SetGlobalTemplate(args) => match args.is_empty() {
+                true => {
+                    api.delete_message(&delete_message_params).unwrap();
+                    let send_message_params =
+                        SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
+                    api.send_message(&send_message_params).unwrap();
+                }
+                false => self.reply_to_message(api, message, texts),
+            },
+            BotCommand::ListSubscriptions => {
+                let send_message_params =
+                    ListSubscriptionsInlineKeyboard::select_feed_url_keyboard_list_subscriptions(
+                        message, feeds_ids, db_pool,
+                    );
+                api.send_message(&send_message_params).unwrap();
             }
-            Commands::SetTemplate => {
-                if data == "You don't have any subscriptions" {
-                    message.text = Some("/list_subscriptions".to_string());
-                    self.reply_to_message(api, message, data);
-                } else {
+            BotCommand::SetTemplate(args) => match args.is_empty() {
+                true => {
                     let send_message_params = SetTemplateInlineKeyboard::select_feed_url_keyboard(
                         message, feeds_ids, db_pool,
                     );
                     api.send_message(&send_message_params).unwrap();
                 }
-            }
+                false => self.reply_to_message(api, message, texts),
+            },
             _ => {
-                self.reply_to_message(api, message, text);
+                self.reply_to_message(api, message, texts);
             }
         };
     }

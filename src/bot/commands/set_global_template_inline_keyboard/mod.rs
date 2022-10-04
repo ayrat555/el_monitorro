@@ -112,10 +112,12 @@ impl SetGlobalTemplateInlineKeyboard {
             .text("Make bot item description 𝐛𝐨𝐥𝐝")
             .callback_data("/set_global_template {{bold bot_item_description }}")
             .build();
+
         let bold_bot_item_name = InlineKeyboardButton::builder()
             .text("Make bot item name 𝐛𝐨𝐥𝐝")
             .callback_data("/set_global_template {{bold bot_item_name }}")
             .build();
+
         let back_to_menu = InlineKeyboardButton::builder()
             .text("Back to menu 🔙 ")
             .callback_data("back to menu")

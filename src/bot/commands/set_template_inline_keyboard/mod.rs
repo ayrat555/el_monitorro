@@ -79,10 +79,16 @@ impl SetTemplateInlineKeyboard {
 
         for feed in feed_ids.clone() {
             let mut row: Vec<InlineKeyboardButton> = Vec::new();
-            let name = format!(
-                "{} ",
-                Handler::get_feed_url_by_id(db_pool.clone(), feed.to_string())
-            );
+            let name =
+                if feed == "You don't have any subscriptions" || feed == "error fetching data" {
+                    feed.to_string()
+                } else {
+                    format!(
+                        "{} ",
+                        Handler::get_feed_url_by_id(db_pool.clone(), feed.to_string())
+                    )
+                };
+
             let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
                 .text(name.clone())
                 .callback_data(format!("set_template {}", feed)) //used letter s to identify the callback ,callback data support no of characters

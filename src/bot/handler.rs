@@ -58,6 +58,7 @@ enum CallbackDatas {
     SetDefaulTemplate,
     SlashRemoveTemplate,
     SlashRemoveFilter,
+    SlashSetGlobalTemplate,
     GlobalItalic,
     GlobalBold,
     GlobalCreateLink,
@@ -100,6 +101,9 @@ impl FromStr for CallbackDatas {
             st if st.starts_with(RemoveFilter::command()) => CallbackDatas::SlashRemoveFilter,
             st if st.starts_with(SetGlobalTemplate::create_link_description()) => {
                 CallbackDatas::GlobalTemplateCreateLinkDescription
+            }
+            st if st.starts_with(SetGlobalTemplate::command()) => {
+                CallbackDatas::SlashSetGlobalTemplate
             }
             st if st.starts_with(SetGlobalTemplate::create_link_item_name()) => {
                 CallbackDatas::GlobalTemplateCreateLinkBotItemName
@@ -266,7 +270,7 @@ impl Handler {
             UpdateContent::CallbackQuery(callback_query) => callback_query,
             _ => return,
         };
-        println!("call back query ==={:?}", query);
+
         let mut message = query.message.unwrap();
         let messageid = message.message_id;
         let chatid = message.chat.id;
@@ -284,8 +288,8 @@ impl Handler {
         message.text = Some(data.clone());
 
         let command = CallbackDatas::from_str(commands).unwrap();
+        println!("command recieved in handler callback == {:?}", command);
 
-        println!("command =={:?}", command);
         match command {
             CallbackDatas::SlashListSubscriptions => {
                 ListSubscriptions::execute(db_pool, api, message);
@@ -319,12 +323,16 @@ impl Handler {
                 SetTemplate::execute(db_pool, api, message);
             }
             CallbackDatas::SetTemplate => {
-                let feed_id = Self::parse_int_from_string(commands).unwrap();
-
-                api.delete_message(&delete_message_params).unwrap();
-                let send_message_params =
-                    SetTemplateInlineKeyboard::set_template_menu_keyboard(message, feed_id);
-                api.send_message(&send_message_params).unwrap();
+                let feed_id = Self::parse_int_from_string(commands);
+                match feed_id {
+                    Some(feed_id) => {
+                        api.delete_message(&delete_message_params).unwrap();
+                        let send_message_params =
+                            SetTemplateInlineKeyboard::set_template_menu_keyboard(message, feed_id);
+                        api.send_message(&send_message_params).unwrap();
+                    }
+                    None => SetTemplate::execute(db_pool, api, message),
+                }
             }
             CallbackDatas::Substring => {
                 api.delete_message(&delete_message_params).unwrap();
@@ -396,6 +404,9 @@ impl Handler {
                 let text = &commands.replace(&feed_id, &feed_url);
                 message.text = Some(text.trim().to_string());
                 RemoveFilter::execute(db_pool, api, message);
+            }
+            CallbackDatas::SlashSetGlobalTemplate => {
+                SetGlobalTemplate::execute(db_pool, api, message)
             }
             CallbackDatas::GlobalTemplateCreateLinkDescription => {
                 message.text = Some(

@@ -93,6 +93,7 @@ pub fn set_global_filter_keyboard(message: Message, _feed_url: String) -> SendMe
     let inline_keyboard = InlineKeyboardMarkup::builder()
         .inline_keyboard(keyboard)
         .build();
+
     SendMessageParams::builder()
         .chat_id(message.chat.id)
         .text("send your filter words")
