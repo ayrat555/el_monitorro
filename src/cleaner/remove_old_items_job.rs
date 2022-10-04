@@ -44,6 +44,10 @@ impl Runnable for RemoveOldItemsJob {
         true
     }
 
+    fn max_retries(&self) -> i32 {
+        0
+    }
+
     fn task_type(&self) -> String {
         super::JOB_TYPE.to_string()
     }

@@ -1,9 +1,6 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
-use diesel::PgConnection;
+use typed_builder::TypedBuilder;
 
 static START: &str =
         "El Monitorro is feed reader as a Telegram bot.\n\
@@ -18,11 +15,14 @@ static START: &str =
 
 static COMMAND: &str = "/start";
 
-pub struct Start {}
+#[derive(TypedBuilder)]
+pub struct Start {
+    message: Message,
+}
 
 impl Start {
-    pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        Self {}.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.message);
     }
 
     pub fn command() -> &'static str {
@@ -31,16 +31,7 @@ impl Start {
 }
 
 impl Command for Start {
-    fn response(
-        &self,
-        _db_pool: Pool<ConnectionManager<PgConnection>>,
-        _message: &Message,
-        _api: &Api,
-    ) -> String {
+    fn response(&self) -> String {
         START.to_string()
-    }
-
-    fn command(&self) -> &str {
-        Self::command()
     }
 }

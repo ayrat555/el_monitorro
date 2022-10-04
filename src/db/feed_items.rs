@@ -157,7 +157,7 @@ mod tests {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|connection| {
-            let feed = feeds::create(connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
             let publication_date = db::current_time();
             let feed_items = vec![
                 FetchedFeedItem {
@@ -208,7 +208,7 @@ mod tests {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|connection| {
-            let feed = feeds::create(connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
             let publication_date = db::current_time();
             let feed_items = vec![FetchedFeedItem {
                 title: "FeedItem1".to_string(),
@@ -239,7 +239,7 @@ mod tests {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|connection| {
-            let feed = feeds::create(connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
             let updated_feed =
                 feeds::set_content_fields(connection, &feed, vec!["guid".to_string()]).unwrap();
 
@@ -269,7 +269,7 @@ mod tests {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|connection| {
-            let feed = feeds::create(connection, "Link".to_string(), "atom".to_string()).unwrap();
+            let feed = feeds::create(connection, "Link", "atom".to_string()).unwrap();
             let publication_date = db::current_time();
             let feed_items = vec![FetchedFeedItem {
                 title: "FeedItem1".to_string(),
@@ -313,7 +313,7 @@ mod tests {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|connection| {
-            let feed = feeds::create(connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
             let feed_items = vec![
                 FetchedFeedItem {
                     title: "FeedItem1".to_string(),
@@ -350,7 +350,7 @@ mod tests {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|connection| {
-            let feed = feeds::create(connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
             let feed_items = vec![
                 FetchedFeedItem {
                     title: "FeedItem1".to_string(),
@@ -387,7 +387,7 @@ mod tests {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|connection| {
-            let feed = feeds::create(connection, "Link".to_string(), "rss".to_string()).unwrap();
+            let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
 
             assert!(super::get_latest_item(connection, feed.id).is_none());
 

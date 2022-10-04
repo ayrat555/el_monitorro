@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 use super::commands::get_filter::GetFilter;
 use super::commands::get_global_filter::GetGlobalFilter;
 use super::commands::get_global_template::GetGlobalTemplate;
@@ -37,10 +38,39 @@ use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::DeleteMessageParams;
 use frankenstein::TelegramApi;
+=======
+use super::commands::BotCommand;
+use super::commands::GetFilter;
+use super::commands::GetGlobalFilter;
+use super::commands::GetGlobalTemplate;
+use super::commands::GetTemplate;
+use super::commands::GetTimezone;
+use super::commands::Help;
+use super::commands::Info;
+use super::commands::ListSubscriptions;
+use super::commands::RemoveFilter;
+use super::commands::RemoveGlobalFilter;
+use super::commands::RemoveGlobalTemplate;
+use super::commands::RemoveTemplate;
+use super::commands::SetContentFields;
+use super::commands::SetFilter;
+use super::commands::SetGlobalFilter;
+use super::commands::SetGlobalTemplate;
+use super::commands::SetTemplate;
+use super::commands::SetTimezone;
+use super::commands::Start;
+use super::commands::Subscribe;
+use super::commands::UnknownCommand;
+use super::commands::Unsubscribe;
+use crate::bot::telegram_client;
+use crate::config::Config;
+>>>>>>> master
 use frankenstein::Update;
 use frankenstein::UpdateContent;
+use std::str::FromStr;
 use std::thread;
 
+<<<<<<< HEAD
 const DEFAULT_TEMPLATE: &str = "{{bot_feed_name}}\n\n{{bot_item_name}}\n\n{{bot_item_description}}\n\n{{bot_date}}\n\n{{bot_item_link}}\n\n";
 
 #[derive(Debug)]
@@ -133,6 +163,9 @@ impl FromStr for CallbackDatas {
         Ok(result)
     }
 }
+=======
+const BOT_NAME: &str = "@el_monitorro_bot "; //replace it with your botname,this const is used to remove bot name from the command
+>>>>>>> master
 
 pub struct Handler {}
 
@@ -150,6 +183,7 @@ impl Handler {
         let interval = std::time::Duration::from_secs(1);
         loop {
             while let Some(update) = api.next_update() {
+<<<<<<< HEAD
                 let db_pool = crate::db::pool().clone();
                 let tg_api = api.clone();
 
@@ -170,18 +204,25 @@ impl Handler {
                     }
                     _ => return,
                 }
+=======
+                thread_pool.spawn(move || Self::process_message_or_channel_post(update));
+>>>>>>> master
             }
 
             thread::sleep(interval);
         }
     }
 
+<<<<<<< HEAD
     fn process_message_or_channel_post(
         db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
         api: Api,
         update: Update,
     ) {
         let bot_name = Config::telegram_bot_handle();
+=======
+    fn process_message_or_channel_post(update: Update) {
+>>>>>>> master
         let message = match update.content {
             UpdateContent::Message(message) => message,
             UpdateContent::ChannelPost(channel_post) => channel_post,
@@ -204,8 +245,125 @@ impl Handler {
             return;
         }
 
+<<<<<<< HEAD
         let commands = &text.unwrap();
         let command = &commands.replace(&bot_name, ""); //removes bot name from the command (switch_inline_query_current_chat adds botname automatically)
+=======
+<<<<<<< HEAD
+        let command = BotCommand::from_str(&text.unwrap()).unwrap();
+
+        match command {
+            BotCommand::Subscribe(args) => Subscribe::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::Help => Help::builder().message(message).build().run(),
+
+            BotCommand::Unsubscribe(args) => Unsubscribe::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::ListSubscriptions => {
+                ListSubscriptions::builder().message(message).build().run()
+            }
+
+            BotCommand::Start => Start::builder().message(message).build().run(),
+
+            BotCommand::SetTimezone(args) => SetTimezone::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::GetTimezone => GetTimezone::builder().message(message).build().run(),
+
+            BotCommand::SetFilter(args) => SetFilter::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::GetFilter(args) => GetFilter::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::RemoveFilter(args) => RemoveFilter::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::SetTemplate(args) => SetTemplate::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::GetTemplate(args) => GetTemplate::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::SetGlobalTemplate(args) => SetGlobalTemplate::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::RemoveGlobalTemplate => RemoveGlobalTemplate::builder()
+                .message(message)
+                .build()
+                .run(),
+
+            BotCommand::GetGlobalTemplate => {
+                GetGlobalTemplate::builder().message(message).build().run()
+            }
+
+            BotCommand::SetGlobalFilter(args) => SetGlobalFilter::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::GetGlobalFilter => {
+                GetGlobalFilter::builder().message(message).build().run()
+            }
+
+            BotCommand::RemoveGlobalFilter => {
+                RemoveGlobalFilter::builder().message(message).build().run()
+            }
+
+            BotCommand::Info => Info::builder().message(message).build().run(),
+
+            BotCommand::SetContentFields(args) => SetContentFields::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+
+            BotCommand::UnknownCommand(args) => UnknownCommand::builder()
+                .message(message)
+                .args(args)
+                .build()
+                .run(),
+        };
+=======
+        let commands = &text.unwrap();
+        let command = &commands.replace(BOT_NAME, ""); //removes bot name from the command (switch_inline_query_current_chat adds botname automatically)
+>>>>>>> master
 
         if !command.starts_with('/') {
             UnknownCommand::execute(db_pool, api, message);
@@ -254,6 +412,7 @@ impl Handler {
         } else {
             UnknownCommand::execute(db_pool, api, message);
         }
+>>>>>>> 64539e0 (added inline keyboard for setting global template)
     }
 
     fn owner_telegram_id() -> Option<i64> {

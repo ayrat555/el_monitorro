@@ -10,7 +10,7 @@ use handlebars::Handlebars;
 use handlebars::JsonValue;
 use htmlescape::decode_html;
 use serde_json::value::Map;
-use typed_builder::TypedBuilder as Builder;
+use typed_builder::TypedBuilder;
 
 const BOT_FEED_NAME: &str = "bot_feed_name";
 const BOT_ITEM_NAME: &str = "bot_item_name";

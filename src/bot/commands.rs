@@ -12,7 +12,6 @@ use crate::db::telegram::NewTelegramSubscription;
 use crate::models::Feed;
 use crate::models::TelegramSubscription;
 use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::Chat;
@@ -72,6 +71,8 @@ pub mod subscribe_inline_keyboard;
 pub mod unknown_command;
 pub mod unsubscribe;
 pub mod unsubscribe_inline_keyboard;
+
+const BOT_NAME: &str = "@el_monitorro_bot "; //replace with your bot name add a space after the name
 
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
@@ -197,6 +198,111 @@ impl FromStr for BotCommand {
     }
 }
 
+pub enum BotCommand {
+    UnknownCommand(String),
+    Help,
+    Subscribe(String),
+    Unsubscribe(String),
+    ListSubscriptions,
+    Start,
+    SetTimezone(String),
+    GetTimezone,
+    SetFilter(String),
+    GetFilter(String),
+    RemoveFilter(String),
+    SetTemplate(String),
+    GetTemplate(String),
+    RemoveTemplate(String),
+    GetGlobalFilter,
+    SetGlobalFilter(String),
+    RemoveGlobalFilter,
+    GetGlobalTemplate,
+    SetGlobalTemplate(String),
+    RemoveGlobalTemplate,
+    Info,
+    SetContentFields(String),
+}
+
+impl FromStr for BotCommand {
+    type Err = ();
+
+    fn from_str(command: &str) -> Result<Self, Self::Err> {
+        let bot_command = if !command.starts_with('/') {
+            BotCommand::UnknownCommand(command.to_string())
+        } else if command.starts_with(Help::command()) {
+            BotCommand::Help
+        } else if command.starts_with(Subscribe::command()) {
+            let args = parse_args(Subscribe::command(), command);
+
+            BotCommand::Subscribe(args)
+        } else if command.starts_with(Unsubscribe::command()) {
+            let args = parse_args(Unsubscribe::command(), command);
+
+            BotCommand::Unsubscribe(args)
+        } else if command.starts_with(ListSubscriptions::command()) {
+            BotCommand::ListSubscriptions
+        } else if command.starts_with(Start::command()) {
+            BotCommand::Start
+        } else if command.starts_with(SetTimezone::command()) {
+            let args = parse_args(SetTimezone::command(), command);
+
+            BotCommand::SetTimezone(args)
+        } else if command.starts_with(GetTimezone::command()) {
+            BotCommand::GetTimezone
+        } else if command.starts_with(SetFilter::command()) {
+            let args = parse_args(SetFilter::command(), command);
+
+            BotCommand::SetFilter(args)
+        } else if command.starts_with(GetFilter::command()) {
+            let args = parse_args(GetFilter::command(), command);
+
+            BotCommand::GetFilter(args)
+        } else if command.starts_with(RemoveFilter::command()) {
+            let args = parse_args(RemoveFilter::command(), command);
+
+            BotCommand::RemoveFilter(args)
+        } else if command.starts_with(SetTemplate::command()) {
+            let args = parse_args(SetTemplate::command(), command);
+
+            BotCommand::SetTemplate(args)
+        } else if command.starts_with(GetTemplate::command()) {
+            let args = parse_args(GetTemplate::command(), command);
+
+            BotCommand::GetTemplate(args)
+        } else if command.starts_with(RemoveTemplate::command()) {
+            let args = parse_args(RemoveTemplate::command(), command);
+
+            BotCommand::RemoveTemplate(args)
+        } else if command.starts_with(SetGlobalFilter::command()) {
+            let args = parse_args(SetGlobalFilter::command(), command);
+
+            BotCommand::SetGlobalFilter(args)
+        } else if command.starts_with(RemoveGlobalTemplate::command()) {
+            BotCommand::RemoveGlobalTemplate
+        } else if command.starts_with(GetGlobalTemplate::command()) {
+            BotCommand::GetGlobalTemplate
+        } else if command.starts_with(SetGlobalTemplate::command()) {
+            let args = parse_args(SetGlobalTemplate::command(), command);
+
+            BotCommand::SetGlobalTemplate(args)
+        } else if command.starts_with(GetGlobalFilter::command()) {
+            BotCommand::GetGlobalFilter
+        } else if command.starts_with(RemoveGlobalFilter::command()) {
+            BotCommand::RemoveGlobalFilter
+        } else if command.starts_with(Info::command()) {
+            BotCommand::Info
+        } else if command.starts_with(SetContentFields::command()) {
+            let args = parse_args(SetContentFields::command(), command);
+
+            BotCommand::SetContentFields(args)
+        } else {
+            BotCommand::UnknownCommand(command.to_string())
+        };
+
+        Ok(bot_command)
+    }
+}
+
 fn parse_args(command: &str, command_with_args: &str) -> String {
     let handle = Config::telegram_bot_handle();
     let command_with_handle = format!("{}@{}", command, handle);
@@ -212,14 +318,9 @@ fn parse_args(command: &str, command_with_args: &str) -> String {
 }
 
 pub trait Command {
-    fn response(
-        &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
-        message: &Message,
-        api: &Api,
-    ) -> String;
+    fn response(&self) -> String;
 
-    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+    fn execute(&self, message: &Message) {
         info!(
             "{:?} wrote: {}",
             message.chat.id,
@@ -299,9 +400,10 @@ pub trait Command {
         };
     }
 
-    fn reply_to_message(&self, api: Api, message: Message, text: String) {
+    fn reply_to_message(&self, message: &Message, text: String) {
         if let Err(error) =
-            api.reply_with_text_message(message.chat.id, text, Some(message.message_id))
+            self.api()
+                .reply_with_text_message(message.chat.id, text, Some(message.message_id))
         {
             error!("Failed to reply to update {:?} {:?}", error, message);
         }
@@ -331,9 +433,8 @@ pub trait Command {
 
     fn fetch_db_connection(
         &self,
-        db_pool: Pool<ConnectionManager<PgConnection>>,
     ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, String> {
-        match db_pool.get() {
+        match crate::db::pool().get() {
             Ok(connection) => Ok(connection),
             Err(err) => {
                 error!("Failed to fetch a connection from the pool {:?}", err);
@@ -343,11 +444,15 @@ pub trait Command {
         }
     }
 
+    fn api(&self) -> Api {
+        telegram_client::api().clone()
+    }
+
     fn find_subscription(
         &self,
         db_connection: &mut PgConnection,
         chat_id: i64,
-        feed_url: String,
+        feed_url: &str,
     ) -> Result<TelegramSubscription, String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
         let feed = self.find_feed(db_connection, feed_url)?;
@@ -368,11 +473,7 @@ pub trait Command {
         }
     }
 
-    fn find_feed(
-        &self,
-        db_connection: &mut PgConnection,
-        feed_url: String,
-    ) -> Result<Feed, String> {
+    fn find_feed(&self, db_connection: &mut PgConnection, feed_url: &str) -> Result<Feed, String> {
         match feeds::find_by_link(db_connection, feed_url) {
             Some(feed) => Ok(feed),
             None => Err("Feed does not exist".to_string()),
