@@ -1,5 +1,10 @@
+use crate::bot::telegram_client::Api;
+
 use super::Command;
 use super::Message;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
+use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
 static START: &str =
@@ -17,12 +22,12 @@ static COMMAND: &str = "/start";
 
 #[derive(TypedBuilder)]
 pub struct Start {
-    message: Message,
+    _message: Message,
 }
 
 impl Start {
-    pub fn run(&self) {
-        self.execute(&self.message);
+    pub fn run(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+        self.execute(db_pool, api, message);
     }
 
     pub fn command() -> &'static str {

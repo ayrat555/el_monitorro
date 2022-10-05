@@ -1,16 +1,15 @@
 use super::Command;
 use super::Message;
+use crate::bot::telegram_client::Api;
 use crate::db::telegram;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
 use diesel::PgConnection;
-<<<<<<< HEAD
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
 use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
-=======
 use typed_builder::TypedBuilder;
->>>>>>> master
-
 static COMMAND: &str = "/remove_template";
 
 #[derive(TypedBuilder)]
@@ -20,10 +19,9 @@ pub struct RemoveTemplate {
 }
 
 impl RemoveTemplate {
-    pub fn run(&self) {
-        self.execute(&self.message);
+    pub fn run(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+        self.execute(db_pool, api, message);
     }
-
     fn remove_template(&self, db_connection: &mut PgConnection) -> String {
         let subscription =
             match self.find_subscription(db_connection, self.message.chat.id, &self.args) {

@@ -1,24 +1,23 @@
 use super::Command;
 use super::Message;
+use crate::bot::telegram_client::Api;
 use crate::db::telegram;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/list_subscriptions";
-<<<<<<< HEAD
 static CALLBACK: &str = "list_subscriptions";
-pub struct ListSubscriptions {}
-=======
 
 #[derive(TypedBuilder)]
 pub struct ListSubscriptions {
     message: Message,
 }
->>>>>>> master
 
 impl ListSubscriptions {
-    pub fn run(&self) {
-        self.execute(&self.message);
+    pub fn run(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+        self.execute(db_pool, api, message);
     }
 
     fn list_subscriptions(&self, db_connection: &mut PgConnection) -> String {
@@ -55,13 +54,6 @@ impl Command for ListSubscriptions {
         }
     }
 }
-//    if data == "You don't have any subscriptions" {
-//                     self.reply_to_message(api, message, data);
-//                 } else {
-//                     let send_message_params =
-//                         ListSubscriptionsInlineKeyboard::select_feed_url_keyboard_list_subscriptions(message, feeds_ids, db_pool);
-//                     api.send_message(&send_message_params).unwrap();
-//                 }
 
 #[cfg(test)]
 mod list_subscriptions_tests {

@@ -1,5 +1,9 @@
 use super::Command;
 use super::Message;
+use crate::bot::telegram_client::Api;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
+use diesel::PgConnection;
 use frankenstein::ChatType;
 use typed_builder::TypedBuilder;
 
@@ -15,8 +19,8 @@ pub struct UnknownCommand {
 }
 
 impl UnknownCommand {
-    pub fn run(&self) {
-        self.execute(&self.message);
+    pub fn run(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+        self.execute(db_pool, api, message);
     }
     pub fn command() -> &'static str {
         COMMAND
@@ -40,7 +44,12 @@ impl Command for UnknownCommand {
         }
     }
 
-    fn execute(&self, message: &Message) {
+    fn execute(
+        &self,
+        _db_pool: Pool<ConnectionManager<PgConnection>>,
+        _api: Api,
+        message: Message,
+    ) {
         if message.chat.type_field != ChatType::Channel {
             info!("{:?} wrote: {}", message.chat.id, self.args);
         }

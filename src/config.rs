@@ -32,7 +32,7 @@ impl Config {
     }
 
     pub fn telegram_bot_handle() -> String {
-        Self::read_var_with_default("TELEGRAM_BOT_HANDLE", " @el_monitorro_bot ")
+        Self::read_var_with_default("TELEGRAM_BOT_HANDLE", "@el_monitorro_bot ")
         //add a space after the bot name
     }
 
@@ -50,6 +50,10 @@ impl Config {
 
     pub fn subscription_limit() -> i64 {
         Self::read_var_with_default("SUBSCRIPTION_LIMIT", "20")
+    }
+
+    pub fn filter_limit() -> usize {
+        Self::read_var_with_default("FILTER_LIMIT", "20")
     }
 
     pub fn commands_db_pool_number() -> u32 {

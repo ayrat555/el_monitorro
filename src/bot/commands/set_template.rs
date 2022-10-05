@@ -1,29 +1,28 @@
 use super::Command;
 use super::Message;
+use crate::bot::telegram_client::Api;
 use crate::db::telegram;
 use crate::deliver::render_template_example;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/set_template";
-<<<<<<< HEAD
 static CALLBACK: &str = "set_template";
 static DEFAULT_TEMPLATE: &str = "set_default_template";
-pub struct SetTemplate {}
-=======
-
+static SET_TEMPLATE_CREATE_LINK_DESCRIPTION: &str = "set__template_description";
+static SET_TEMPLATE_CREATE_LINK_BOT_ITEM_NAME: &str = "set__template_item_name";
 #[derive(TypedBuilder)]
 pub struct SetTemplate {
     message: Message,
     args: String,
 }
->>>>>>> master
 
 impl SetTemplate {
-    pub fn run(&self) {
-        self.execute(&self.message);
+    pub fn run(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+        self.execute(db_pool, api, message);
     }
-
     fn set_template(&self, db_connection: &mut PgConnection) -> String {
         let vec: Vec<&str> = self.args.splitn(2, ' ').collect();
 
@@ -35,11 +34,8 @@ impl SetTemplate {
             return "Template can not be empty".to_string();
         }
 
-<<<<<<< HEAD
-        let feed_url = vec[0].trim().to_string();
-=======
-        let feed_url = vec[0];
->>>>>>> master
+        let feed_url = vec[0].trim();
+
         let template = vec[1];
 
         let subscription =
@@ -77,6 +73,14 @@ impl SetTemplate {
 
     pub fn default_template() -> &'static str {
         DEFAULT_TEMPLATE
+    }
+
+    pub fn create_link_description() -> &'static str {
+        SET_TEMPLATE_CREATE_LINK_DESCRIPTION
+    }
+
+    pub fn create_link_item_name() -> &'static str {
+        SET_TEMPLATE_CREATE_LINK_BOT_ITEM_NAME
     }
 }
 

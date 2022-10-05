@@ -6,7 +6,7 @@ use frankenstein::{
     InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyMarkup, SendMessageParams,
 };
 
-use crate::bot::handler::Handler;
+use crate::bot::handler::get_feed_url_by_id;
 
 static SUBSTRING: &str = "substring";
 static ITALIC: &str = "italic";
@@ -83,10 +83,7 @@ impl SetTemplateInlineKeyboard {
                 if feed == "You don't have any subscriptions" || feed == "error fetching data" {
                     feed.to_string()
                 } else {
-                    format!(
-                        "{} ",
-                        Handler::get_feed_url_by_id(db_pool.clone(), feed.to_string())
-                    )
+                    format!("{} ", get_feed_url_by_id(db_pool.clone(), feed.to_string()))
                 };
 
             let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
@@ -253,11 +250,11 @@ impl SetTemplateInlineKeyboard {
 
         let create_link_bot_item_description = InlineKeyboardButton::builder()
             .text("Make bot item description as link")
-            .callback_data(format!("/set_template {} create_link_description", feed_id))
+            .callback_data(format!("set__template_description {}", feed_id))
             .build();
         let create_link_bot_item_name = InlineKeyboardButton::builder()
             .text("Make bot item name as link")
-            .callback_data(format!("/set_template {} create_link_item_name", feed_id))
+            .callback_data(format!("set__template_item_name {}", feed_id))
             .build();
         let create_link_custom_name = InlineKeyboardButton::builder()
             .text("Make custom name as link")

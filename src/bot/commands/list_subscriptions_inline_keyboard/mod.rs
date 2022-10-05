@@ -6,7 +6,7 @@ use frankenstein::{
     InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyMarkup, SendMessageParams,
 };
 
-use crate::bot::handler::Handler;
+use crate::bot::handler::get_feed_url_by_id;
 static BACK_TO_MENU: &str = "back to menu";
 
 pub struct ListSubscriptionsInlineKeyboard {}
@@ -103,10 +103,7 @@ impl ListSubscriptionsInlineKeyboard {
                 if feed == "You don't have any subscriptions" || feed == "error fetching data" {
                     feed.to_string()
                 } else {
-                    format!(
-                        "{} ",
-                        Handler::get_feed_url_by_id(db_pool.clone(), feed.to_string())
-                    )
+                    format!("{} ", get_feed_url_by_id(db_pool.clone(), feed.to_string()))
                 };
             let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
                 .text(name.clone())

@@ -3,6 +3,7 @@ use crate::bot::commands::set_global_template_inline_keyboard::SetGlobalTemplate
 use crate::bot::commands::set_template_inline_keyboard::SetTemplateInlineKeyboard;
 use crate::bot::commands::subscribe_inline_keyboard::SubscribeInlineKeyboard;
 use crate::bot::commands::unsubscribe_inline_keyboard::UnsubscribeInlineKeyboard;
+use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
@@ -12,6 +13,7 @@ use crate::db::telegram::NewTelegramSubscription;
 use crate::models::Feed;
 use crate::models::TelegramSubscription;
 use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::Chat;
@@ -72,8 +74,6 @@ pub mod unknown_command;
 pub mod unsubscribe;
 pub mod unsubscribe_inline_keyboard;
 
-const BOT_NAME: &str = "@el_monitorro_bot "; //replace with your bot name add a space after the name
-
 impl From<Chat> for NewTelegramChat {
     fn from(chat: Chat) -> Self {
         let kind = match chat.type_field {
@@ -93,110 +93,6 @@ impl From<Chat> for NewTelegramChat {
         }
     }
 }
-pub enum BotCommand {
-    UnknownCommand(String),
-    Help,
-    Subscribe(String),
-    Unsubscribe(String),
-    ListSubscriptions,
-    Start,
-    SetTimezone(String),
-    GetTimezone,
-    SetFilter(String),
-    GetFilter(String),
-    RemoveFilter(String),
-    SetTemplate(String),
-    GetTemplate(String),
-    RemoveTemplate(String),
-    GetGlobalFilter,
-    SetGlobalFilter(String),
-    RemoveGlobalFilter,
-    GetGlobalTemplate,
-    SetGlobalTemplate(String),
-    RemoveGlobalTemplate,
-    Info,
-    SetContentFields(String),
-}
-
-impl FromStr for BotCommand {
-    type Err = ();
-
-    fn from_str(command: &str) -> Result<Self, Self::Err> {
-        let bot_command = if !command.starts_with('/') {
-            BotCommand::UnknownCommand(command.to_string())
-        } else if command.starts_with(Help::command()) {
-            BotCommand::Help
-        } else if command.starts_with(Subscribe::command()) {
-            let args = parse_args(Subscribe::command(), command);
-
-            BotCommand::Subscribe(args)
-        } else if command.starts_with(Unsubscribe::command()) {
-            let args = parse_args(Unsubscribe::command(), command);
-
-            BotCommand::Unsubscribe(args)
-        } else if command.starts_with(ListSubscriptions::command()) {
-            BotCommand::ListSubscriptions
-        } else if command.starts_with(Start::command()) {
-            BotCommand::Start
-        } else if command.starts_with(SetTimezone::command()) {
-            let args = parse_args(SetTimezone::command(), command);
-
-            BotCommand::SetTimezone(args)
-        } else if command.starts_with(GetTimezone::command()) {
-            BotCommand::GetTimezone
-        } else if command.starts_with(SetFilter::command()) {
-            let args = parse_args(SetFilter::command(), command);
-
-            BotCommand::SetFilter(args)
-        } else if command.starts_with(GetFilter::command()) {
-            let args = parse_args(GetFilter::command(), command);
-
-            BotCommand::GetFilter(args)
-        } else if command.starts_with(RemoveFilter::command()) {
-            let args = parse_args(RemoveFilter::command(), command);
-
-            BotCommand::RemoveFilter(args)
-        } else if command.starts_with(SetTemplate::command()) {
-            let args = parse_args(SetTemplate::command(), command);
-
-            BotCommand::SetTemplate(args)
-        } else if command.starts_with(GetTemplate::command()) {
-            let args = parse_args(GetTemplate::command(), command);
-
-            BotCommand::GetTemplate(args)
-        } else if command.starts_with(RemoveTemplate::command()) {
-            let args = parse_args(RemoveTemplate::command(), command);
-
-            BotCommand::RemoveTemplate(args)
-        } else if command.starts_with(SetGlobalFilter::command()) {
-            let args = parse_args(SetGlobalFilter::command(), command);
-
-            BotCommand::SetGlobalFilter(args)
-        } else if command.starts_with(RemoveGlobalTemplate::command()) {
-            BotCommand::RemoveGlobalTemplate
-        } else if command.starts_with(GetGlobalTemplate::command()) {
-            BotCommand::GetGlobalTemplate
-        } else if command.starts_with(SetGlobalTemplate::command()) {
-            let args = parse_args(SetGlobalTemplate::command(), command);
-
-            BotCommand::SetGlobalTemplate(args)
-        } else if command.starts_with(GetGlobalFilter::command()) {
-            BotCommand::GetGlobalFilter
-        } else if command.starts_with(RemoveGlobalFilter::command()) {
-            BotCommand::RemoveGlobalFilter
-        } else if command.starts_with(Info::command()) {
-            BotCommand::Info
-        } else if command.starts_with(SetContentFields::command()) {
-            let args = parse_args(SetContentFields::command(), command);
-
-            BotCommand::SetContentFields(args)
-        } else {
-            BotCommand::UnknownCommand(command.to_string())
-        };
-
-        Ok(bot_command)
-    }
-}
 
 pub enum BotCommand {
     UnknownCommand(String),
@@ -303,7 +199,7 @@ impl FromStr for BotCommand {
     }
 }
 
-fn parse_args(command: &str, command_with_args: &str) -> String {
+pub fn parse_args(command: &str, command_with_args: &str) -> String {
     let handle = Config::telegram_bot_handle();
     let command_with_handle = format!("{}@{}", command, handle);
 
@@ -320,7 +216,7 @@ fn parse_args(command: &str, command_with_args: &str) -> String {
 pub trait Command {
     fn response(&self) -> String;
 
-    fn execute(&self, message: &Message) {
+    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         info!(
             "{:?} wrote: {}",
             message.chat.id,
@@ -328,15 +224,14 @@ pub trait Command {
         );
 
         let text: &str = message.text.as_ref().unwrap();
-        println!("text from message.text === {}", text);
         let command = BotCommand::from_str(text).unwrap();
 
-        let data = match self.fetch_db_connection(db_pool.clone()) {
+        let data = match self.fetch_db_connection() {
             Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
             Err(_error_message) => "error fetching data".to_string(),
         };
 
-        let feed_id = match self.fetch_db_connection(db_pool.clone()) {
+        let feed_id = match self.fetch_db_connection() {
             Ok(mut connection) => self.list_feed_id(&mut *connection, &message),
             Err(_error_message) => "error fetching data".to_string(),
         };
@@ -344,7 +239,7 @@ pub trait Command {
         let feeds = data.split('\n');
         let feeds_ids = feed_id.split(',').clone();
 
-        let texts = self.response(db_pool.clone(), &message, &api);
+        let texts = self.response();
         let delete_message_params = DeleteMessageParams::builder()
             .chat_id(message.chat.id)
             .message_id(message.message_id)
@@ -357,7 +252,7 @@ pub trait Command {
                         SubscribeInlineKeyboard::set_subscribe_keyboard(message);
                     api.send_message(&send_message_params).unwrap();
                 }
-                false => self.reply_to_message(api, message, texts),
+                false => self.reply_to_message(message, texts),
             },
             BotCommand::Unsubscribe(args) => match args.is_empty() {
                 true => {
@@ -367,7 +262,7 @@ pub trait Command {
                     );
                     api.send_message(&send_message_params).unwrap();
                 }
-                false => self.reply_to_message(api, message, texts),
+                false => self.reply_to_message(message, texts),
             },
             BotCommand::SetGlobalTemplate(args) => match args.is_empty() {
                 true => {
@@ -376,7 +271,7 @@ pub trait Command {
                         SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
                     api.send_message(&send_message_params).unwrap();
                 }
-                false => self.reply_to_message(api, message, texts),
+                false => self.reply_to_message(message, texts),
             },
             BotCommand::ListSubscriptions => {
                 let send_message_params =
@@ -392,42 +287,21 @@ pub trait Command {
                     );
                     api.send_message(&send_message_params).unwrap();
                 }
-                false => self.reply_to_message(api, message, texts),
+                false => self.reply_to_message(message, texts),
             },
             _ => {
-                self.reply_to_message(api, message, texts);
+                self.reply_to_message(message, texts);
             }
         };
     }
 
-    fn reply_to_message(&self, message: &Message, text: String) {
+    fn reply_to_message(&self, message: Message, text: String) {
         if let Err(error) =
-            self.api()
+            &self
+                .api()
                 .reply_with_text_message(message.chat.id, text, Some(message.message_id))
         {
             error!("Failed to reply to update {:?} {:?}", error, message);
-        }
-    }
-    fn command(&self) -> &str;
-
-    fn parse_argument(&self, full_command: &str) -> String {
-        let bot_name = Config::telegram_bot_handle();
-        let command = self.command();
-        let handle = Config::telegram_bot_handle();
-        let command_with_handle = format!("{}@{}", command, handle);
-
-        if full_command.starts_with(&command_with_handle) {
-            full_command
-                .replace(&command_with_handle, "")
-                .replace(&bot_name, "")
-                .trim()
-                .to_string()
-        } else {
-            full_command
-                .replace(command, "")
-                .replace(&bot_name, "")
-                .trim()
-                .to_string()
         }
     }
 
@@ -484,12 +358,16 @@ pub trait Command {
         let filter_words: Vec<String> =
             params.split(',').map(|s| s.trim().to_lowercase()).collect();
 
-        if filter_words.len() > 20 {
-            return Err("The number of filter words is limited by 20".to_string());
+        let filter_limit = Config::filter_limit();
+
+        if filter_words.len() > filter_limit {
+            let err = format!("The number of filter words is limited by {}", filter_limit);
+            return Err(err);
         }
 
         Ok(filter_words)
     }
+
     fn list_subscriptions(&self, db_connection: &mut PgConnection, message: Message) -> String {
         match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
             Err(_) => "Couldn't fetch your subscriptions".to_string(),

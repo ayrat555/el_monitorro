@@ -190,11 +190,11 @@ impl SetGlobalTemplateInlineKeyboard {
 
         let create_link_bot_item_description = InlineKeyboardButton::builder()
             .text("Make bot item description as link")
-            .callback_data("/set_global_template create_link_description")
+            .callback_data("set_global_template_description")
             .build();
         let create_link_bot_item_name = InlineKeyboardButton::builder()
             .text("Make bot item name as link")
-            .callback_data("/set_global_template create_link_item_name")
+            .callback_data("set_global_template_item_name")
             .build();
         let create_link_custom_name = InlineKeyboardButton::builder()
             .text("Make custom name as link")

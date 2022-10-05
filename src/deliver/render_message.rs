@@ -37,7 +37,7 @@ handlebars_helper!(bold: |string: String| format!("<b>{}</b>", string));
 handlebars_helper!(italic: |string: String| format!("<i>{}</i>", string));
 handlebars_helper!(substring: |string: String, length: usize| truncate(&string, length));
 
-#[derive(Builder)]
+#[derive(TypedBuilder)]
 pub struct MessageRenderer {
     #[builder(setter(into), default)]
     bot_feed_name: Option<String>,
