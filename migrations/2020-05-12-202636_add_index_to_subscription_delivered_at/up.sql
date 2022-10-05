@@ -1,0 +1,1 @@
+CREATE INDEX telegram_subscriptions_last_delivered_at_index ON telegram_subscriptions(last_delivered_at);

@@ -1,0 +1,38 @@
+[package]
+name = "el_monitorro"
+version = "0.11.0"
+authors = ["Ayrat Badykov <ayratin555@gmail.com>"]
+edition = "2021"
+rust-version = "1.62"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+thiserror = "1.0"
+once_cell = "1.13"
+aho-corasick = "0.7"
+atom_syndication = "0.11"
+chrono = "0.4"
+diesel = { version = "2", features = ["postgres","r2d2"] }
+dotenv = "0.15"
+pretty_env_logger = "0.4"
+fang = { version = "0.10", features = ["blocking"], default-features = false }
+feed-rs = "1"
+frankenstein = { version = "0.20", default-features = false, features = ["telegram-trait"] }
+handlebars = "4"
+hex = "0.4"
+htmlescape = "0.3"
+isahc = "1"
+log = "0.4"
+nanohtml2text = "0.1.4"
+rayon = "1.5"
+rss = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+typed-builder = "0.10"
+url = "2"
+regex ="1"
+
+[dev-dependencies]
+mockito = "0.31"

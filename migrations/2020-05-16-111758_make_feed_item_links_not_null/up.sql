@@ -1,0 +1,2 @@
+ALTER TABLE feed_items
+    ALTER COLUMN link SET NOT NULL;

@@ -1,0 +1,30 @@
+services:
+  sync:
+    image: ayratbadykov/el_monitorro:dev
+    network_mode: host
+    env_file: .env
+    environment:
+      BOT_BINARY: sync
+      SYNC_INTERVAL_SECONDS: 120
+      SYNC_WORKERS_NUMBER: 10
+  deliver:
+    image: ayratbadykov/el_monitorro:dev
+    network_mode: host
+    env_file: .env
+    environment:
+      BOT_BINARY: deliver
+      DELIVER_INTERVAL_SECONDS: 60
+      DELIVER_WORKERS_NUMBER: 5
+  clean:
+    image: ayratbadykov/el_monitorro:dev
+    network_mode: host
+    env_file: .env
+    environment:
+      BOT_BINARY: cleaner
+      CLEAN_INTERVAL_SECONDS: 43200
+  commands:
+    image: ayratbadykov/el_monitorro:dev
+    network_mode: host
+    env_file: .env
+    environment:
+      BOT_BINARY: commands

@@ -1,0 +1,25 @@
+# The URL the site will be built for
+base_url = "https://elmonitorro.badykov.com"
+
+# Whether to automatically compile all Sass files in the sass directory
+compile_sass = true
+
+# Whether to build a search index to be used later on by a JavaScript library
+build_search_index = false
+theme = "juice"
+
+title = "El Monitorro - high-performance feed reader"
+
+[markdown]
+# Whether to do syntax highlighting
+# Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
+highlight_code = true
+highlight_theme = "css"
+
+[extra]
+juice_logo_name = "El Monitorro"
+juice_logo_path = "el_monitorro_logo.png"
+juice_extra_menu = [
+    { title = "Github", link = "https://github.com/ayrat555/el_monitorro"}
+]
+repository_url = "https://github.com/ayrat555/el_monitorro"

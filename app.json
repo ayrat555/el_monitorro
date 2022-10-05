@@ -1,0 +1,13 @@
+{
+  "name": "el_monitorro",
+  "description": "el_monitorro is RSS, Atom and JSON feed reader as a Telegram bot",
+  "repository": "https://github.com/ayrat555/el_monitorro",
+  "keywords": ["rust", "json", "api"],
+  "logo": "https://github.com/ayrat555/el_monitorro/raw/master/el_monitorro_logo.png",
+  "addons": [ "heroku-postgresql" ],
+  "buildpacks": [
+    {
+      "url": "https://github.com/emk/heroku-buildpack-rust"
+    }
+  ]
+}
