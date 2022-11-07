@@ -18,7 +18,7 @@ dotenv = "0.15"
 pretty_env_logger = "0.4"
 fang = { version = "0.10", features = ["blocking"], default-features = false }
 feed-rs = "1"
-frankenstein = { git = "https://github.com/ayrat555/frankenstein", branch = "ayrat555/fix-custom-emoji-id"  }
+frankenstein = { version = "0.21", default-features = false, features = ["telegram-trait"] }
 handlebars = "4"
 hex = "0.4"
 htmlescape = "0.3"
