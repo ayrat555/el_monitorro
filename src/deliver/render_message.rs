@@ -104,17 +104,17 @@ impl MessageRenderer {
     fn date(&self) -> Option<String> {
         if let Some(date) = &self.bot_date {
             let time_offset = match self.offset {
-                None => FixedOffset::west(0),
+                None => FixedOffset::west_opt(0),
                 Some(value) => {
                     if value > 0 {
-                        FixedOffset::east(value * 60)
+                        FixedOffset::east_opt(value * 60)
                     } else {
-                        FixedOffset::west(-value * 60)
+                        FixedOffset::west_opt(-value * 60)
                     }
                 }
             };
 
-            let date_with_timezone = date.with_timezone(&time_offset);
+            let date_with_timezone = date.with_timezone(&time_offset.unwrap());
 
             return Some(format!("{}", date_with_timezone));
         }
