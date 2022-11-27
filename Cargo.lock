@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "aho-corasick"
-version = "0.7.19"
+version = "0.7.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4f55bd91a0978cbfd91c457a164bab8b4001c833b7f323132c0a4e1922dd44e"
+checksum = "cc936419f96fa211c1b9166887b38e5e40b19958e5b895be7c1f93adec7071ac"
 dependencies = [
  "memchr",
 ]
@@ -100,9 +100,9 @@ checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
 name = "bytes"
-version = "1.2.1"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec8a7b6a70fde80372154c65702f00a0f56f3e1c36abbc6c440484be248856db"
+checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 
 [[package]]
 name = "cache-padded"
@@ -118,9 +118,9 @@ checksum = "a2698f953def977c68f935bb0dfa959375ad4638570e969e2f1e9f433cbf1af6"
 
 [[package]]
 name = "cc"
-version = "1.0.76"
+version = "1.0.77"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76a284da2e6fe2092f2353e51713435363112dfd60030e22add80be333fb928f"
+checksum = "e9f73505338f7d905b19d18738976aae232eb46b8efc15554ffc56deb5d9ebe4"
 
 [[package]]
 name = "cfg-if"
@@ -222,9 +222,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-epoch"
-version = "0.9.12"
+version = "0.9.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96bf8df95e795db1a4aca2957ad884a2df35413b24bbeb3114422f3cc21498e8"
+checksum = "01a9af1f4c2ef74bb8aa1f7e19706bc72d03598c8a570bb5de72243c7a9d9d5a"
 dependencies = [
  "autocfg",
  "cfg-if",
@@ -235,9 +235,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.13"
+version = "0.8.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "422f23e724af1240ec469ea1e834d87a4b59ce2efe2c6a96256b0c47e2fd86aa"
+checksum = "4fb766fa798726286dbbb842f174001dab8abc7b627a1dd86e0b7222a95d929f"
 dependencies = [
  "cfg-if",
 ]
@@ -1018,9 +1018,9 @@ checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.77"
+version = "0.9.78"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b03b84c3b2d099b81f0953422b4d4ad58761589d0229b5506356afca05a3670a"
+checksum = "07d5c8cb6e57b3a3612064d7b18b117912b4ce70955c2504d4b741c9e244b132"
 dependencies = [
  "autocfg",
  "cc",
@@ -1066,9 +1066,9 @@ checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 
 [[package]]
 name = "pest"
-version = "2.4.1"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a528564cc62c19a7acac4d81e01f39e53e25e17b934878f4c6d25cc2836e62f8"
+checksum = "5f400b0f7905bf702f9f3dc3df5a121b16c54e9e8012c082905fdf09a931861a"
 dependencies = [
  "thiserror",
  "ucd-trie",
@@ -1076,9 +1076,9 @@ dependencies = [
 
 [[package]]
 name = "pest_derive"
-version = "2.4.1"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5fd9bc6500181952d34bd0b2b0163a54d794227b498be0b7afa7698d0a7b18f"
+checksum = "423c2ba011d6e27b02b482a3707c773d19aec65cc024637aec44e19652e66f63"
 dependencies = [
  "pest",
  "pest_generator",
@@ -1086,9 +1086,9 @@ dependencies = [
 
 [[package]]
 name = "pest_generator"
-version = "2.4.1"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2610d5ac5156217b4ff8e46ddcef7cdf44b273da2ac5bca2ecbfa86a330e7c4"
+checksum = "3e64e6c2c85031c02fdbd9e5c72845445ca0a724d419aa0bc068ac620c9935c1"
 dependencies = [
  "pest",
  "pest_meta",
@@ -1099,9 +1099,9 @@ dependencies = [
 
 [[package]]
 name = "pest_meta"
-version = "2.4.1"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "824749bf7e21dd66b36fbe26b3f45c713879cccd4a009a917ab8e045ca8246fe"
+checksum = "57959b91f0a133f89a68be874a5c88ed689c19cd729ecdb5d762ebf16c64d662"
 dependencies = [
  "once_cell",
  "pest",
@@ -1142,16 +1142,16 @@ checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
 
 [[package]]
 name = "polling"
-version = "2.4.0"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab4609a838d88b73d8238967b60dd115cc08d38e2bbaf51ee1e4b695f89122e2"
+checksum = "9f7d73f1eaed1ca1fb37b54dcc9b38e3b17d6c7b8ecb7abfffcac8d0351f17d4"
 dependencies = [
  "autocfg",
  "cfg-if",
  "libc",
  "log",
  "wepoll-ffi",
- "winapi",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -1408,9 +1408,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.88"
+version = "1.0.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e8b3801309262e8184d9687fb697586833e939767aea0dda89f5a8e650e8bd7"
+checksum = "020ff22c755c2ed3f8cf162dbb41a7268d934702f3ed3631656ea597e08fc3db"
 dependencies = [
  "itoa",
  "ryu",
@@ -1547,9 +1547,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.1.44"
+version = "0.1.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6db9e6914ab8b1ae1c260a4ae7a49b6c5611b40328a735b21862567685e73255"
+checksum = "1b797afad3f312d1c66a56d11d0316f916356d11bd158fbc6ca6389ff6bf805a"
 dependencies = [
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
