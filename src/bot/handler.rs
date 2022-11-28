@@ -94,7 +94,7 @@ pub fn get_feed_url_by_id(db_pool: Pool<ConnectionManager<PgConnection>>, data: 
             let feedid: i64 = data.parse().unwrap();
             match fetch_db_connection(db_pool) {
                 Ok(mut connection) => {
-                    let feeds = find(&mut *connection, feedid).unwrap();
+                    let feeds = find(&mut connection, feedid).unwrap();
                     let data = feeds;
                     data.link
                 }

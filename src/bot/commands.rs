@@ -227,12 +227,12 @@ pub trait Command {
         let command = BotCommand::from_str(text).unwrap();
 
         let data = match self.fetch_db_connection() {
-            Ok(mut connection) => self.list_subscriptions(&mut *connection, message.clone()),
+            Ok(mut connection) => self.list_subscriptions(&mut connection, message.clone()),
             Err(_error_message) => "error fetching data".to_string(),
         };
 
         let feed_id = match self.fetch_db_connection() {
-            Ok(mut connection) => self.list_feed_id(&mut *connection, &message),
+            Ok(mut connection) => self.list_feed_id(&mut connection, &message),
             Err(_error_message) => "error fetching data".to_string(),
         };
 
