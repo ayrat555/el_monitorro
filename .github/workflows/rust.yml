@@ -16,7 +16,7 @@ jobs:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres
+        image: postgres:15.1
         # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: postgres
@@ -85,7 +85,7 @@ jobs:
         with:
           command: build
           args: --release --verbose --all-features --target x86_64-unknown-linux-gnu
-  
+
   build-container:
     name: Build and Push image to DockerHub.
     runs-on: ubuntu-latest
@@ -107,4 +107,3 @@ jobs:
           context: .
           push: true
           tags: ayratbadykov/el_monitorro:dev
-
