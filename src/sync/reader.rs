@@ -52,10 +52,15 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
 
     let request = Request::get(url)
         .header("User-Agent", "el_monitorro")
-        .body(())
-        .unwrap();
+        .body(());
 
-    match client.send(request) {
+    if let Err(_error) = request {
+        return Err(FeedReaderError {
+            msg: "Invalid URL".to_string(),
+        });
+    };
+
+    match client.send(request.unwrap()) {
         Ok(mut response) => {
             let mut writer: Vec<u8> = vec![];
 

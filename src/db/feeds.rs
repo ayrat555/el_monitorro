@@ -126,7 +126,7 @@ pub fn find_unsynced_feeds(
 pub fn increment_and_reset_skips(conn: &mut PgConnection) -> Result<usize, Error> {
     // diesel doesn't support updates with joins
     // https://github.com/diesel-rs/diesel/issues/1478
-    let query = "UPDATE \"feeds\" SET \"sync_skips\" = -1\
+    let query = "UPDATE \"feeds\" SET \"sync_skips\" = -1 \
                  FROM \"telegram_subscriptions\"
                  WHERE \"telegram_subscriptions\".\"feed_id\" = \"feeds\".\"id\" AND\
                  \"feeds\".\"sync_retries\" != 0 AND \"feeds\".\"sync_skips\" = pow(2, \"feeds\".\"sync_retries\" - 1)";
@@ -135,7 +135,7 @@ pub fn increment_and_reset_skips(conn: &mut PgConnection) -> Result<usize, Error
 
     // diesel doesn't support updates with joins
     // https://github.com/diesel-rs/diesel/issues/1478
-    let query = "UPDATE \"feeds\" SET \"sync_skips\" = \"sync_skips\" + 1\
+    let query = "UPDATE \"feeds\" SET \"sync_skips\" = \"sync_skips\" + 1 \
                  FROM \"telegram_subscriptions\"
                  WHERE \"telegram_subscriptions\".\"feed_id\" = \"feeds\".\"id\" AND\
                  \"feeds\".\"sync_retries\" != 0 AND \"feeds\".\"sync_skips\" != pow(2, \"feeds\".\"sync_retries\" - 1)";

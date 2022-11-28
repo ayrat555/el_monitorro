@@ -199,7 +199,9 @@ impl TelegramApi for Api {
 
         match parsed_result {
             Ok(result) => Ok(result),
-            Err(_) => {
+            Err(serde_error) => {
+                log::error!("Failed to parse a response {:?}", serde_error);
+
                 let parsed_error: Result<ErrorResponse, serde_json::Error> =
                     serde_json::from_slice(&bytes);
 
