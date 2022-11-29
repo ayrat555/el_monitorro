@@ -291,8 +291,8 @@ impl Handler {
     }
 
     fn process_message_or_channel_post(
-        db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
-        api: Api,
+        _db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
+        _api: Api,
         update: Update,
     ) {
         let message = match update.content {
@@ -324,127 +324,111 @@ impl Handler {
 
         match command {
             BotCommand::Subscribe(args) => Subscribe::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
-            BotCommand::Help => Help::builder()
-                ._message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            BotCommand::Help => Help::builder().message(message).build().run(),
 
             BotCommand::Unsubscribe(args) => Unsubscribe::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
-            BotCommand::ListSubscriptions => ListSubscriptions::builder()
-                .message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            BotCommand::ListSubscriptions => {
+                ListSubscriptions::builder().message(message).build().run()
+            }
 
-            BotCommand::Start => Start::builder()
-                ._message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            BotCommand::Start => Start::builder().message(message).build().run(),
 
             BotCommand::SetTimezone(args) => SetTimezone::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
-            BotCommand::GetTimezone => GetTimezone::builder()
-                .message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            BotCommand::GetTimezone => GetTimezone::builder().message(message).build().run(),
 
             BotCommand::SetFilter(args) => SetFilter::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
             BotCommand::GetFilter(args) => GetFilter::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
             BotCommand::RemoveFilter(args) => RemoveFilter::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
             BotCommand::SetTemplate(args) => SetTemplate::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
             BotCommand::GetTemplate(args) => GetTemplate::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
             BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
             BotCommand::SetGlobalTemplate(args) => SetGlobalTemplate::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
             BotCommand::RemoveGlobalTemplate => RemoveGlobalTemplate::builder()
-                .message(message.clone())
+                .message(message)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
-            BotCommand::GetGlobalTemplate => GetGlobalTemplate::builder()
-                .message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            BotCommand::GetGlobalTemplate => {
+                GetGlobalTemplate::builder().message(message).build().run()
+            }
 
             BotCommand::SetGlobalFilter(args) => SetGlobalFilter::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
-            BotCommand::GetGlobalFilter => GetGlobalFilter::builder()
-                .message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            BotCommand::GetGlobalFilter => {
+                GetGlobalFilter::builder().message(message).build().run()
+            }
 
-            BotCommand::RemoveGlobalFilter => RemoveGlobalFilter::builder()
-                .message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            BotCommand::RemoveGlobalFilter => {
+                RemoveGlobalFilter::builder().message(message).build().run()
+            }
 
-            BotCommand::Info => Info::builder()
-                .message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            BotCommand::Info => Info::builder().message(message).build().run(),
 
             BotCommand::SetContentFields(args) => SetContentFields::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
 
             BotCommand::UnknownCommand(args) => UnknownCommand::builder()
-                .message(message.clone())
+                .message(message)
                 .args(args)
                 .build()
-                .run(db_pool, api, message),
+                .run(),
         };
     }
 
@@ -453,7 +437,7 @@ impl Handler {
     }
 
     fn process_callback_query(
-        db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
+        _db_pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
         api: Api,
         update: Update,
     ) {
@@ -482,16 +466,12 @@ impl Handler {
         let command = CallbackDatas::from_str(commands).unwrap();
 
         match command {
-            CallbackDatas::ListSubscriptions => ListSubscriptions::builder()
-                .message(message.clone())
-                .build()
-                .run(db_pool, api, message),
+            CallbackDatas::ListSubscriptions => {
+                ListSubscriptions::builder().message(message).build().run()
+            }
             CallbackDatas::CallbackListSubscriptions(feedid, feed_url) => {
                 match feed_url.is_empty() {
-                    true => ListSubscriptions::builder()
-                        .message(message.clone())
-                        .build()
-                        .run(db_pool, api, message),
+                    true => ListSubscriptions::builder().message(message).build().run(),
                     false => {
                         api.delete_message(&delete_message_params).unwrap();
                         let send_message_params =
@@ -508,10 +488,10 @@ impl Handler {
                 message.text = Some(format!("/get_filter {}", feed_url));
 
                 GetFilter::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(feed_url)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::GetTemplate(feedid, feed_url) => {
                 let text = &commands.replace(&feedid, &feed_url);
@@ -519,10 +499,10 @@ impl Handler {
                 let args = parse_args(GetTemplate::command(), text);
 
                 GetTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::SetTemplate(feedid, feed_url) => {
                 let text = &commands.replace(&feedid, &feed_url);
@@ -530,10 +510,10 @@ impl Handler {
                 message.text = Some(text.trim().to_string());
 
                 SetTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::CallbackSetTemplateCreateLinkDescription(feed_url) => {
                 message.text = Some(format!(
@@ -543,10 +523,10 @@ impl Handler {
                 let args = parse_args(SetTemplate::command(), &message.clone().text.unwrap());
 
                 SetTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::CallbackSetTemplateCreateLinkBotItemName(feed_url) => {
                 message.text = Some(format!(
@@ -557,23 +537,23 @@ impl Handler {
                 let args = parse_args(SetTemplate::command(), &message.clone().text.unwrap());
 
                 SetTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::CallbackSetTemplate(feed_url, feedid) => match feed_url.is_empty() {
                 true => {
                     let args = "".to_string();
                     SetTemplate::builder()
-                        .message(message.clone())
+                        .message(message)
                         .args(args)
                         .build()
-                        .run(db_pool, api, message)
+                        .run()
                 }
                 false => {
                     let send_message_params =
-                        SetTemplateInlineKeyboard::set_template_menu_keyboard(message, feedid);
+                        SetTemplateInlineKeyboard::set_template_menu_keyboard(&message, feedid);
                     api.send_message(&send_message_params).unwrap();
                 }
             },
@@ -625,10 +605,10 @@ impl Handler {
                 message.text = Some(format!("/set_template {} {}", feed_url, DEFAULT_TEMPLATE));
 
                 SetTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::RemoveTemplate(feedid, feed_url) => {
                 let text = &commands.replace(&feedid, &feed_url);
@@ -636,10 +616,10 @@ impl Handler {
                 let args = parse_args(RemoveTemplate::command(), text);
 
                 RemoveTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::RemoveFilter(feedid, feed_url) => {
                 let text = &commands.replace(&feedid, &feed_url);
@@ -647,19 +627,19 @@ impl Handler {
                 let args = parse_args(RemoveFilter::command(), text);
 
                 RemoveFilter::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::SetGlobalTemplate => {
                 let args = parse_args(SetGlobalTemplate::command(), commands);
 
                 SetGlobalTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::CallbackGlobalTemplateCreateLinkDescription => {
                 message.text = Some(
@@ -670,10 +650,10 @@ impl Handler {
                 let args = "{{create_link bot_item_description bot_item_link}}".to_string();
 
                 SetGlobalTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::CallbackGlobalTemplateCreateLinkBotItemName => {
                 message.text = Some(
@@ -683,10 +663,10 @@ impl Handler {
                 let args = "{{create_link bot_item_name bot_item_link}}".to_string();
 
                 SetGlobalTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::CallbackGlobalItalic => {
                 api.delete_message(&delete_message_params).unwrap();
@@ -722,10 +702,10 @@ impl Handler {
                 let args = DEFAULT_TEMPLATE.to_string();
 
                 SetGlobalTemplate::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::Unsubscribe(feedid, feed_url) => {
                 let text = &commands.replace(&feedid, &feed_url);
@@ -733,46 +713,46 @@ impl Handler {
                 let args = parse_args(Unsubscribe::command(), text);
 
                 Unsubscribe::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
             CallbackDatas::CallbackUnsubscribe(_feedid, feed_url) => match feed_url.is_empty() {
                 true => {
                     let args = feed_url;
 
                     Unsubscribe::builder()
-                        .message(message.clone())
+                        .message(message)
                         .args(args)
                         .build()
-                        .run(db_pool, api, message)
+                        .run()
                 }
                 false => {
                     message.text = Some(format!("/unsubscribe {}", feed_url));
                     let args = feed_url;
 
                     Unsubscribe::builder()
-                        .message(message.clone())
+                        .message(message)
                         .args(args)
                         .build()
-                        .run(db_pool, api, message)
+                        .run()
                 }
             },
             CallbackDatas::CallbackBackToMenu => {
                 api.delete_message(&delete_message_params).unwrap();
                 let send_message_params =
-                    SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
+                    SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(&message);
                 api.send_message(&send_message_params).unwrap();
             }
             _ => {
                 let args = parse_args(UnknownCommand::command(), commands);
 
                 UnknownCommand::builder()
-                    .message(message.clone())
+                    .message(message)
                     .args(args)
                     .build()
-                    .run(db_pool, api, message)
+                    .run()
             }
         }
     }

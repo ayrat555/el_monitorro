@@ -5,10 +5,6 @@ use crate::deliver::render_template_example;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
-use crate::bot::telegram_client::Api;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
-
 static COMMAND: &str = "/set_global_template";
 static SET_GLOBAL_TEMPLATE_CREATE_LINK_DESCRIPTION: &str = "set_global_template_description";
 static SET_GLOBAL_TEMPLATE_CREATE_LINK_BOT_ITEM_NAME: &str = "set_global_template_item_name";
@@ -20,8 +16,8 @@ pub struct SetGlobalTemplate {
 }
 
 impl SetGlobalTemplate {
-    pub fn run(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        self.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.message);
     }
 
     fn set_global_template(&self, db_connection: &mut PgConnection) -> String {

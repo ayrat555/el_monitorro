@@ -7,7 +7,7 @@ use frankenstein::SendMessageParams;
 pub struct UnsubscribeInlineKeyboard {}
 impl UnsubscribeInlineKeyboard {
     pub fn set_unsubscribe_keyboard(
-        message: Message,
+        message: &Message,
         feeds: std::str::Split<'_, char>,
         feed_id: String,
     ) -> SendMessageParams {

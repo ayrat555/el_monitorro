@@ -1,10 +1,7 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::db::telegram;
 use crate::deliver::render_template_example;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 
@@ -20,8 +17,8 @@ pub struct SetTemplate {
 }
 
 impl SetTemplate {
-    pub fn run(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        self.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.message);
     }
     fn set_template(&self, db_connection: &mut PgConnection) -> String {
         let vec: Vec<&str> = self.args.splitn(2, ' ').collect();

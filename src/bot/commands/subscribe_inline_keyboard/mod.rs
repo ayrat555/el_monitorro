@@ -6,7 +6,7 @@ use frankenstein::SendMessageParams;
 
 pub struct SubscribeInlineKeyboard {}
 impl SubscribeInlineKeyboard {
-    pub fn set_subscribe_keyboard(message: Message) -> SendMessageParams {
+    pub fn set_subscribe_keyboard(message: &Message) -> SendMessageParams {
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
         let mut row: Vec<InlineKeyboardButton> = Vec::new();
 

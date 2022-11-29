@@ -4,16 +4,17 @@ use crate::bot::commands::set_template_inline_keyboard::SetTemplateInlineKeyboar
 use crate::bot::commands::subscribe_inline_keyboard::SubscribeInlineKeyboard;
 use crate::bot::commands::unsubscribe_inline_keyboard::UnsubscribeInlineKeyboard;
 use crate::bot::telegram_client;
+use crate::bot::telegram_client::api;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
 use crate::db::feeds;
+use crate::db::pool;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramChat;
 use crate::db::telegram::NewTelegramSubscription;
 use crate::models::Feed;
 use crate::models::TelegramSubscription;
 use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::Chat;
@@ -216,7 +217,7 @@ pub fn parse_args(command: &str, command_with_args: &str) -> String {
 pub trait Command {
     fn response(&self) -> String;
 
-    fn execute(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
+    fn execute(&self, message: &Message) {
         info!(
             "{:?} wrote: {}",
             message.chat.id,
@@ -232,7 +233,7 @@ pub trait Command {
         };
 
         let feed_id = match self.fetch_db_connection() {
-            Ok(mut connection) => self.list_feed_id(&mut connection, &message),
+            Ok(mut connection) => self.list_feed_id(&mut connection, message),
             Err(_error_message) => "error fetching data".to_string(),
         };
 
@@ -250,42 +251,46 @@ pub trait Command {
                 true => {
                     let send_message_params =
                         SubscribeInlineKeyboard::set_subscribe_keyboard(message);
-                    api.send_message(&send_message_params).unwrap();
+                    api().send_message(&send_message_params).unwrap();
                 }
                 false => self.reply_to_message(message, texts),
             },
             BotCommand::Unsubscribe(args) => match args.is_empty() {
                 true => {
-                    api.delete_message(&delete_message_params).unwrap();
+                    api().delete_message(&delete_message_params).unwrap();
                     let send_message_params = UnsubscribeInlineKeyboard::set_unsubscribe_keyboard(
                         message, feeds, feed_id,
                     );
-                    api.send_message(&send_message_params).unwrap();
+                    api().send_message(&send_message_params).unwrap();
                 }
                 false => self.reply_to_message(message, texts),
             },
             BotCommand::SetGlobalTemplate(args) => match args.is_empty() {
                 true => {
-                    api.delete_message(&delete_message_params).unwrap();
+                    api().delete_message(&delete_message_params).unwrap();
                     let send_message_params =
                         SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
-                    api.send_message(&send_message_params).unwrap();
+                    api().send_message(&send_message_params).unwrap();
                 }
                 false => self.reply_to_message(message, texts),
             },
             BotCommand::ListSubscriptions => {
                 let send_message_params =
                     ListSubscriptionsInlineKeyboard::select_feed_url_keyboard_list_subscriptions(
-                        message, feeds_ids, db_pool,
+                        message,
+                        feeds_ids,
+                        pool().to_owned(),
                     );
-                api.send_message(&send_message_params).unwrap();
+                api().send_message(&send_message_params).unwrap();
             }
             BotCommand::SetTemplate(args) => match args.is_empty() {
                 true => {
                     let send_message_params = SetTemplateInlineKeyboard::select_feed_url_keyboard(
-                        message, feeds_ids, db_pool,
+                        message,
+                        feeds_ids,
+                        pool().to_owned(),
                     );
-                    api.send_message(&send_message_params).unwrap();
+                    api().send_message(&send_message_params).unwrap();
                 }
                 false => self.reply_to_message(message, texts),
             },
@@ -295,7 +300,7 @@ pub trait Command {
         };
     }
 
-    fn reply_to_message(&self, message: Message, text: String) {
+    fn reply_to_message(&self, message: &Message, text: String) {
         if let Err(error) =
             &self
                 .api()

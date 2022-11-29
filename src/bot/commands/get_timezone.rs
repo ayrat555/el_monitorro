@@ -1,9 +1,6 @@
 use super::Command;
 use super::Message;
-use crate::bot::telegram_client::Api;
 use crate::db::telegram;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
 static COMMAND: &str = "/get_timezone";
@@ -14,8 +11,8 @@ pub struct GetTimezone {
 }
 
 impl GetTimezone {
-    pub fn run(&self, db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
-        self.execute(db_pool, api, message);
+    pub fn run(&self) {
+        self.execute(&self.message);
     }
 
     fn get_timezone(&self, db_connection: &mut PgConnection) -> String {

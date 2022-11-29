@@ -8,7 +8,7 @@ static CREATE_LINK: &str = "global_create_link";
 static DEFAULT_TEMPLATE: &str = "global_default_template";
 pub struct SetGlobalTemplateInlineKeyboard {}
 impl SetGlobalTemplateInlineKeyboard {
-    pub fn set_global_template_keyboard(message: Message) -> SendMessageParams {
+    pub fn set_global_template_keyboard(message: &Message) -> SendMessageParams {
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
         let mut row: Vec<InlineKeyboardButton> = Vec::new();

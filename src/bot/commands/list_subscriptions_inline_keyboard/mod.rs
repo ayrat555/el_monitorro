@@ -91,7 +91,7 @@ impl ListSubscriptionsInlineKeyboard {
             .build()
     }
     pub fn select_feed_url_keyboard_list_subscriptions(
-        message: Message,
+        message: &Message,
         feed_ids: std::str::Split<'_, char>,
         db_pool: Pool<ConnectionManager<PgConnection>>,
     ) -> SendMessageParams {
