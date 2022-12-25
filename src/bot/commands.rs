@@ -71,7 +71,7 @@ impl From<Chat> for NewTelegramChat {
         };
 
         NewTelegramChat {
-            id: chat.id as i64,
+            id: chat.id,
             kind: kind.to_string(),
             username: chat.username,
             first_name: chat.first_name,
