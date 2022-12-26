@@ -2,8 +2,10 @@ use crate::config::Config;
 use crate::http_client;
 use fang::FangError;
 use frankenstein::AllowedUpdate;
+use frankenstein::DeleteMessageParams;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
+use frankenstein::Message;
 use frankenstein::ParseMode;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
@@ -140,6 +142,17 @@ impl Api {
                 );
                 Err(err)
             }
+        }
+    }
+
+    pub fn remove_message(&self, message: &Message) {
+        let params = DeleteMessageParams::builder()
+            .chat_id(message.chat.id)
+            .message_id(message.message_id)
+            .build();
+
+        if let Err(err) = self.delete_message(&params) {
+            error!("Failed to delete a message {:?}: {:?}", err, params);
         }
     }
 }

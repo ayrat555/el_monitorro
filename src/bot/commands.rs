@@ -249,6 +249,10 @@ pub trait Command {
         }
     }
 
+    fn remove_message(&self, message: &Message) {
+        self.api().remove_message(message)
+    }
+
     fn fetch_db_connection(
         &self,
     ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, String> {

@@ -88,7 +88,7 @@ impl UpdateHandler {
             .message(query.message.unwrap())
             .command(command)
             .build()
-            .process()
+            .process();
     }
 
     fn owner_telegram_id() -> Option<i64> {
