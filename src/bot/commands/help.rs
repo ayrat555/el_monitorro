@@ -147,8 +147,7 @@ impl Help {
 
     pub fn help_keyboard_params(&self) -> SendMessageParams {
         let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
-
-        for command_row in [
+        let rows = [
             vec![HelpCommand::Help, HelpCommand::Start],
             vec![HelpCommand::Subscribe, HelpCommand::Unsubscribe],
             vec![HelpCommand::ListSubscriptions],
@@ -164,7 +163,9 @@ impl Help {
                 HelpCommand::SetGlobalTemplate,
             ],
             vec![HelpCommand::RemoveGlobalTemplate],
-        ] {
+        ];
+
+        for command_row in rows {
             let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
             for command in command_row {
