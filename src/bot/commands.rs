@@ -13,7 +13,9 @@ use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::Message;
+use frankenstein::SendMessageParams;
 use std::str::FromStr;
+use typed_builder::TypedBuilder;
 
 pub use get_filter::GetFilter;
 pub use get_global_filter::GetGlobalFilter;
@@ -21,6 +23,7 @@ pub use get_global_template::GetGlobalTemplate;
 pub use get_template::GetTemplate;
 pub use get_timezone::GetTimezone;
 pub use help::Help;
+pub use help_command_info::HelpCommandInfo;
 pub use info::Info;
 pub use list_subscriptions::ListSubscriptions;
 pub use remove_filter::RemoveFilter;
@@ -44,6 +47,7 @@ pub mod get_global_template;
 pub mod get_template;
 pub mod get_timezone;
 pub mod help;
+pub mod help_command_info;
 pub mod info;
 pub mod list_subscriptions;
 pub mod remove_filter;
@@ -81,9 +85,11 @@ impl From<Chat> for NewTelegramChat {
     }
 }
 
+#[derive(Debug)]
 pub enum BotCommand {
     UnknownCommand(String),
     Help,
+    HelpCommandInfo(String),
     Subscribe(String),
     Unsubscribe(String),
     ListSubscriptions,
@@ -112,6 +118,10 @@ impl FromStr for BotCommand {
     fn from_str(command: &str) -> Result<Self, Self::Err> {
         let bot_command = if !command.starts_with('/') {
             BotCommand::UnknownCommand(command.to_string())
+        } else if command.starts_with(HelpCommandInfo::command()) {
+            let args = parse_args(HelpCommandInfo::command(), command);
+
+            BotCommand::HelpCommandInfo(args)
         } else if command.starts_with(Help::command()) {
             BotCommand::Help
         } else if command.starts_with(Subscribe::command()) {
@@ -200,8 +210,13 @@ fn parse_args(command: &str, command_with_args: &str) -> String {
     }
 }
 
+pub enum Response {
+    Simple(String),
+    Params(SendMessageParams),
+}
+
 pub trait Command {
-    fn response(&self) -> String;
+    fn response(&self) -> Response;
 
     fn execute(&self, message: &Message) {
         info!(
@@ -210,8 +225,10 @@ pub trait Command {
             message.text.as_ref().unwrap()
         );
 
-        let text = self.response();
-        self.reply_to_message(message, text)
+        match self.response() {
+            Response::Simple(raw_message) => self.reply_to_message(message, raw_message),
+            Response::Params(params) => self.send_message(params),
+        }
     }
 
     fn reply_to_message(&self, message: &Message, text: String) {
@@ -219,8 +236,21 @@ pub trait Command {
             self.api()
                 .reply_with_text_message(message.chat.id, text, Some(message.message_id))
         {
-            error!("Failed to reply to update {:?} {:?}", error, message);
+            error!("Failed to reply to a message {:?} {:?}", error, message);
         }
+    }
+
+    fn send_message(&self, send_message_params: SendMessageParams) {
+        if let Err(error) = self.api().send_message_with_params(&send_message_params) {
+            error!(
+                "Failed to send a message {:?} {:?}",
+                error, send_message_params
+            );
+        }
+    }
+
+    fn remove_message(&self, message: &Message) {
+        self.api().remove_message(message)
     }
 
     fn fetch_db_connection(
@@ -284,5 +314,136 @@ pub trait Command {
         }
 
         Ok(filter_words)
+    }
+}
+
+#[derive(TypedBuilder)]
+pub struct CommandProcessor {
+    message: Message,
+    command: BotCommand,
+}
+
+impl CommandProcessor {
+    pub fn process(&self) {
+        match &self.command {
+            BotCommand::Subscribe(args) => Subscribe::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::Help => Help::builder().message(self.message.clone()).build().run(),
+
+            BotCommand::Unsubscribe(args) => Unsubscribe::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::ListSubscriptions => ListSubscriptions::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::Start => Start::builder().message(self.message.clone()).build().run(),
+
+            BotCommand::SetTimezone(args) => SetTimezone::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::GetTimezone => GetTimezone::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::SetFilter(args) => SetFilter::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::GetFilter(args) => GetFilter::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::RemoveFilter(args) => RemoveFilter::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::SetTemplate(args) => SetTemplate::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::GetTemplate(args) => GetTemplate::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::SetGlobalTemplate(args) => SetGlobalTemplate::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::RemoveGlobalTemplate => RemoveGlobalTemplate::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::GetGlobalTemplate => GetGlobalTemplate::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::SetGlobalFilter(args) => SetGlobalFilter::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::GetGlobalFilter => GetGlobalFilter::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::RemoveGlobalFilter => RemoveGlobalFilter::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::Info => Info::builder().message(self.message.clone()).build().run(),
+
+            BotCommand::SetContentFields(args) => SetContentFields::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+
+            BotCommand::UnknownCommand(args) => UnknownCommand::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+            BotCommand::HelpCommandInfo(args) => HelpCommandInfo::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
+        };
     }
 }

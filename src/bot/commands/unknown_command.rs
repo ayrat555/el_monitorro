@@ -1,5 +1,6 @@
 use super::Command;
 use super::Message;
+use super::Response;
 use frankenstein::ChatType;
 use typed_builder::TypedBuilder;
 
@@ -25,8 +26,8 @@ impl UnknownCommand {
 }
 
 impl Command for UnknownCommand {
-    fn response(&self) -> String {
-        match self.message.chat.type_field {
+    fn response(&self) -> Response {
+        let response = match self.message.chat.type_field {
             ChatType::Private => UNKNOWN_COMMAND_PRIVATE.to_string(),
             ChatType::Group | ChatType::Supergroup => {
                 if self.message.text.as_ref().unwrap().starts_with('/')
@@ -38,7 +39,9 @@ impl Command for UnknownCommand {
                 }
             }
             ChatType::Channel => "".to_string(),
-        }
+        };
+
+        Response::Simple(response)
     }
 
     fn execute(&self, message: &Message) {
@@ -46,10 +49,10 @@ impl Command for UnknownCommand {
             info!("{:?} wrote: {}", message.chat.id, self.args);
         }
 
-        let text = self.response();
-
-        if !text.is_empty() {
-            self.reply_to_message(message, text);
+        if let Response::Simple(text) = self.response() {
+            if !text.is_empty() {
+                self.reply_to_message(message, text);
+            }
         }
     }
 }

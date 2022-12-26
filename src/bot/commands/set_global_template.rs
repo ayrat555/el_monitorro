@@ -1,5 +1,6 @@
 use super::Command;
 use super::Message;
+use super::Response;
 use crate::db::telegram;
 use crate::deliver::render_template_example;
 use diesel::PgConnection;
@@ -53,10 +54,12 @@ impl SetGlobalTemplate {
 }
 
 impl Command for SetGlobalTemplate {
-    fn response(&self) -> String {
-        match self.fetch_db_connection() {
+    fn response(&self) -> Response {
+        let response = match self.fetch_db_connection() {
             Ok(mut connection) => self.set_global_template(&mut connection),
             Err(error_message) => error_message,
-        }
+        };
+
+        Response::Simple(response)
     }
 }

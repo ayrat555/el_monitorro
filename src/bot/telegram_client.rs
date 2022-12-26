@@ -2,8 +2,10 @@ use crate::config::Config;
 use crate::http_client;
 use fang::FangError;
 use frankenstein::AllowedUpdate;
+use frankenstein::DeleteMessageParams;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
+use frankenstein::Message;
 use frankenstein::ParseMode;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
@@ -59,7 +61,11 @@ impl Api {
         let http_client = http_client::client().clone();
 
         let update_params = GetUpdatesParams::builder()
-            .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
+            .allowed_updates(vec![
+                AllowedUpdate::Message,
+                AllowedUpdate::ChannelPost,
+                AllowedUpdate::CallbackQuery,
+            ])
             .build();
 
         Api {
@@ -120,7 +126,14 @@ impl Api {
                 .build(),
         };
 
-        match self.send_message(&send_message_params) {
+        self.send_message_with_params(&send_message_params)
+    }
+
+    pub fn send_message_with_params(
+        &self,
+        send_message_params: &SendMessageParams,
+    ) -> Result<(), Error> {
+        match self.send_message(send_message_params) {
             Ok(_) => Ok(()),
             Err(err) => {
                 error!(
@@ -129,6 +142,17 @@ impl Api {
                 );
                 Err(err)
             }
+        }
+    }
+
+    pub fn remove_message(&self, message: &Message) {
+        let params = DeleteMessageParams::builder()
+            .chat_id(message.chat.id)
+            .message_id(message.message_id)
+            .build();
+
+        if let Err(err) = self.delete_message(&params) {
+            error!("Failed to delete a message {:?}: {:?}", err, params);
         }
     }
 }
