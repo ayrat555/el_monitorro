@@ -148,35 +148,34 @@ impl Help {
     pub fn help_keyboard_params(&self) -> SendMessageParams {
         let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
-        for command in [
-            HelpCommand::Help,
-            HelpCommand::Subscribe,
-            HelpCommand::Unsubscribe,
-            HelpCommand::ListSubscriptions,
-            HelpCommand::Start,
-            HelpCommand::SetTimezone,
-            HelpCommand::GetTimezone,
-            HelpCommand::SetFilter,
-            HelpCommand::GetFilter,
-            HelpCommand::RemoveFilter,
-            HelpCommand::SetTemplate,
-            HelpCommand::GetTemplate,
-            HelpCommand::RemoveTemplate,
-            HelpCommand::GetGlobalFilter,
-            HelpCommand::SetGlobalFilter,
-            HelpCommand::RemoveGlobalFilter,
-            HelpCommand::GetGlobalTemplate,
-            HelpCommand::SetGlobalTemplate,
-            HelpCommand::RemoveGlobalTemplate,
+        for command_row in [
+            vec![HelpCommand::Help, HelpCommand::Start],
+            vec![HelpCommand::Subscribe, HelpCommand::Unsubscribe],
+            vec![HelpCommand::ListSubscriptions],
+            vec![HelpCommand::SetTimezone, HelpCommand::GetTimezone],
+            vec![HelpCommand::SetFilter, HelpCommand::GetFilter],
+            vec![HelpCommand::RemoveFilter],
+            vec![HelpCommand::SetTemplate, HelpCommand::GetTemplate],
+            vec![HelpCommand::RemoveTemplate],
+            vec![HelpCommand::GetGlobalFilter, HelpCommand::SetGlobalFilter],
+            vec![HelpCommand::RemoveGlobalFilter],
+            vec![
+                HelpCommand::GetGlobalTemplate,
+                HelpCommand::SetGlobalTemplate,
+            ],
+            vec![HelpCommand::RemoveGlobalTemplate],
         ] {
             let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
-            let button = InlineKeyboardButton::builder()
-                .text(command.to_string())
-                .callback_data(format!("{} {}", HelpCommandInfo::command(), command))
-                .build();
+            for command in command_row {
+                let button = InlineKeyboardButton::builder()
+                    .text(command.to_string())
+                    .callback_data(format!("{} {}", HelpCommandInfo::command(), command))
+                    .build();
 
-            row.push(button);
+                row.push(button);
+            }
+
             buttons.push(row);
         }
 
