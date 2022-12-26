@@ -60,28 +60,28 @@ pub enum HelpCommand {
 
 impl fmt::Display for HelpCommand {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            &HelpCommand::Start => write!(f, "{}", Start::command()),
-            &HelpCommand::Help => write!(f, "{}", Help::command()),
-            &HelpCommand::Subscribe => write!(f, "{}", Subscribe::command()),
-            &HelpCommand::Unsubscribe => write!(f, "{}", Unsubscribe::command()),
-            &HelpCommand::ListSubscriptions => write!(f, "{}", ListSubscriptions::command()),
-            &HelpCommand::SetTimezone => write!(f, "{}", SetTimezone::command()),
-            &HelpCommand::GetTimezone => write!(f, "{}", GetTimezone::command()),
-            &HelpCommand::SetFilter => write!(f, "{}", SetFilter::command()),
-            &HelpCommand::GetFilter => write!(f, "{}", GetFilter::command()),
-            &HelpCommand::RemoveFilter => write!(f, "{}", RemoveFilter::command()),
-            &HelpCommand::SetTemplate => write!(f, "{}", SetTemplate::command()),
-            &HelpCommand::GetTemplate => write!(f, "{}", GetTemplate::command()),
-            &HelpCommand::RemoveTemplate => write!(f, "{}", RemoveTemplate::command()),
-            &HelpCommand::GetGlobalFilter => write!(f, "{}", GetGlobalFilter::command()),
-            &HelpCommand::SetGlobalFilter => write!(f, "{}", SetGlobalFilter::command()),
-            &HelpCommand::RemoveGlobalFilter => write!(f, "{}", RemoveGlobalFilter::command()),
-            &HelpCommand::GetGlobalTemplate => write!(f, "{}", GetGlobalTemplate::command()),
-            &HelpCommand::SetGlobalTemplate => write!(f, "{}", SetGlobalTemplate::command()),
-            &HelpCommand::RemoveGlobalTemplate => write!(f, "{}", RemoveGlobalTemplate::command()),
+        match *self {
+            HelpCommand::Start => write!(f, "{}", Start::command()),
+            HelpCommand::Help => write!(f, "{}", Help::command()),
+            HelpCommand::Subscribe => write!(f, "{}", Subscribe::command()),
+            HelpCommand::Unsubscribe => write!(f, "{}", Unsubscribe::command()),
+            HelpCommand::ListSubscriptions => write!(f, "{}", ListSubscriptions::command()),
+            HelpCommand::SetTimezone => write!(f, "{}", SetTimezone::command()),
+            HelpCommand::GetTimezone => write!(f, "{}", GetTimezone::command()),
+            HelpCommand::SetFilter => write!(f, "{}", SetFilter::command()),
+            HelpCommand::GetFilter => write!(f, "{}", GetFilter::command()),
+            HelpCommand::RemoveFilter => write!(f, "{}", RemoveFilter::command()),
+            HelpCommand::SetTemplate => write!(f, "{}", SetTemplate::command()),
+            HelpCommand::GetTemplate => write!(f, "{}", GetTemplate::command()),
+            HelpCommand::RemoveTemplate => write!(f, "{}", RemoveTemplate::command()),
+            HelpCommand::GetGlobalFilter => write!(f, "{}", GetGlobalFilter::command()),
+            HelpCommand::SetGlobalFilter => write!(f, "{}", SetGlobalFilter::command()),
+            HelpCommand::RemoveGlobalFilter => write!(f, "{}", RemoveGlobalFilter::command()),
+            HelpCommand::GetGlobalTemplate => write!(f, "{}", GetGlobalTemplate::command()),
+            HelpCommand::SetGlobalTemplate => write!(f, "{}", SetGlobalTemplate::command()),
+            HelpCommand::RemoveGlobalTemplate => write!(f, "{}", RemoveGlobalTemplate::command()),
             // just a placeholder
-            &HelpCommand::UnknownCommand => write!(f, "{}", "/unknown_command"),
+            HelpCommand::UnknownCommand => write!(f, "/unknown_command"),
         }
     }
 }

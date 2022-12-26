@@ -68,7 +68,7 @@ impl HelpCommandInfo {
 
         let button = InlineKeyboardButton::builder()
             .text("Back".to_string())
-            .callback_data(format!("{}", Help::command()))
+            .callback_data(Help::command().to_string())
             .build();
 
         row.push(button);

@@ -133,7 +133,7 @@ impl Api {
         &self,
         send_message_params: &SendMessageParams,
     ) -> Result<(), Error> {
-        match self.send_message(&send_message_params) {
+        match self.send_message(send_message_params) {
             Ok(_) => Ok(()),
             Err(err) => {
                 error!(
