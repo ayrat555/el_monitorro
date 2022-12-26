@@ -1,3 +1,3 @@
 pub mod commands;
-pub mod handler;
 pub mod telegram_client;
+pub mod update_handler;

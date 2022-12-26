@@ -1,5 +1,6 @@
 use super::Command;
 use super::Message;
+use super::Response;
 use crate::db::telegram;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
@@ -36,10 +37,12 @@ impl RemoveFilter {
 }
 
 impl Command for RemoveFilter {
-    fn response(&self) -> String {
-        match self.fetch_db_connection() {
+    fn response(&self) -> Response {
+        let response = match self.fetch_db_connection() {
             Ok(mut connection) => self.remove_filter(&mut connection),
             Err(error_message) => error_message,
-        }
+        };
+
+        Response::Simple(response)
     }
 }

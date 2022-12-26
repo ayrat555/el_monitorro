@@ -1,5 +1,6 @@
 use super::Command;
 use super::Message;
+use super::Response;
 use crate::db::telegram;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
@@ -51,10 +52,12 @@ impl SetFilter {
 }
 
 impl Command for SetFilter {
-    fn response(&self) -> String {
-        match self.fetch_db_connection() {
+    fn response(&self) -> Response {
+        let response = match self.fetch_db_connection() {
             Ok(mut connection) => self.set_filter(&mut connection),
             Err(error_message) => error_message,
-        }
+        };
+
+        Response::Simple(response)
     }
 }

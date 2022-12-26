@@ -59,7 +59,11 @@ impl Api {
         let http_client = http_client::client().clone();
 
         let update_params = GetUpdatesParams::builder()
-            .allowed_updates(vec![AllowedUpdate::Message, AllowedUpdate::ChannelPost])
+            .allowed_updates(vec![
+                AllowedUpdate::Message,
+                AllowedUpdate::ChannelPost,
+                AllowedUpdate::CallbackQuery,
+            ])
             .build();
 
         Api {
@@ -120,6 +124,13 @@ impl Api {
                 .build(),
         };
 
+        self.send_message_with_params(&send_message_params)
+    }
+
+    pub fn send_message_with_params(
+        &self,
+        send_message_params: &SendMessageParams,
+    ) -> Result<(), Error> {
         match self.send_message(&send_message_params) {
             Ok(_) => Ok(()),
             Err(err) => {

@@ -1,5 +1,6 @@
 use super::Command;
 use super::Message;
+use super::Response;
 use typed_builder::TypedBuilder;
 
 static START: &str =
@@ -31,7 +32,7 @@ impl Start {
 }
 
 impl Command for Start {
-    fn response(&self) -> String {
-        START.to_string()
+    fn response(&self) -> Response {
+        Response::Simple(START.to_string())
     }
 }

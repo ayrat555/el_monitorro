@@ -1,6 +1,7 @@
 use super::unknown_command::UnknownCommand;
 use super::Command;
 use super::Message;
+use super::Response;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -82,9 +83,9 @@ impl Command for Info {
                         message.text.as_ref().unwrap()
                     );
 
-                    let text = self.response();
-
-                    self.reply_to_message(message, text)
+                    if let Response::Simple(text) = self.response() {
+                        self.reply_to_message(message, text)
+                    }
                 } else {
                     self.unknown_command();
                 }
@@ -92,10 +93,12 @@ impl Command for Info {
         }
     }
 
-    fn response(&self) -> String {
-        match self.fetch_db_connection() {
+    fn response(&self) -> Response {
+        let response = match self.fetch_db_connection() {
             Ok(mut connection) => self.info(&mut connection),
             Err(error_message) => error_message,
-        }
+        };
+
+        Response::Simple(response)
     }
 }

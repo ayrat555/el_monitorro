@@ -1,5 +1,6 @@
 use super::Command;
 use super::Message;
+use super::Response;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
@@ -73,11 +74,13 @@ impl Unsubscribe {
 }
 
 impl Command for Unsubscribe {
-    fn response(&self) -> String {
-        match self.fetch_db_connection() {
+    fn response(&self) -> Response {
+        let response = match self.fetch_db_connection() {
             Ok(mut connection) => self.unsubscribe(&mut connection),
             Err(error_message) => error_message,
-        }
+        };
+
+        Response::Simple(response)
     }
 }
 

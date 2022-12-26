@@ -19,5 +19,5 @@ fn main() {
 
     el_monitorro::start_scheduler(&queue);
 
-    bot::handler::Handler::start();
+    bot::update_handler::UpdateHandler::start();
 }
