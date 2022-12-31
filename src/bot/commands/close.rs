@@ -21,7 +21,7 @@ impl Close {
         COMMAND
     }
 
-    pub fn close_button_row() -> Vec<InlineKeyboardButton> {
+    pub fn button_row() -> Vec<InlineKeyboardButton> {
         let button = InlineKeyboardButton::builder()
             .text(BUTTON_NAME)
             .callback_data(COMMAND)
