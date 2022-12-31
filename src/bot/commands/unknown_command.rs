@@ -52,9 +52,8 @@ impl Command for UnknownCommand {
         };
 
         if let Some(text) = response {
-            let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
-            buttons.push(Help::button_row());
-            buttons.push(Close::button_row());
+            let mut buttons: Vec<Vec<InlineKeyboardButton>> =
+                vec![Help::button_row(), Close::button_row()];
 
             let keyboard = InlineKeyboardMarkup::builder()
                 .inline_keyboard(buttons)
