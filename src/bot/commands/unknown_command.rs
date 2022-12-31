@@ -52,7 +52,7 @@ impl Command for UnknownCommand {
         };
 
         if let Some(text) = response {
-            let mut buttons: Vec<Vec<InlineKeyboardButton>> =
+            let buttons: Vec<Vec<InlineKeyboardButton>> =
                 vec![Help::button_row(), Close::button_row()];
 
             let keyboard = InlineKeyboardMarkup::builder()
