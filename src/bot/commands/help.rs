@@ -1,3 +1,4 @@
+use super::Close;
 use super::Command;
 use super::GetFilter;
 use super::GetGlobalFilter;
@@ -179,6 +180,8 @@ impl Help {
 
             buttons.push(row);
         }
+
+        buttons.push(Close::close_button_row());
 
         let keyboard = InlineKeyboardMarkup::builder()
             .inline_keyboard(buttons)

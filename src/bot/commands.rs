@@ -17,6 +17,7 @@ use frankenstein::SendMessageParams;
 use std::str::FromStr;
 use typed_builder::TypedBuilder;
 
+pub use close::Close;
 pub use get_filter::GetFilter;
 pub use get_global_filter::GetGlobalFilter;
 pub use get_global_template::GetGlobalTemplate;
@@ -41,6 +42,7 @@ pub use subscribe::Subscribe;
 pub use unknown_command::UnknownCommand;
 pub use unsubscribe::Unsubscribe;
 
+pub mod close;
 pub mod get_filter;
 pub mod get_global_filter;
 pub mod get_global_template;
@@ -87,29 +89,30 @@ impl From<Chat> for NewTelegramChat {
 
 #[derive(Debug)]
 pub enum BotCommand {
-    UnknownCommand(String),
+    Close,
+    GetFilter(String),
+    GetGlobalFilter,
+    GetGlobalTemplate,
+    GetTemplate(String),
+    GetTimezone,
     Help,
     HelpCommandInfo(String),
-    Subscribe(String),
-    Unsubscribe(String),
-    ListSubscriptions,
-    Start,
-    SetTimezone(String),
-    GetTimezone,
-    SetFilter(String),
-    GetFilter(String),
-    RemoveFilter(String),
-    SetTemplate(String),
-    GetTemplate(String),
-    RemoveTemplate(String),
-    GetGlobalFilter,
-    SetGlobalFilter(String),
-    RemoveGlobalFilter,
-    GetGlobalTemplate,
-    SetGlobalTemplate(String),
-    RemoveGlobalTemplate,
     Info,
+    ListSubscriptions,
+    RemoveFilter(String),
+    RemoveGlobalFilter,
+    RemoveGlobalTemplate,
+    RemoveTemplate(String),
     SetContentFields(String),
+    SetFilter(String),
+    SetGlobalFilter(String),
+    SetGlobalTemplate(String),
+    SetTemplate(String),
+    SetTimezone(String),
+    Start,
+    Subscribe(String),
+    UnknownCommand(String),
+    Unsubscribe(String),
 }
 
 impl FromStr for BotCommand {
@@ -188,6 +191,8 @@ impl FromStr for BotCommand {
             let args = parse_args(SetContentFields::command(), command);
 
             BotCommand::SetContentFields(args)
+        } else if command.starts_with(Close::command()) {
+            BotCommand::Close
         } else {
             BotCommand::UnknownCommand(command.to_string())
         };
@@ -439,11 +444,14 @@ impl CommandProcessor {
                 .args(args.to_string())
                 .build()
                 .run(),
+
             BotCommand::HelpCommandInfo(args) => HelpCommandInfo::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
                 .build()
                 .run(),
+
+            BotCommand::Close => Close::builder().message(self.message.clone()).build().run(),
         };
     }
 }

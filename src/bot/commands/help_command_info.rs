@@ -1,4 +1,5 @@
 use super::help::HelpCommand;
+use super::Close;
 use super::Command;
 use super::Help;
 use super::Response;
@@ -15,7 +16,7 @@ static SUBSCRIBE: &str = "/subscribe url - subscribe to a feed";
 static UNSUBSCRIBE: &str = "/unsubscribe url - unsubscribe from a feed";
 static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions - list your subscriptions";
 static HELP: &str = "/help - show available commands";
-static SET_TIMEZONE: &str = "set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, your offset is equal to 60 x 10 = 600";
+static SET_TIMEZONE: &str = "/set_timezone timezone_minutes - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, your offset is equal to 60 x 10 = 600";
 static GET_TIMEZONE: &str = "/get_timezone - get your timezone";
 static GET_TEMPLATE: &str = "/get_template feed_url - get the template for the subscription";
 static SET_TEMPLATE: &str =
@@ -67,12 +68,13 @@ impl HelpCommandInfo {
         let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
         let button = InlineKeyboardButton::builder()
-            .text("Back".to_string())
+            .text("Back")
             .callback_data(Help::command().to_string())
             .build();
 
         row.push(button);
         buttons.push(row);
+        buttons.push(Close::close_button_row());
 
         let keyboard = InlineKeyboardMarkup::builder()
             .inline_keyboard(buttons)
