@@ -33,7 +33,7 @@ impl Close {
 
 impl Command for Close {
     fn execute(&self, message: &Message) {
-        info!("{:?} closed a keyboard", message.chat.id,);
+        info!("{:?} closed a keyboard", message.chat.id);
 
         self.remove_message(&self.message);
     }
