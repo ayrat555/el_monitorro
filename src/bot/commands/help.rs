@@ -30,6 +30,7 @@ use std::str::FromStr;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/help";
+static BUTTON_NAME: &str = "Help information";
 
 #[derive(TypedBuilder)]
 pub struct Help {
@@ -181,7 +182,7 @@ impl Help {
             buttons.push(row);
         }
 
-        buttons.push(Close::close_button_row());
+        buttons.push(Close::button_row());
 
         let keyboard = InlineKeyboardMarkup::builder()
             .inline_keyboard(buttons)
@@ -192,6 +193,15 @@ impl Help {
             .text("Select a command:")
             .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
             .build()
+    }
+
+    pub fn button_row() -> Vec<InlineKeyboardButton> {
+        let button = InlineKeyboardButton::builder()
+            .text(BUTTON_NAME)
+            .callback_data(COMMAND)
+            .build();
+
+        vec![button]
     }
 }
 

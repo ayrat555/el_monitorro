@@ -74,7 +74,7 @@ impl HelpCommandInfo {
 
         row.push(button);
         buttons.push(row);
-        buttons.push(Close::close_button_row());
+        buttons.push(Close::button_row());
 
         let keyboard = InlineKeyboardMarkup::builder()
             .inline_keyboard(buttons)
