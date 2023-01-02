@@ -11,7 +11,7 @@ rust-version = "1.62"
 thiserror = "1.0"
 once_cell = "1.16"
 aho-corasick = "0.7"
-atom_syndication = "0.11"
+atom_syndication = "0.12"
 chrono = "0.4"
 diesel = { version = "2", features = ["postgres","r2d2"] }
 dotenv = "0.15"
