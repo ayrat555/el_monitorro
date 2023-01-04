@@ -1,8 +1,11 @@
 use super::help::HelpCommand;
-use super::Close;
 use super::Command;
 use super::Help;
 use super::Response;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
+use diesel::r2d2::PooledConnection;
+use diesel::PgConnection;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
 use frankenstein::Message;
@@ -14,9 +17,8 @@ use typed_builder::TypedBuilder;
 static START: &str = "/start - show the description of the bot and its contact information";
 static SUBSCRIBE: &str = "/subscribe url - subscribe to a feed";
 static UNSUBSCRIBE: &str = "/unsubscribe url - unsubscribe from a feed";
-static LIST_SUBSCRIPTIONS: &str = "/list_subscriptions - list your subscriptions";
 static HELP: &str = "/help - show available commands";
-static SET_TIMEZONE: &str = "/set_timezone timezone_minutes - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, your offset is equal to 60 x 10 = 600";
+static SET_TIMEZONE: &str = "set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, your offset is equal to 60 x 10 = 600";
 static GET_TIMEZONE: &str = "/get_timezone - get your timezone";
 static GET_TEMPLATE: &str = "/get_template feed_url - get the template for the subscription";
 static SET_TEMPLATE: &str =
@@ -68,13 +70,12 @@ impl HelpCommandInfo {
         let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
         let button = InlineKeyboardButton::builder()
-            .text("Back")
+            .text("back".to_string())
             .callback_data(Help::command().to_string())
             .build();
 
         row.push(button);
         buttons.push(row);
-        buttons.push(Close::button_row());
 
         let keyboard = InlineKeyboardMarkup::builder()
             .inline_keyboard(buttons)
@@ -97,7 +98,9 @@ impl HelpCommandInfo {
             HelpCommand::Help => HELP.to_string(),
             HelpCommand::Subscribe => SUBSCRIBE.to_string(),
             HelpCommand::Unsubscribe => UNSUBSCRIBE.to_string(),
-            HelpCommand::ListSubscriptions => LIST_SUBSCRIPTIONS.to_string(),
+            HelpCommand::ListSubscriptions => {
+                HelpCommandInfo::fetch_subcriptions(self.message.clone())
+            }
             HelpCommand::SetTimezone => SET_TIMEZONE.to_string(),
             HelpCommand::GetTimezone => GET_TIMEZONE.to_string(),
             HelpCommand::SetFilter => SET_FILTER.to_string(),
@@ -114,6 +117,15 @@ impl HelpCommandInfo {
             HelpCommand::RemoveGlobalTemplate => REMOVE_GLOBAL_TEMPLATE.to_string(),
             HelpCommand::UnknownCommand => UNKNOWN_COMMAND.to_string(),
         }
+    }
+
+    fn fetch_subcriptions(message: Message) -> String {
+        let data = match fetch_db_connection(crate::db::pool().clone()) {
+            Ok(mut connection) => <crate::bot::commands::list_subscriptions::ListSubscriptions as Command>::list_subscriptions(&mut connection, &message),
+            Err(_error_message) => "error fetching data".to_string(),
+        };
+
+        data
     }
 }
 
@@ -133,5 +145,18 @@ impl Command for HelpCommandInfo {
         }
 
         self.remove_message(&self.message);
+    }
+}
+
+fn fetch_db_connection(
+    db_pool: Pool<ConnectionManager<PgConnection>>,
+) -> Result<PooledConnection<ConnectionManager<PgConnection>>, String> {
+    match db_pool.get() {
+        Ok(connection) => Ok(connection),
+        Err(err) => {
+            error!("Failed to fetch a connection from the pool {:?}", err);
+
+            Err("Failed to process your command. Please contact @Ayrat555".to_string())
+        }
     }
 }
