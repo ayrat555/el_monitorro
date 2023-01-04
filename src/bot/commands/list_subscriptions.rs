@@ -1,8 +1,13 @@
+use super::Close;
 use super::Command;
 use super::Message;
 use super::Response;
 use crate::db::telegram;
 use diesel::PgConnection;
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
+use frankenstein::ReplyMarkup;
+use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/list_subscriptions";
@@ -41,12 +46,70 @@ impl ListSubscriptions {
 
 impl Command for ListSubscriptions {
     fn response(&self) -> Response {
-        let response = match self.fetch_db_connection() {
+        let subscriptions_list = match self.fetch_db_connection() {
             Ok(mut connection) => self.list_subscriptions(&mut connection),
             Err(error_message) => error_message,
         };
 
-        Response::Simple(response)
+        let feed_id = match self.fetch_db_connection() {
+            Ok(mut connection) => list_feed_id(&mut connection, &self.message),
+            Err(_error_message) => "error fetching data".to_string(),
+        };
+
+        let feeds_names = subscriptions_list.split(',').clone();
+        let feed_ids = feed_id.split(',').clone();
+
+        let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+        for feed in feeds_names {
+            for feed_id in feed_ids.clone() {
+                let mut row: Vec<InlineKeyboardButton> = Vec::new();
+                let name = if feed == "You don't have any subscriptions"
+                    || feed == "error fetching data"
+                {
+                    feed.to_string()
+                } else {
+                    format!("{} ", feed)
+                };
+
+                let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
+                    .text(name.clone())
+                    .callback_data(format!("list_subscriptions {}", feed_id))
+                    .build();
+
+                row.push(unsubscribe_inlinekeyboard);
+                keyboard.push(row);
+            }
+        }
+        keyboard.push(Close::button_row());
+        let inline_keyboard = InlineKeyboardMarkup::builder()
+            .inline_keyboard(keyboard)
+            .build();
+
+        let send_message_params = SendMessageParams::builder()
+            .chat_id(self.message.chat.id)
+            .text("Select a feed url ")
+            .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
+            .build();
+
+        Response::Params(send_message_params)
+    }
+}
+
+fn list_feed_id(db_connection: &mut PgConnection, message: &Message) -> String {
+    match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
+        Err(_) => "Couldn't fetch your subscriptions".to_string(),
+        Ok(feeds) => {
+            if feeds.is_empty() {
+                "You don't have any subscriptions".to_string()
+            } else {
+                feeds
+                    .into_iter()
+                    .map(|feed| feed.id.to_string())
+                    .collect::<Vec<String>>()
+                    .join(",")
+            }
+        }
     }
 }
 
