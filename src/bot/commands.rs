@@ -274,7 +274,7 @@ pub trait Command {
     fn api(&self) -> Api {
         telegram_client::api().clone()
     }
-    
+
     fn list_subscriptions(db_connection: &mut PgConnection, message: &Message) -> String {
         match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
             Err(_) => "Couldn't fetch your subscriptions".to_string(),
@@ -291,7 +291,7 @@ pub trait Command {
             }
         }
     }
-    
+
     fn find_subscription(
         &self,
         db_connection: &mut PgConnection,
