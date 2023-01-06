@@ -2,6 +2,7 @@ use super::Close;
 use super::Command;
 use super::Message;
 use super::Response;
+use crate::db::feeds::find_by_link;
 use crate::db::telegram;
 use diesel::PgConnection;
 use frankenstein::InlineKeyboardButton;
@@ -51,37 +52,46 @@ impl Command for ListSubscriptions {
             Err(error_message) => error_message,
         };
 
-        let feed_id = match self.fetch_db_connection() {
-            Ok(mut connection) => list_feed_id(&mut connection, &self.message),
-            Err(_error_message) => "error fetching data".to_string(),
-        };
-
-        let feeds_names = subscriptions_list.split(',').clone();
-        let feed_ids = feed_id.split(',').clone();
+        let feeds_names = subscriptions_list.split('\n').clone();
+       
 
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
-        for feed in feeds_names {
-            for feed_id in feed_ids.clone() {
+        for feed in feeds_names{
+                
                 let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+                let feed_id = if feed == "You don't have any subscriptions"
+                    || feed == "error fetching data"
+                    {
+                        feed.to_string()
+                    } else {
+                        match self.fetch_db_connection() {
+                            Ok(mut connection) => find_by_link(&mut connection,feed).unwrap().id.to_string(),
+                            Err(error_message) => error_message ,
+                        }
+                    };
+              
                 let name = if feed == "You don't have any subscriptions"
                     || feed == "error fetching data"
                 {
                     feed.to_string()
                 } else {
-                    format!("{} ", feed)
+                    format!("{} ",feed)
                 };
-
-                let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
+            
+                let listsubscriptions_inlinekeyboard = InlineKeyboardButton::builder()
                     .text(name.clone())
                     .callback_data(format!("list_subscriptions {}", feed_id))
                     .build();
 
-                row.push(unsubscribe_inlinekeyboard);
-                keyboard.push(row);
+                row.push(listsubscriptions_inlinekeyboard);
+                keyboard.push(row.clone());
+            
             }
-        }
+            
         keyboard.push(Close::button_row());
+
         let inline_keyboard = InlineKeyboardMarkup::builder()
             .inline_keyboard(keyboard)
             .build();
@@ -96,22 +106,6 @@ impl Command for ListSubscriptions {
     }
 }
 
-fn list_feed_id(db_connection: &mut PgConnection, message: &Message) -> String {
-    match telegram::find_feeds_by_chat_id(db_connection, message.chat.id) {
-        Err(_) => "Couldn't fetch your subscriptions".to_string(),
-        Ok(feeds) => {
-            if feeds.is_empty() {
-                "You don't have any subscriptions".to_string()
-            } else {
-                feeds
-                    .into_iter()
-                    .map(|feed| feed.id.to_string())
-                    .collect::<Vec<String>>()
-                    .join(",")
-            }
-        }
-    }
-}
 
 #[cfg(test)]
 mod list_subscriptions_tests {
