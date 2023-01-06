@@ -53,43 +53,39 @@ impl Command for ListSubscriptions {
         };
 
         let feeds_names = subscriptions_list.split('\n').clone();
-       
 
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+        for feed in feeds_names {
+            let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
-        for feed in feeds_names{
-                
-                let mut row: Vec<InlineKeyboardButton> = Vec::new();
-
-                let feed_id = if feed == "You don't have any subscriptions"
-                    || feed == "error fetching data"
-                    {
-                        feed.to_string()
-                    } else {
-                        match self.fetch_db_connection() {
-                            Ok(mut connection) => find_by_link(&mut connection,feed).unwrap().id.to_string(),
-                            Err(error_message) => error_message ,
-                        }
-                    };
-              
-                let name = if feed == "You don't have any subscriptions"
-                    || feed == "error fetching data"
-                {
+            let feed_id =
+                if feed == "You don't have any subscriptions" || feed == "error fetching data" {
                     feed.to_string()
                 } else {
-                    format!("{} ",feed)
+                    match self.fetch_db_connection() {
+                        Ok(mut connection) => {
+                            find_by_link(&mut connection, feed).unwrap().id.to_string()
+                        }
+                        Err(error_message) => error_message,
+                    }
                 };
-            
-                let listsubscriptions_inlinekeyboard = InlineKeyboardButton::builder()
-                    .text(name.clone())
-                    .callback_data(format!("list_subscriptions {}", feed_id))
-                    .build();
 
-                row.push(listsubscriptions_inlinekeyboard);
-                keyboard.push(row.clone());
-            
-            }
-            
+            let name =
+                if feed == "You don't have any subscriptions" || feed == "error fetching data" {
+                    feed.to_string()
+                } else {
+                    format!("{} ", feed)
+                };
+
+            let listsubscriptions_inlinekeyboard = InlineKeyboardButton::builder()
+                .text(name.clone())
+                .callback_data(format!("list_subscriptions {}", feed_id))
+                .build();
+
+            row.push(listsubscriptions_inlinekeyboard);
+            keyboard.push(row.clone());
+        }
+
         keyboard.push(Close::button_row());
 
         let inline_keyboard = InlineKeyboardMarkup::builder()
@@ -105,7 +101,6 @@ impl Command for ListSubscriptions {
         Response::Params(send_message_params)
     }
 }
-
 
 #[cfg(test)]
 mod list_subscriptions_tests {
