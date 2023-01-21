@@ -352,10 +352,11 @@ fn format_messages(
         .map(|item| {
             let message_renderer = message_renderer_builder
                 .clone()
-                .bot_date(Some(item.publication_date))
-                .bot_item_name(Some(item.title.clone()))
-                .bot_item_link(Some(item.link.clone()))
+                .bot_date(item.publication_date)
+                .bot_item_name(item.title.clone())
+                .bot_item_link(item.link.clone())
                 .bot_item_description(item.description.clone())
+                .bot_item_author(item.author.clone())
                 .build();
 
             match message_renderer.render() {

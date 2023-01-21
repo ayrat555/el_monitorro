@@ -12,12 +12,13 @@ use htmlescape::decode_html;
 use serde_json::value::Map;
 use typed_builder::TypedBuilder;
 
-const BOT_FEED_NAME: &str = "bot_feed_name";
-const BOT_ITEM_NAME: &str = "bot_item_name";
 const BOT_DATE: &str = "bot_date";
 const BOT_FEED_LINK: &str = "bot_feed_link";
-const BOT_ITEM_LINK: &str = "bot_item_link";
+const BOT_FEED_NAME: &str = "bot_feed_name";
+const BOT_ITEM_AUTHOR: &str = "bot_item_author";
 const BOT_ITEM_DESCRIPTION: &str = "bot_item_description";
+const BOT_ITEM_LINK: &str = "bot_item_link";
+const BOT_ITEM_NAME: &str = "bot_item_name";
 
 const SUBSTRING_HELPER: &str = "substring";
 const CREATE_LINK_HELPER: &str = "create_link";
@@ -52,6 +53,8 @@ pub struct MessageRenderer {
     #[builder(setter(into), default)]
     bot_item_description: Option<String>,
     #[builder(setter(into), default)]
+    bot_item_author: Option<String>,
+    #[builder(setter(into), default)]
     template: Option<String>,
     #[builder(setter(into), default)]
     offset: Option<i32>,
@@ -79,6 +82,7 @@ impl MessageRenderer {
         self.maybe_set_value(&mut data, BOT_DATE, &self.date());
         self.maybe_set_value(&mut data, BOT_FEED_LINK, &self.bot_feed_link);
         self.maybe_set_value(&mut data, BOT_ITEM_LINK, &self.bot_item_link);
+        self.maybe_set_value(&mut data, BOT_ITEM_AUTHOR, &self.bot_item_author);
         self.maybe_set_value(
             &mut data,
             BOT_ITEM_DESCRIPTION,
@@ -154,6 +158,7 @@ pub fn render_template_example(template: &str) -> Result<String, String> {
         .bot_feed_link(Some("https://www.badykov.com/feed.xml".to_string()))
         .bot_item_link(Some("https://www.badykov.com/".to_string()))
         .bot_item_description(Some("item_description".to_string()))
+        .bot_item_author(Some("Airat".to_string()))
         .template(Some(template.to_string()))
         .build();
 
