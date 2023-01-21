@@ -26,6 +26,7 @@ static SET_TEMPLATE: &str =
      - bot_item_name - name of the item\n\
      - bot_item_link - url of the item\n\
      - bot_item_description - description of the item\n\
+     - bot_item_author - author of the item\n\
      - bot_date - publication date of the feed\n\
      Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}\n\n\n{{bot_item_name}}\n\n\n{{bot_date}}\n\n\n{{bot_item_link}}\n\n\
      Also, there are some helpers for templates:\n\n\
