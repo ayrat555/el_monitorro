@@ -42,7 +42,7 @@ impl From<Channel> for FetchedFeed {
                         .map_or_else(|| "".to_string(), |s| s.to_string()),
                     description: item.description().map(|s| s.to_string()),
                     link: item.link().unwrap().to_string(),
-                    author: author(&item),
+                    author: author(item),
                     guid: item.guid().map(|s| s.value().to_string()),
                     publication_date: pub_date,
                 }
@@ -64,7 +64,7 @@ impl From<Channel> for FetchedFeed {
 fn author(item: &Item) -> Option<String> {
     let author = item.author().map(|s| s.to_string());
 
-    if let Some(_) = author {
+    if author.is_some() {
         return author;
     }
 
