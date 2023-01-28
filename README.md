@@ -91,6 +91,10 @@ Available fields:
     - guid
     - description
     - author
+
+/toggle_preview_enabled - disable or enable previews
+
+/get_preview_enabled - check if previews are enabled for the current chat. by default, previews are enabled
 ```
 
 ### Common info

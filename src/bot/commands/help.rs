@@ -227,13 +227,17 @@ impl Command for Help {
     }
 
     fn send_message(&self, send_message_params: SendMessageParams) {
-        if let Err(error) = self.api().send_message_with_params(&send_message_params) {
-            error!(
-                "Failed to send a message {:?} {:?}",
-                error, send_message_params
-            );
-        }
+        match self.api().send_message_with_params(&send_message_params) {
+            Err(error) => {
+                error!(
+                    "Failed to send a message {:?} {:?}",
+                    error, send_message_params
+                );
+            }
 
-        self.remove_message(&self.message);
+            Ok(_) => {
+                self.remove_message(&self.message);
+            }
+        }
     }
 }
