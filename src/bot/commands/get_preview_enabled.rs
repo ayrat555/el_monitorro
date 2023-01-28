@@ -22,9 +22,9 @@ impl GetPreviewEnabled {
             None => "You don't have any subscriptions".to_string(),
             Some(chat) => {
                 if chat.preview_enabled {
-                    format!("Previews are enabled in this chat")
+                    "Previews are enabled in this chat".to_string()
                 } else {
-                    format!("Previews are disabled in this chat")
+                    "Previews are disabled in this chat".to_string()
                 }
             }
         }
