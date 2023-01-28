@@ -48,7 +48,7 @@ impl Default for Api {
 
 impl From<Error> for FangError {
     fn from(error: Error) -> Self {
-        let description = format!("telegram error: {:?}", error);
+        let description = format!("telegram error: {error:?}");
 
         Self { description }
     }
@@ -68,7 +68,7 @@ impl Api {
     pub fn new() -> Api {
         let token = Config::telegram_bot_token();
         let base_url = Config::telegram_base_url();
-        let api_url = format!("{}{}", base_url, token);
+        let api_url = format!("{base_url}{token}");
         let http_client = http_client::client().clone();
 
         let update_params = GetUpdatesParams::builder()
@@ -161,7 +161,7 @@ impl Api {
 
 impl From<isahc::http::Error> for Error {
     fn from(error: isahc::http::Error) -> Self {
-        let message = format!("{:?}", error);
+        let message = format!("{error:?}");
 
         let error = HttpError { code: 500, message };
 
@@ -171,7 +171,7 @@ impl From<isahc::http::Error> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        let message = format!("{:?}", error);
+        let message = format!("{error:?}");
 
         let error = HttpError { code: 500, message };
 
@@ -181,7 +181,7 @@ impl From<std::io::Error> for Error {
 
 impl From<isahc::Error> for Error {
     fn from(error: isahc::Error) -> Self {
-        let message = format!("{:?}", error);
+        let message = format!("{error:?}");
 
         let error = HttpError { code: 500, message };
 
@@ -197,7 +197,7 @@ impl TelegramApi for Api {
         method: &str,
         params: Option<T1>,
     ) -> Result<T2, Error> {
-        let url = format!("{}/{}", self.api_url, method);
+        let url = format!("{}/{method}", self.api_url);
 
         let request_builder = Request::post(url).header("Content-Type", "application/json");
 
@@ -222,7 +222,7 @@ impl TelegramApi for Api {
         match parsed_result {
             Ok(result) => Ok(result),
             Err(serde_error) => {
-                log::error!("Failed to parse a response {:?}", serde_error);
+                log::error!("Failed to parse a response {serde_error:?}");
 
                 let parsed_error: Result<ErrorResponse, serde_json::Error> =
                     serde_json::from_slice(&bytes);
@@ -230,7 +230,7 @@ impl TelegramApi for Api {
                 match parsed_error {
                     Ok(result) => Err(Error::ApiError(result)),
                     Err(error) => {
-                        let message = format!("{:?} {:?}", error, std::str::from_utf8(&bytes));
+                        let message = format!("{:?} {error:?}", std::str::from_utf8(&bytes));
 
                         let error = HttpError { code: 500, message };
 

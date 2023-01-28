@@ -204,7 +204,7 @@ impl FromStr for BotCommand {
 
 fn parse_args(command: &str, command_with_args: &str) -> String {
     let handle = Config::telegram_bot_handle();
-    let command_with_handle = format!("{}@{}", command, handle);
+    let command_with_handle = format!("{command}@{handle}");
 
     if command_with_args.starts_with(&command_with_handle) {
         command_with_args
@@ -317,7 +317,7 @@ pub trait Command {
         let filter_limit = Config::filter_limit();
 
         if filter_words.len() > filter_limit {
-            let err = format!("The number of filter words is limited by {}", filter_limit);
+            let err = format!("The number of filter words is limited by {filter_limit}");
             return Err(err);
         }
 

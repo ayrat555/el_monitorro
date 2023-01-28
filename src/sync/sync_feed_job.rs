@@ -35,7 +35,7 @@ pub enum FeedSyncError {
 
 impl From<Error> for FeedSyncError {
     fn from(error: Error) -> Self {
-        let msg = format!("{:?}", error);
+        let msg = format!("{error:?}");
 
         FeedSyncError::DbError { msg }
     }
@@ -43,7 +43,7 @@ impl From<Error> for FeedSyncError {
 
 impl From<FeedSyncError> for FangError {
     fn from(error: FeedSyncError) -> Self {
-        let msg = format!("{:?}", error);
+        let msg = format!("{error:?}");
         FangError { description: msg }
     }
 }
@@ -83,7 +83,7 @@ impl SyncFeedJob {
 
                 self.remove_feed_and_notify_subscribers(db_connection)?;
             }
-            Err(error) => error!("Failed to process feed {}: {:?}", self.feed_id, error),
+            Err(error) => error!("Failed to process feed {}: {error:?}", self.feed_id),
             Ok(_) => (),
         };
 
@@ -191,12 +191,12 @@ impl SyncFeedJob {
 
     fn format_sync_error(&self, err: Error) -> Result<(), FeedSyncError> {
         error!(
-            "Error: failed to create feed items for feed with id {}: {:?}",
-            self.feed_id, err
+            "Error: failed to create feed items for feed with id {}: {err:?}",
+            self.feed_id
         );
 
         let error = FeedSyncError::DbError {
-            msg: format!("Error: failed to create feed items {:?}", err),
+            msg: format!("Error: failed to create feed items {err:?}"),
         };
         Err(error)
     }
@@ -211,12 +211,12 @@ impl SyncFeedJob {
         match feeds::set_synced_at(db_connection, &feed, Some(title), Some(description)) {
             Err(err) => {
                 error!(
-                    "Error: failed to update synced_at for feed with id {}: {:?}",
-                    self.feed_id, err
+                    "Error: failed to update synced_at for feed with id {}: {err:?}",
+                    self.feed_id
                 );
 
                 let error = FeedSyncError::DbError {
-                    msg: format!("Error: failed to update synced_at {:?}", err),
+                    msg: format!("Error: failed to update synced_at {err:?}"),
                 };
 
                 Err(error)

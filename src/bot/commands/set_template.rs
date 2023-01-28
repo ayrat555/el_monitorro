@@ -46,7 +46,7 @@ impl SetTemplate {
             };
 
         let example = match render_template_example(template) {
-            Ok(example) => format!("Your messages will look like:\n\n{}", example),
+            Ok(example) => format!("Your messages will look like:\n\n{example}"),
             Err(_) => return "The template is invalid".to_string(),
         };
 
