@@ -28,7 +28,7 @@ impl TogglePreviewEnabled {
                 if updated_chat.preview_enabled {
                     "Previews are now enabled".to_string()
                 } else {
-                    "Previews are now desabled".to_string()
+                    "Previews are now disabled".to_string()
                 }
             }
 
