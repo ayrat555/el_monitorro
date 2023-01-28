@@ -44,7 +44,7 @@ impl Runnable for DeliverJob {
             ) {
                 Ok(chats) => chats,
                 Err(error) => {
-                    let description = format!("{:?}", error);
+                    let description = format!("{error:?}");
 
                     return Err(FangError { description });
                 }

@@ -1,5 +1,6 @@
 use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
+use crate::bot::SimpleMessageParams;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -21,6 +22,7 @@ pub use close::Close;
 pub use get_filter::GetFilter;
 pub use get_global_filter::GetGlobalFilter;
 pub use get_global_template::GetGlobalTemplate;
+pub use get_preview_enabled::GetPreviewEnabled;
 pub use get_template::GetTemplate;
 pub use get_timezone::GetTimezone;
 pub use help::Help;
@@ -39,6 +41,7 @@ pub use set_template::SetTemplate;
 pub use set_timezone::SetTimezone;
 pub use start::Start;
 pub use subscribe::Subscribe;
+pub use toggle_preview_enabled::TogglePreviewEnabled;
 pub use unknown_command::UnknownCommand;
 pub use unsubscribe::Unsubscribe;
 
@@ -46,6 +49,7 @@ pub mod close;
 pub mod get_filter;
 pub mod get_global_filter;
 pub mod get_global_template;
+pub mod get_preview_enabled;
 pub mod get_template;
 pub mod get_timezone;
 pub mod help;
@@ -64,6 +68,7 @@ pub mod set_template;
 pub mod set_timezone;
 pub mod start;
 pub mod subscribe;
+pub mod toggle_preview_enabled;
 pub mod unknown_command;
 pub mod unsubscribe;
 
@@ -93,6 +98,7 @@ pub enum BotCommand {
     GetFilter(String),
     GetGlobalFilter,
     GetGlobalTemplate,
+    GetPreviewEnabled,
     GetTemplate(String),
     GetTimezone,
     Help,
@@ -111,6 +117,7 @@ pub enum BotCommand {
     SetTimezone(String),
     Start,
     Subscribe(String),
+    TogglePreviewEnabled,
     UnknownCommand(String),
     Unsubscribe(String),
 }
@@ -193,6 +200,10 @@ impl FromStr for BotCommand {
             BotCommand::SetContentFields(args)
         } else if command.starts_with(Close::command()) {
             BotCommand::Close
+        } else if command.starts_with(GetPreviewEnabled::command()) {
+            BotCommand::GetPreviewEnabled
+        } else if command.starts_with(TogglePreviewEnabled::command()) {
+            BotCommand::TogglePreviewEnabled
         } else {
             BotCommand::UnknownCommand(command.to_string())
         };
@@ -203,7 +214,7 @@ impl FromStr for BotCommand {
 
 fn parse_args(command: &str, command_with_args: &str) -> String {
     let handle = Config::telegram_bot_handle();
-    let command_with_handle = format!("{}@{}", command, handle);
+    let command_with_handle = format!("{command}@{handle}");
 
     if command_with_args.starts_with(&command_with_handle) {
         command_with_args
@@ -237,10 +248,12 @@ pub trait Command {
     }
 
     fn reply_to_message(&self, message: &Message, text: String) {
-        if let Err(error) =
-            self.api()
-                .reply_with_text_message(message.chat.id, text, Some(message.message_id))
-        {
+        let message_params = SimpleMessageParams::builder()
+            .message(text)
+            .chat_id(message.chat.id)
+            .build();
+
+        if let Err(error) = self.api().reply_with_text_message(&message_params) {
             error!("Failed to reply to a message {:?} {:?}", error, message);
         }
     }
@@ -314,7 +327,7 @@ pub trait Command {
         let filter_limit = Config::filter_limit();
 
         if filter_words.len() > filter_limit {
-            let err = format!("The number of filter words is limited by {}", filter_limit);
+            let err = format!("The number of filter words is limited by {filter_limit}");
             return Err(err);
         }
 
@@ -452,6 +465,16 @@ impl CommandProcessor {
                 .run(),
 
             BotCommand::Close => Close::builder().message(self.message.clone()).build().run(),
+
+            BotCommand::GetPreviewEnabled => GetPreviewEnabled::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::TogglePreviewEnabled => TogglePreviewEnabled::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
         };
     }
 }

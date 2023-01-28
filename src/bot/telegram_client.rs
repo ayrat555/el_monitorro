@@ -16,6 +16,7 @@ use isahc::Request;
 use once_cell::sync::OnceCell;
 use std::collections::VecDeque;
 use std::path::PathBuf;
+use typed_builder::TypedBuilder;
 
 static API: OnceCell<Api> = OnceCell::new();
 
@@ -47,17 +48,27 @@ impl Default for Api {
 
 impl From<Error> for FangError {
     fn from(error: Error) -> Self {
-        let description = format!("telegram error: {:?}", error);
+        let description = format!("telegram error: {error:?}");
 
         Self { description }
     }
+}
+
+#[derive(TypedBuilder)]
+pub struct SimpleMessageParams {
+    chat_id: i64,
+    message: String,
+    #[builder(setter(into), default)]
+    reply_message_id: Option<i32>,
+    #[builder(default = false)]
+    preview_enabled: bool,
 }
 
 impl Api {
     pub fn new() -> Api {
         let token = Config::telegram_bot_token();
         let base_url = Config::telegram_base_url();
-        let api_url = format!("{}{}", base_url, token);
+        let api_url = format!("{base_url}{token}");
         let http_client = http_client::client().clone();
 
         let update_params = GetUpdatesParams::builder()
@@ -101,29 +112,20 @@ impl Api {
         }
     }
 
-    pub fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
-        self.reply_with_text_message(chat_id, message, None)
-    }
-
     pub fn reply_with_text_message(
         &self,
-        chat_id: i64,
-        message: String,
-        message_id: Option<i32>,
+        simple_params: &SimpleMessageParams,
     ) -> Result<(), Error> {
-        let send_message_params = match message_id {
-            None => SendMessageParams::builder()
-                .chat_id(chat_id)
-                .text(message)
-                .parse_mode(ParseMode::Html)
-                .build(),
+        let message_params = SendMessageParams::builder()
+            .chat_id(simple_params.chat_id)
+            .text(simple_params.message.clone())
+            .disable_web_page_preview(!simple_params.preview_enabled)
+            .parse_mode(ParseMode::Html);
 
-            Some(message_id_value) => SendMessageParams::builder()
-                .chat_id(chat_id)
-                .text(message)
-                .parse_mode(ParseMode::Html)
-                .reply_to_message_id(message_id_value)
-                .build(),
+        let send_message_params = match simple_params.reply_message_id {
+            None => message_params.build(),
+
+            Some(message_id_value) => message_params.reply_to_message_id(message_id_value).build(),
         };
 
         self.send_message_with_params(&send_message_params)
@@ -159,7 +161,7 @@ impl Api {
 
 impl From<isahc::http::Error> for Error {
     fn from(error: isahc::http::Error) -> Self {
-        let message = format!("{:?}", error);
+        let message = format!("{error:?}");
 
         let error = HttpError { code: 500, message };
 
@@ -169,7 +171,7 @@ impl From<isahc::http::Error> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        let message = format!("{:?}", error);
+        let message = format!("{error:?}");
 
         let error = HttpError { code: 500, message };
 
@@ -179,7 +181,7 @@ impl From<std::io::Error> for Error {
 
 impl From<isahc::Error> for Error {
     fn from(error: isahc::Error) -> Self {
-        let message = format!("{:?}", error);
+        let message = format!("{error:?}");
 
         let error = HttpError { code: 500, message };
 
@@ -195,7 +197,7 @@ impl TelegramApi for Api {
         method: &str,
         params: Option<T1>,
     ) -> Result<T2, Error> {
-        let url = format!("{}/{}", self.api_url, method);
+        let url = format!("{}/{method}", self.api_url);
 
         let request_builder = Request::post(url).header("Content-Type", "application/json");
 
@@ -220,7 +222,7 @@ impl TelegramApi for Api {
         match parsed_result {
             Ok(result) => Ok(result),
             Err(serde_error) => {
-                log::error!("Failed to parse a response {:?}", serde_error);
+                log::error!("Failed to parse a response {serde_error:?}");
 
                 let parsed_error: Result<ErrorResponse, serde_json::Error> =
                     serde_json::from_slice(&bytes);
@@ -228,7 +230,7 @@ impl TelegramApi for Api {
                 match parsed_error {
                     Ok(result) => Err(Error::ApiError(result)),
                     Err(error) => {
-                        let message = format!("{:?} {:?}", error, std::str::from_utf8(&bytes));
+                        let message = format!("{:?} {error:?}", std::str::from_utf8(&bytes));
 
                         let error = HttpError { code: 500, message };
 

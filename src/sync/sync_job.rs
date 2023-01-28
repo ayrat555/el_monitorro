@@ -52,7 +52,7 @@ impl Runnable for SyncJob {
             ) {
                 Ok(ids) => ids,
                 Err(err) => {
-                    let description = format!("{:?}", err);
+                    let description = format!("{err:?}");
 
                     return Err(FangError { description });
                 }

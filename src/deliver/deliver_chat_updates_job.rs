@@ -1,6 +1,7 @@
 use super::MessageRenderer;
 use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
+use crate::bot::SimpleMessageParams;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::models::feed::Feed;
@@ -45,7 +46,7 @@ pub struct DeliverJobError {
 
 impl From<Error> for DeliverJobError {
     fn from(error: Error) -> Self {
-        let msg = format!("{:?}", error);
+        let msg = format!("{error:?}");
 
         DeliverJobError { msg }
     }
@@ -74,9 +75,7 @@ impl DeliverChatUpdatesJob {
 
                 Err(error) => {
                     log::error!(
-                        "Failed to deliver updates for subscription: {:?} {:?}",
-                        subscription,
-                        error
+                        "Failed to deliver updates for subscription: {subscription:?} {error:?}",
                     );
                     break;
                 }
@@ -218,10 +217,7 @@ impl DeliverChatUpdatesJob {
         }
 
         if feed_items_count == MESSAGES_LIMIT && undelivered_count > MESSAGES_LIMIT {
-            let message = format!(
-                "You have {} unread items, below {} last items for {}",
-                undelivered_count, feed_items_count, feed_link
-            );
+            let message = format!("You have {undelivered_count} unread items, below {feed_items_count} last items for {feed_link}");
 
             self.send_text_message(chat, message, connection, api)?;
         }
@@ -238,14 +234,20 @@ impl DeliverChatUpdatesJob {
     ) -> Result<(), DeliverJobError> {
         let delay = delay_period(chat);
 
-        match api.send_text_message(chat.id, message) {
+        let message_params = SimpleMessageParams::builder()
+            .message(message)
+            .chat_id(chat.id)
+            .preview_enabled(chat.preview_enabled)
+            .build();
+
+        match api.reply_with_text_message(&message_params) {
             Ok(_) => {
                 std::thread::sleep(delay);
                 Ok(())
             }
 
             Err(error) => {
-                let error_message = format!("{:?}", error);
+                let error_message = format!("{error:?}");
 
                 Err(handle_error(error_message, connection, chat.id))
             }
@@ -279,9 +281,9 @@ impl DeliverChatUpdatesJob {
         ) {
             Ok(_) => Ok(()),
             Err(error) => {
-                log::error!("Failed to set last_delivered_at: {}", error);
+                log::error!("Failed to set last_delivered_at: {error}");
                 Err(DeliverJobError {
-                    msg: format!("Failed to set last_delivered_at : {}", error),
+                    msg: format!("Failed to set last_delivered_at : {error}"),
                 })
             }
         }
@@ -314,13 +316,13 @@ fn handle_error(error: String, connection: &mut PgConnection, chat_id: i64) -> D
 
     if bot_blocked(&error) {
         match telegram::remove_chat(connection, chat_id) {
-            Ok(_) => log::info!("Successfully removed chat {}", chat_id),
-            Err(error) => log::error!("Failed to remove a chat {}", error),
+            Ok(_) => log::info!("Successfully removed chat {chat_id}"),
+            Err(error) => log::error!("Failed to remove a chat {error}"),
         }
     };
 
     DeliverJobError {
-        msg: format!("Failed to send updates : {}", error),
+        msg: format!("Failed to send updates : {error}"),
     }
 }
 

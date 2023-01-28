@@ -1,4 +1,5 @@
 use crate::bot::telegram_client;
+use crate::bot::SimpleMessageParams;
 use crate::db;
 use crate::db::{feed_items, feeds, telegram};
 use crate::models::feed::Feed;
@@ -34,7 +35,7 @@ pub enum FeedSyncError {
 
 impl From<Error> for FeedSyncError {
     fn from(error: Error) -> Self {
-        let msg = format!("{:?}", error);
+        let msg = format!("{error:?}");
 
         FeedSyncError::DbError { msg }
     }
@@ -42,7 +43,7 @@ impl From<Error> for FeedSyncError {
 
 impl From<FeedSyncError> for FangError {
     fn from(error: FeedSyncError) -> Self {
-        let msg = format!("{:?}", error);
+        let msg = format!("{error:?}");
         FangError { description: msg }
     }
 }
@@ -82,7 +83,7 @@ impl SyncFeedJob {
 
                 self.remove_feed_and_notify_subscribers(db_connection)?;
             }
-            Err(error) => error!("Failed to process feed {}: {:?}", self.feed_id, error),
+            Err(error) => error!("Failed to process feed {}: {error:?}", self.feed_id),
             Ok(_) => (),
         };
 
@@ -98,12 +99,17 @@ impl SyncFeedJob {
         })?;
         let chats = telegram::find_chats_by_feed_id(db_connection, self.feed_id)?;
 
-        let message = format!("{} can not be processed. It was removed.", feed.link);
-
         let api = telegram_client::api();
 
+        let message_params_builder = SimpleMessageParams::builder().message(format!(
+            "{} can not be processed. It was removed.",
+            feed.link
+        ));
+
         for chat in chats.into_iter() {
-            api.send_text_message(chat.id, message.clone())?;
+            let message_params = message_params_builder.clone().chat_id(chat.id).build();
+
+            api.reply_with_text_message(&message_params)?;
         }
 
         feeds::remove_feed(db_connection, self.feed_id)?;
@@ -185,12 +191,12 @@ impl SyncFeedJob {
 
     fn format_sync_error(&self, err: Error) -> Result<(), FeedSyncError> {
         error!(
-            "Error: failed to create feed items for feed with id {}: {:?}",
-            self.feed_id, err
+            "Error: failed to create feed items for feed with id {}: {err:?}",
+            self.feed_id
         );
 
         let error = FeedSyncError::DbError {
-            msg: format!("Error: failed to create feed items {:?}", err),
+            msg: format!("Error: failed to create feed items {err:?}"),
         };
         Err(error)
     }
@@ -205,12 +211,12 @@ impl SyncFeedJob {
         match feeds::set_synced_at(db_connection, &feed, Some(title), Some(description)) {
             Err(err) => {
                 error!(
-                    "Error: failed to update synced_at for feed with id {}: {:?}",
-                    self.feed_id, err
+                    "Error: failed to update synced_at for feed with id {}: {err:?}",
+                    self.feed_id
                 );
 
                 let error = FeedSyncError::DbError {
-                    msg: format!("Error: failed to update synced_at {:?}", err),
+                    msg: format!("Error: failed to update synced_at {err:?}"),
                 };
 
                 Err(error)
@@ -248,19 +254,19 @@ impl SyncFeedJob {
         feed: &Feed,
         sync_error: FeedReaderError,
     ) -> FeedSyncError {
-        match feeds::set_error(db_connection, feed, &format!("{:?}", sync_error)) {
+        match feeds::set_error(db_connection, feed, &format!("{sync_error:?}")) {
             Err(err) => {
                 error!(
-                    "Error: failed to set a sync error to feed with id {} {:?}",
-                    feed.id, err
+                    "Error: failed to set a sync error to feed with id {} {err:?}",
+                    feed.id
                 );
 
                 FeedSyncError::DbError {
-                    msg: format!("Error: failed to set a sync error to feed {:?}", err),
+                    msg: format!("Error: failed to set a sync error to feed {err:?}"),
                 }
             }
             _ => FeedSyncError::FeedError {
-                msg: format!("Error: failed to fetch feed items {:?}", sync_error),
+                msg: format!("Error: failed to fetch feed items {sync_error:?}"),
             },
         }
     }

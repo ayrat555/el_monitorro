@@ -38,9 +38,8 @@ impl Info {
         };
 
         let mut result_message = format!(
-            "the number of feeds is {}\n\
-             the number of chats is {} \n",
-            total_feeds, total_chats
+            "the number of feeds is {total_feeds}\n\
+             the number of chats is {total_chats} \n",
         );
 
         for kind in ["private", "group", "supergroup", "channel"] {
@@ -52,7 +51,7 @@ impl Info {
                 }
             };
 
-            result_message = format!("{}\n{} chats - {}", result_message, kind, result);
+            result_message = format!("{result_message}\n{kind} chats - {result}");
         }
 
         result_message

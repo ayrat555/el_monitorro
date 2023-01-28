@@ -22,7 +22,7 @@ impl GetTimezone {
             None => "You don't have timezone set".to_string(),
             Some(chat) => match chat.utc_offset_minutes {
                 None => "You don't have timezone set".to_string(),
-                Some(value) => format!("Your timezone offset is {} minutes", value),
+                Some(value) => format!("Your timezone offset is {value} minutes"),
             },
         }
     }

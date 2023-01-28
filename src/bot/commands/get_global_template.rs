@@ -22,7 +22,7 @@ impl GetGlobalTemplate {
             None => "You don't have the global template set".to_string(),
             Some(chat) => match chat.template {
                 None => "You don't have the global template set".to_string(),
-                Some(value) => format!("Your global template is \n {}", value),
+                Some(value) => format!("Your global template is \n {value}"),
             },
         }
     }

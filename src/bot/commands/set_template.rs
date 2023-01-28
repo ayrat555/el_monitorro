@@ -1,6 +1,7 @@
 use super::Command;
 use super::Message;
 use super::Response;
+use crate::bot::SimpleMessageParams;
 use crate::db::telegram;
 use crate::deliver::render_template_example;
 use diesel::PgConnection;
@@ -33,6 +34,11 @@ impl SetTemplate {
         let feed_url = vec[0];
         let template = vec[1];
 
+        let chat = match telegram::find_chat(db_connection, self.message.chat.id) {
+            Some(chat) => chat,
+            None => return "You don't have any subcriptions".to_string(),
+        };
+
         let subscription =
             match self.find_subscription(db_connection, self.message.chat.id, feed_url) {
                 Err(message) => return message,
@@ -40,15 +46,17 @@ impl SetTemplate {
             };
 
         let example = match render_template_example(template) {
-            Ok(example) => format!("Your messages will look like:\n\n{}", example),
+            Ok(example) => format!("Your messages will look like:\n\n{example}"),
             Err(_) => return "The template is invalid".to_string(),
         };
 
-        if self
-            .api()
-            .send_text_message(self.message.chat.id, example)
-            .is_err()
-        {
+        let message_params = SimpleMessageParams::builder()
+            .message(example)
+            .chat_id(self.message.chat.id)
+            .preview_enabled(chat.preview_enabled)
+            .build();
+
+        if self.api().reply_with_text_message(&message_params).is_err() {
             return "The template is invalid".to_string();
         }
 

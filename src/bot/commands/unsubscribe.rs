@@ -139,7 +139,7 @@ mod unsubscribe_tests {
                 .build()
                 .unsubscribe(connection);
 
-            assert_eq!(format!("Successfully unsubscribed from {}", link), result);
+            assert_eq!(format!("Successfully unsubscribed from {link}"), result);
 
             let result = telegram::fetch_chats_with_subscriptions(connection, 1, 1).unwrap();
 

@@ -195,7 +195,7 @@ mod subscribe_tests {
                 .build()
                 .subscribe(db_connection);
 
-            assert_eq!(result, format!("Successfully subscribed to {}", feed_url));
+            assert_eq!(result, format!("Successfully subscribed to {feed_url}"));
 
             let subscriptions = telegram::fetch_subscriptions(db_connection, 1, 1000).unwrap();
 
@@ -334,7 +334,7 @@ mod subscribe_tests {
                     .build()
                     .subscribe(db_connection);
 
-                assert_eq!(format!("Successfully subscribed to {}", rss_url), result);
+                assert_eq!(format!("Successfully subscribed to {rss_url}"), result);
             }
 
             let result = Subscribe::builder()
