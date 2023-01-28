@@ -254,19 +254,19 @@ impl SyncFeedJob {
         feed: &Feed,
         sync_error: FeedReaderError,
     ) -> FeedSyncError {
-        match feeds::set_error(db_connection, feed, &format!("{:?}", sync_error)) {
+        match feeds::set_error(db_connection, feed, &format!("{sync_error:?}")) {
             Err(err) => {
                 error!(
-                    "Error: failed to set a sync error to feed with id {} {:?}",
-                    feed.id, err
+                    "Error: failed to set a sync error to feed with id {} {err:?}",
+                    feed.id
                 );
 
                 FeedSyncError::DbError {
-                    msg: format!("Error: failed to set a sync error to feed {:?}", err),
+                    msg: format!("Error: failed to set a sync error to feed {err:?}"),
                 }
             }
             _ => FeedSyncError::FeedError {
-                msg: format!("Error: failed to fetch feed items {:?}", sync_error),
+                msg: format!("Error: failed to fetch feed items {sync_error:?}"),
             },
         }
     }
