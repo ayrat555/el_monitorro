@@ -3,6 +3,7 @@ use super::Command;
 use super::GetFilter;
 use super::GetGlobalFilter;
 use super::GetGlobalTemplate;
+use super::GetPreviewEnabled;
 use super::GetTemplate;
 use super::GetTimezone;
 use super::HelpCommandInfo;
@@ -19,6 +20,7 @@ use super::SetTemplate;
 use super::SetTimezone;
 use super::Start;
 use super::Subscribe;
+use super::TogglePreviewEnabled;
 use super::Unsubscribe;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
@@ -58,6 +60,8 @@ pub enum HelpCommand {
     SetGlobalTemplate,
     RemoveGlobalTemplate,
     UnknownCommand,
+    GetPreviewEnabled,
+    TogglePreviewEnabled,
 }
 
 impl fmt::Display for HelpCommand {
@@ -82,6 +86,8 @@ impl fmt::Display for HelpCommand {
             HelpCommand::GetGlobalTemplate => write!(f, "{}", GetGlobalTemplate::command()),
             HelpCommand::SetGlobalTemplate => write!(f, "{}", SetGlobalTemplate::command()),
             HelpCommand::RemoveGlobalTemplate => write!(f, "{}", RemoveGlobalTemplate::command()),
+            HelpCommand::GetPreviewEnabled => write!(f, "{}", GetPreviewEnabled::command()),
+            HelpCommand::TogglePreviewEnabled => write!(f, "{}", TogglePreviewEnabled::command()),
             // just a placeholder
             HelpCommand::UnknownCommand => write!(f, "/unknown_command"),
         }
@@ -130,6 +136,10 @@ impl FromStr for HelpCommand {
             HelpCommand::GetGlobalFilter
         } else if command.starts_with(RemoveGlobalFilter::command()) {
             HelpCommand::RemoveGlobalFilter
+        } else if command.starts_with(GetPreviewEnabled::command()) {
+            HelpCommand::GetPreviewEnabled
+        } else if command.starts_with(TogglePreviewEnabled::command()) {
+            HelpCommand::TogglePreviewEnabled
         } else {
             HelpCommand::UnknownCommand
         };
@@ -163,6 +173,10 @@ impl Help {
             vec![
                 HelpCommand::GetGlobalTemplate,
                 HelpCommand::SetGlobalTemplate,
+            ],
+            vec![
+                HelpCommand::GetPreviewEnabled,
+                HelpCommand::TogglePreviewEnabled,
             ],
             vec![HelpCommand::RemoveGlobalTemplate],
         ];

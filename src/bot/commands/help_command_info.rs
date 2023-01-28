@@ -46,6 +46,8 @@ static REMOVE_FILTER: &str = "/remove_filter url - remove the filter for the sub
 static SET_GLOBAL_FILTER: &str = "/set_global_filter filter - set the global filter";
 static GET_GLOBAL_FILTER: &str = "/get_global_filter - get a global filter";
 static REMOVE_GLOBAL_FILTER: &str = "/remove_global_filter - remove the global filter";
+static GET_PREVIEW_ENABLED: &str = "/get_preview_enabled - check if previews are enabled for the current chat. by default, previews are enabled";
+static TOGGLE_PREVIEW_ENABLED: &str = "/toggle_preview_enabled - disable or enable previews";
 static UNKNOWN_COMMAND: &str = "unknown command";
 
 static COMMAND: &str = "/help_command";
@@ -113,6 +115,8 @@ impl HelpCommandInfo {
             HelpCommand::GetGlobalTemplate => GET_GLOBAL_TEMPLATE.to_string(),
             HelpCommand::SetGlobalTemplate => SET_GLOBAL_TEMPLATE.to_string(),
             HelpCommand::RemoveGlobalTemplate => REMOVE_GLOBAL_TEMPLATE.to_string(),
+            HelpCommand::GetPreviewEnabled => GET_PREVIEW_ENABLED.to_string(),
+            HelpCommand::TogglePreviewEnabled => TOGGLE_PREVIEW_ENABLED.to_string(),
             HelpCommand::UnknownCommand => UNKNOWN_COMMAND.to_string(),
         }
     }
