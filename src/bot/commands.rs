@@ -40,6 +40,7 @@ pub use set_global_filter::SetGlobalFilter;
 pub use set_global_template::SetGlobalTemplate;
 pub use set_template::SetTemplate;
 pub use set_timezone::SetTimezone;
+pub use show_feed_keyboard::ShowFeedKeyboard;
 pub use start::Start;
 pub use subscribe::Subscribe;
 pub use toggle_preview_enabled::TogglePreviewEnabled;
@@ -68,6 +69,7 @@ pub mod set_global_filter;
 pub mod set_global_template;
 pub mod set_template;
 pub mod set_timezone;
+pub mod show_feed_keyboard;
 pub mod start;
 pub mod subscribe;
 pub mod toggle_preview_enabled;
@@ -117,6 +119,7 @@ pub enum BotCommand {
     SetGlobalTemplate(String),
     SetTemplate(String),
     SetTimezone(String),
+    ShowFeedKeyboard(String),
     Start,
     Subscribe(String),
     TogglePreviewEnabled,
@@ -200,6 +203,10 @@ impl FromStr for BotCommand {
             let args = parse_args(SetContentFields::command(), command);
 
             BotCommand::SetContentFields(args)
+        } else if command.starts_with(ShowFeedKeyboard::command()) {
+            let args = parse_args(ShowFeedKeyboard::command(), command);
+
+            BotCommand::ShowFeedKeyboard(args)
         } else if command.starts_with(Close::command()) {
             BotCommand::Close
         } else if command.starts_with(GetPreviewEnabled::command()) {
@@ -475,6 +482,12 @@ impl CommandProcessor {
 
             BotCommand::TogglePreviewEnabled => TogglePreviewEnabled::builder()
                 .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::ShowFeedKeyboard(args) => ShowFeedKeyboard::builder()
+                .message(self.message.clone())
+                .feed_url(args.to_string())
                 .build()
                 .run(),
         };
