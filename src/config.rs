@@ -115,7 +115,7 @@ impl Config {
 
         value
             .parse()
-            .unwrap_or_else(|_| panic!("{} can not be parsed", name))
+            .unwrap_or_else(|_| panic!("{name} can not be parsed"))
     }
 
     fn read_var<T: FromStr + Debug>(name: &str) -> T

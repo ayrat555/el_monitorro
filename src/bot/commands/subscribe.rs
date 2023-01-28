@@ -334,7 +334,7 @@ mod subscribe_tests {
                     .build()
                     .subscribe(db_connection);
 
-                assert_eq!(format!("Successfully subscribed to {}", rss_url), result);
+                assert_eq!(format!("Successfully subscribed to {rss_url}"), result);
             }
 
             let result = Subscribe::builder()
