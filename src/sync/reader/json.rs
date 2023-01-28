@@ -14,7 +14,7 @@ impl ReadFeed for JsonReader {
         match serde_json::from_slice::<Value>(data) {
             Ok(_) => (),
             Err(err) => {
-                let msg = format!("{:?}", err);
+                let msg = format!("{err:?}");
                 return Err(FeedReaderError { msg });
             }
         }
@@ -27,7 +27,7 @@ impl ReadFeed for JsonReader {
                 Ok(fetched_feed)
             }
             Err(err) => {
-                let msg = format!("{:?}", err);
+                let msg = format!("{err:?}");
                 Err(FeedReaderError { msg })
             }
         }

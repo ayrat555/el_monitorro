@@ -37,7 +37,7 @@ impl CleanJob {
         loop {
             current_feed_ids = match feeds::load_feed_ids(&mut conn, page, FEEDS_PER_PAGE) {
                 Err(err) => {
-                    let description = format!("{:?}", err);
+                    let description = format!("{err:?}");
                     return Err(FangError { description });
                 }
                 Ok(ids) => ids,

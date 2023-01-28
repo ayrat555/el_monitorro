@@ -17,7 +17,7 @@ impl ReadFeed for RssReader {
         match Channel::read_from(data) {
             Ok(channel) => Ok(FetchedFeed::from(channel)),
             Err(err) => {
-                let msg = format!("{}", err);
+                let msg = format!("{err}");
                 Err(FeedReaderError { msg })
             }
         }

@@ -65,7 +65,7 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
             let mut writer: Vec<u8> = vec![];
 
             if let Err(err) = io::copy(response.body_mut(), &mut writer) {
-                let msg = format!("{:?}", err);
+                let msg = format!("{err:?}");
 
                 return Err(FeedReaderError { msg });
             }
@@ -73,7 +73,7 @@ pub fn read_url(url: &str) -> Result<Vec<u8>, FeedReaderError> {
             Ok(writer)
         }
         Err(error) => {
-            let msg = format!("{:?}", error);
+            let msg = format!("{error:?}");
 
             Err(FeedReaderError { msg })
         }

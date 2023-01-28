@@ -61,10 +61,7 @@ impl Config {
 
     fn check_interval(interval: &u32) {
         if !(1..=MAX_SECONDS).contains(interval) {
-            panic!(
-                "Value {} is not in the interval [1 second , MAX_SECONDS]",
-                interval
-            )
+            panic!("Value {interval} is not in the interval [1, {MAX_SECONDS}] seconds")
         }
     }
 
@@ -125,11 +122,11 @@ impl Config {
     where
         <T as FromStr>::Err: std::fmt::Debug,
     {
-        let value = env::var(name).unwrap_or_else(|_| panic!("{} must be set", name));
+        let value = env::var(name).unwrap_or_else(|_| panic!("{name} must be set"));
 
         value
             .parse()
-            .unwrap_or_else(|_| panic!("{} can not be parsed", name))
+            .unwrap_or_else(|_| panic!("{name} can not be parsed"))
     }
 
     fn read_var_option<T: FromStr + Debug>(name: &str) -> Option<T>
@@ -140,7 +137,7 @@ impl Config {
             Ok(val) => {
                 let parsed_value: T = val
                     .parse()
-                    .unwrap_or_else(|_| panic!("{} can not be parsed", name));
+                    .unwrap_or_else(|_| panic!("{name} can not be parsed"));
                 Some(parsed_value)
             }
             Err(_error) => None,

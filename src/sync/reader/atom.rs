@@ -22,7 +22,7 @@ impl ReadFeed for AtomReader {
                 Ok(feed)
             }
             Err(err) => {
-                let msg = format!("{}", err);
+                let msg = format!("{err}");
                 Err(FeedReaderError { msg })
             }
         }
