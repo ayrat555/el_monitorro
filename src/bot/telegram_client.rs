@@ -60,7 +60,7 @@ pub struct SimpleMessageParams {
     message: String,
     #[builder(setter(into), default)]
     reply_message_id: Option<i32>,
-    #[builder(default = true)]
+    #[builder(default = false)]
     preview_enabled: bool,
 }
 
