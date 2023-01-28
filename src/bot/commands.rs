@@ -22,6 +22,7 @@ pub use close::Close;
 pub use get_filter::GetFilter;
 pub use get_global_filter::GetGlobalFilter;
 pub use get_global_template::GetGlobalTemplate;
+pub use get_preview_enabled::GetPreviewEnabled;
 pub use get_template::GetTemplate;
 pub use get_timezone::GetTimezone;
 pub use help::Help;
@@ -40,6 +41,7 @@ pub use set_template::SetTemplate;
 pub use set_timezone::SetTimezone;
 pub use start::Start;
 pub use subscribe::Subscribe;
+pub use toggle_preview_enabled::TogglePreviewEnabled;
 pub use unknown_command::UnknownCommand;
 pub use unsubscribe::Unsubscribe;
 
@@ -47,6 +49,7 @@ pub mod close;
 pub mod get_filter;
 pub mod get_global_filter;
 pub mod get_global_template;
+pub mod get_preview_enabled;
 pub mod get_template;
 pub mod get_timezone;
 pub mod help;
@@ -65,6 +68,7 @@ pub mod set_template;
 pub mod set_timezone;
 pub mod start;
 pub mod subscribe;
+pub mod toggle_preview_enabled;
 pub mod unknown_command;
 pub mod unsubscribe;
 
@@ -94,6 +98,7 @@ pub enum BotCommand {
     GetFilter(String),
     GetGlobalFilter,
     GetGlobalTemplate,
+    GetPreviewEnabled,
     GetTemplate(String),
     GetTimezone,
     Help,
@@ -112,6 +117,7 @@ pub enum BotCommand {
     SetTimezone(String),
     Start,
     Subscribe(String),
+    TogglePreviewEnabled,
     UnknownCommand(String),
     Unsubscribe(String),
 }
@@ -194,6 +200,10 @@ impl FromStr for BotCommand {
             BotCommand::SetContentFields(args)
         } else if command.starts_with(Close::command()) {
             BotCommand::Close
+        } else if command.starts_with(GetPreviewEnabled::command()) {
+            BotCommand::GetPreviewEnabled
+        } else if command.starts_with(TogglePreviewEnabled::command()) {
+            BotCommand::TogglePreviewEnabled
         } else {
             BotCommand::UnknownCommand(command.to_string())
         };
@@ -455,6 +465,16 @@ impl CommandProcessor {
                 .run(),
 
             BotCommand::Close => Close::builder().message(self.message.clone()).build().run(),
+
+            BotCommand::GetPreviewEnabled => GetPreviewEnabled::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::TogglePreviewEnabled => TogglePreviewEnabled::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
         };
     }
 }

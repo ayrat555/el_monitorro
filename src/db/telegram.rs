@@ -110,6 +110,16 @@ pub fn set_filter(
         .get_result::<TelegramSubscription>(conn)
 }
 
+pub fn set_preview_enabled(
+    conn: &mut PgConnection,
+    chat: &TelegramChat,
+    preview_enabled: bool,
+) -> Result<TelegramChat, Error> {
+    diesel::update(chat)
+        .set(telegram_chats::preview_enabled.eq(preview_enabled))
+        .get_result::<TelegramChat>(conn)
+}
+
 pub fn create_subscription(
     conn: &mut PgConnection,
     subscription: NewTelegramSubscription,
