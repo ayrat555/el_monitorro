@@ -16,6 +16,7 @@ use isahc::Request;
 use once_cell::sync::OnceCell;
 use std::collections::VecDeque;
 use std::path::PathBuf;
+use typed_builder::TypedBuilder;
 
 static API: OnceCell<Api> = OnceCell::new();
 
@@ -51,6 +52,16 @@ impl From<Error> for FangError {
 
         Self { description }
     }
+}
+
+#[derive(TypedBuilder)]
+pub struct SimpleMessageParams {
+    chat_id: i64,
+    message: String,
+    #[builder(setter(into), default)]
+    reply_message_id: Option<i32>,
+    #[builder(default = true)]
+    preview_enabled: bool,
 }
 
 impl Api {
@@ -101,29 +112,20 @@ impl Api {
         }
     }
 
-    pub fn send_text_message(&self, chat_id: i64, message: String) -> Result<(), Error> {
-        self.reply_with_text_message(chat_id, message, None)
-    }
-
     pub fn reply_with_text_message(
         &self,
-        chat_id: i64,
-        message: String,
-        message_id: Option<i32>,
+        simple_params: &SimpleMessageParams,
     ) -> Result<(), Error> {
-        let send_message_params = match message_id {
-            None => SendMessageParams::builder()
-                .chat_id(chat_id)
-                .text(message)
-                .parse_mode(ParseMode::Html)
-                .build(),
+        let message_params = SendMessageParams::builder()
+            .chat_id(simple_params.chat_id)
+            .text(simple_params.message.clone())
+            .disable_web_page_preview(!simple_params.preview_enabled)
+            .parse_mode(ParseMode::Html);
 
-            Some(message_id_value) => SendMessageParams::builder()
-                .chat_id(chat_id)
-                .text(message)
-                .parse_mode(ParseMode::Html)
-                .reply_to_message_id(message_id_value)
-                .build(),
+        let send_message_params = match simple_params.reply_message_id {
+            None => message_params.build(),
+
+            Some(message_id_value) => message_params.reply_to_message_id(message_id_value).build(),
         };
 
         self.send_message_with_params(&send_message_params)

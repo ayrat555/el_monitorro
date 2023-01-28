@@ -1,5 +1,6 @@
 use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
+use crate::bot::SimpleMessageParams;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -237,10 +238,12 @@ pub trait Command {
     }
 
     fn reply_to_message(&self, message: &Message, text: String) {
-        if let Err(error) =
-            self.api()
-                .reply_with_text_message(message.chat.id, text, Some(message.message_id))
-        {
+        let message_params = SimpleMessageParams::builder()
+            .message(text)
+            .chat_id(message.chat.id)
+            .build();
+
+        if let Err(error) = self.api().reply_with_text_message(&message_params) {
             error!("Failed to reply to a message {:?} {:?}", error, message);
         }
     }

@@ -1,6 +1,7 @@
 use super::MessageRenderer;
 use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
+use crate::bot::SimpleMessageParams;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::models::feed::Feed;
@@ -238,7 +239,13 @@ impl DeliverChatUpdatesJob {
     ) -> Result<(), DeliverJobError> {
         let delay = delay_period(chat);
 
-        match api.send_text_message(chat.id, message) {
+        let message_params = SimpleMessageParams::builder()
+            .message(message)
+            .chat_id(chat.id)
+            .preview_enabled(chat.preview_enabled)
+            .build();
+
+        match api.reply_with_text_message(&message_params) {
             Ok(_) => {
                 std::thread::sleep(delay);
                 Ok(())
