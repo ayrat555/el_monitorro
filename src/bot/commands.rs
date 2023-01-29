@@ -354,7 +354,7 @@ pub trait Command {
 
                     Ok((subscription, feed))
                 }
-                None => return Err("Subscription does not exist".to_string()),
+                None => Err("Subscription does not exist".to_string()),
             },
             Err(_) => {
                 self.find_subscription_by_feed_url(db_connection, chat_id, feed_url_or_external_id)
@@ -388,10 +388,7 @@ pub trait Command {
         chat_id: i64,
         feed_id: i64,
     ) -> Option<TelegramSubscription> {
-        let telegram_subscription = NewTelegramSubscription {
-            chat_id: chat_id,
-            feed_id: feed_id,
-        };
+        let telegram_subscription = NewTelegramSubscription { chat_id, feed_id };
 
         telegram::find_subscription(db_connection, telegram_subscription)
     }

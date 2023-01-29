@@ -30,7 +30,7 @@ impl Unsubscribe {
 
     fn unsubscribe(&self, db_connection: &mut PgConnection) -> String {
         match self.delete_subscription(db_connection) {
-            Ok(link) => format!("Successfully unsubscribed from {}", link),
+            Ok(link) => format!("Successfully unsubscribed from {link}"),
             Err(DeleteSubscriptionError::DbError) => {
                 format!("Failed to unsubscribe from {}", self.args)
             }
