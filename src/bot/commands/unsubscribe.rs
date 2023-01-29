@@ -15,6 +15,7 @@ static COMMAND: &str = "/unsubscribe";
 pub struct Unsubscribe {
     message: Message,
     args: String,
+    #[builder(default = false)]
     callback: bool,
 }
 
