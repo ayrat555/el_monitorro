@@ -12,6 +12,7 @@ use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::BigInt;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
+use uuid::Uuid;
 
 #[derive(Insertable, Clone, Debug)]
 #[diesel(table_name = telegram_chats)]
@@ -136,6 +137,19 @@ pub fn find_subscription(
     match telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(subscription.chat_id))
         .filter(telegram_subscriptions::feed_id.eq(subscription.feed_id))
+        .first::<TelegramSubscription>(conn)
+    {
+        Ok(record) => Some(record),
+        _ => None,
+    }
+}
+
+pub fn find_subscription_by_external_id(
+    conn: &mut PgConnection,
+    external_id: Uuid,
+) -> Option<TelegramSubscription> {
+    match telegram_subscriptions::table
+        .filter(telegram_subscriptions::external_id.eq(external_id))
         .first::<TelegramSubscription>(conn)
     {
         Ok(record) => Some(record),

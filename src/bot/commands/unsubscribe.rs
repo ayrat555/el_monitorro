@@ -2,7 +2,6 @@ use super::Command;
 use super::ListSubscriptionsKeyboard;
 use super::Message;
 use super::Response;
-use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
 use diesel::PgConnection;
@@ -21,8 +20,6 @@ pub struct Unsubscribe {
 
 enum DeleteSubscriptionError {
     FeedNotFound,
-    ChatNotFound,
-    SubscriptionNotFound,
     DbError,
 }
 
@@ -33,7 +30,7 @@ impl Unsubscribe {
 
     fn unsubscribe(&self, db_connection: &mut PgConnection) -> String {
         match self.delete_subscription(db_connection) {
-            Ok(_) => format!("Successfully unsubscribed from {}", self.args),
+            Ok(link) => format!("Successfully unsubscribed from {}", link),
             Err(DeleteSubscriptionError::DbError) => {
                 format!("Failed to unsubscribe from {}", self.args)
             }
@@ -44,30 +41,20 @@ impl Unsubscribe {
     fn delete_subscription(
         &self,
         db_connection: &mut PgConnection,
-    ) -> Result<(), DeleteSubscriptionError> {
-        let feed = match feeds::find_by_link(db_connection, &self.args) {
-            Some(feed) => feed,
-            None => return Err(DeleteSubscriptionError::FeedNotFound),
-        };
-
-        let chat = match telegram::find_chat(db_connection, self.message.chat.id) {
-            Some(chat) => chat,
-            None => return Err(DeleteSubscriptionError::ChatNotFound),
-        };
+    ) -> Result<String, DeleteSubscriptionError> {
+        let (_subscription, feed) =
+            match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
+                Ok((subscription, feed)) => (subscription, feed),
+                Err(_) => return Err(DeleteSubscriptionError::FeedNotFound),
+            };
 
         let telegram_subscription = NewTelegramSubscription {
-            chat_id: chat.id,
+            chat_id: self.message.chat.id,
             feed_id: feed.id,
         };
 
-        let _subscription = match telegram::find_subscription(db_connection, telegram_subscription)
-        {
-            Some(subscription) => subscription,
-            None => return Err(DeleteSubscriptionError::SubscriptionNotFound),
-        };
-
         match telegram::remove_subscription(db_connection, telegram_subscription) {
-            Ok(_) => Ok(()),
+            Ok(_) => Ok(feed.link),
             _ => Err(DeleteSubscriptionError::DbError),
         }
     }

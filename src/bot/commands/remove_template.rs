@@ -22,10 +22,10 @@ impl RemoveTemplate {
     }
 
     fn remove_template(&self, db_connection: &mut PgConnection) -> String {
-        let subscription =
+        let (subscription, _feed) =
             match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
                 Err(message) => return message,
-                Ok(subscription) => subscription,
+                Ok(subscription_with_feed) => subscription_with_feed,
             };
 
         match telegram::set_template(db_connection, &subscription, None) {

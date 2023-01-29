@@ -39,10 +39,10 @@ impl SetTemplate {
             None => return "You don't have any subcriptions".to_string(),
         };
 
-        let subscription =
+        let (subscription, _feed) =
             match self.find_subscription(db_connection, self.message.chat.id, feed_url) {
                 Err(message) => return message,
-                Ok(subscription) => subscription,
+                Ok((subscription, feed)) => (subscription, feed),
             };
 
         let example = match render_template_example(template) {

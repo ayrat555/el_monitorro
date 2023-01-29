@@ -20,6 +20,7 @@ use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
 use std::str::FromStr;
 use typed_builder::TypedBuilder;
+use uuid::Uuid;
 
 pub use close::Close;
 pub use get_filter::GetFilter;
@@ -344,8 +345,29 @@ pub trait Command {
         &self,
         db_connection: &mut PgConnection,
         chat_id: i64,
+        feed_url_or_external_id: &str,
+    ) -> Result<(TelegramSubscription, Feed), String> {
+        match Uuid::from_str(feed_url_or_external_id) {
+            Ok(uuid) => match telegram::find_subscription_by_external_id(db_connection, uuid) {
+                Some(subscription) => {
+                    let feed = feeds::find(db_connection, subscription.feed_id).unwrap();
+
+                    Ok((subscription, feed))
+                }
+                None => return Err("Subscription does not exist".to_string()),
+            },
+            Err(_) => {
+                self.find_subscription_by_feed_url(db_connection, chat_id, feed_url_or_external_id)
+            }
+        }
+    }
+
+    fn find_subscription_by_feed_url(
+        &self,
+        db_connection: &mut PgConnection,
+        chat_id: i64,
         feed_url: &str,
-    ) -> Result<TelegramSubscription, String> {
+    ) -> Result<(TelegramSubscription, Feed), String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
         let feed = self.find_feed(db_connection, feed_url)?;
 
@@ -354,15 +376,24 @@ pub trait Command {
             None => return not_exists_error,
         };
 
-        let telegram_subscription = NewTelegramSubscription {
-            chat_id: chat.id,
-            feed_id: feed.id,
-        };
-
-        match telegram::find_subscription(db_connection, telegram_subscription) {
-            Some(subscription) => Ok(subscription),
+        match self.find_subscription_by_chat_id_and_feed_id(db_connection, chat.id, feed.id) {
+            Some(subscription) => Ok((subscription, feed)),
             None => not_exists_error,
         }
+    }
+
+    fn find_subscription_by_chat_id_and_feed_id(
+        &self,
+        db_connection: &mut PgConnection,
+        chat_id: i64,
+        feed_id: i64,
+    ) -> Option<TelegramSubscription> {
+        let telegram_subscription = NewTelegramSubscription {
+            chat_id: chat_id,
+            feed_id: feed_id,
+        };
+
+        telegram::find_subscription(db_connection, telegram_subscription)
     }
 
     fn find_feed(&self, db_connection: &mut PgConnection, feed_url: &str) -> Result<Feed, String> {
@@ -536,7 +567,7 @@ impl CommandProcessor {
 
             BotCommand::ShowFeedKeyboard(args) => ShowFeedKeyboard::builder()
                 .message(self.message.clone())
-                .feed_url(args.to_string())
+                .feed_url_or_external_id(args.to_string())
                 .build()
                 .run(),
         };

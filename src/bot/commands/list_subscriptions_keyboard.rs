@@ -43,10 +43,17 @@ impl ListSubscriptionsKeyboard {
 
         for feed in feeds {
             let mut row: Vec<InlineKeyboardButton> = Vec::new();
+            let subscription = self
+                .find_subscription_by_chat_id_and_feed_id(
+                    db_connection,
+                    self.message.chat.id,
+                    feed.id,
+                )
+                .unwrap();
 
             let feed_button = InlineKeyboardButton::builder()
                 .text(feed.link.clone())
-                .callback_data(format!("/feed_keyboard {}", feed.link))
+                .callback_data(format!("/feed_keyboard {}", subscription.external_id))
                 .build();
 
             row.push(feed_button);

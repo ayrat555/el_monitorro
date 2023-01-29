@@ -57,6 +57,7 @@ table! {
         template -> Nullable<Text>,
         filter_words -> Nullable<Array<Text>>,
         has_updates -> Bool,
+        external_id -> Uuid,
     }
 }
 

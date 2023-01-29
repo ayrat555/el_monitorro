@@ -20,7 +20,7 @@ static COMMAND: &str = "/feed_keyboard";
 #[derive(TypedBuilder)]
 pub struct ShowFeedKeyboard {
     message: Message,
-    feed_url: String,
+    feed_url_or_external_id: String,
 }
 
 impl ShowFeedKeyboard {
@@ -33,13 +33,18 @@ impl ShowFeedKeyboard {
     }
 
     fn feed_keyboard(&self, db_connection: &mut PgConnection) -> SendMessageParams {
-        if let Err(message) =
-            self.find_subscription(db_connection, self.message.chat.id, &self.feed_url)
-        {
-            return SendMessageParams::builder()
-                .chat_id(self.message.chat.id)
-                .text(message)
-                .build();
+        let (subscription, feed) = match self.find_subscription(
+            db_connection,
+            self.message.chat.id,
+            &self.feed_url_or_external_id,
+        ) {
+            Err(error_message) => {
+                return SendMessageParams::builder()
+                    .chat_id(self.message.chat.id)
+                    .text(error_message)
+                    .build();
+            }
+            Ok((subscription, feed)) => (subscription, feed),
         };
 
         let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
@@ -56,7 +61,7 @@ impl ShowFeedKeyboard {
             for command in command_row {
                 let button = InlineKeyboardButton::builder()
                     .text(command.to_string())
-                    .callback_data(format!("{} {}", command, self.feed_url))
+                    .callback_data(format!("{} {}", command, subscription.external_id))
                     .build();
 
                 row.push(button);
@@ -83,7 +88,7 @@ impl ShowFeedKeyboard {
 
         SendMessageParams::builder()
             .chat_id(self.message.chat.id)
-            .text(self.feed_url.clone())
+            .text(feed.link)
             .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
             .build()
     }
