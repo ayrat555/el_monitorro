@@ -1,12 +1,11 @@
 use super::Close;
 use super::Command;
 use super::GetFilter;
-use super::GetPreviewEnabled;
 use super::GetTemplate;
+use super::ListSubscriptions;
 use super::RemoveFilter;
 use super::RemoveTemplate;
 use super::Response;
-use super::TogglePreviewEnabled;
 use super::Unsubscribe;
 use diesel::PgConnection;
 use frankenstein::InlineKeyboardButton;
@@ -48,10 +47,6 @@ impl ShowFeedKeyboard {
         let rows = [
             vec![GetFilter::command(), RemoveFilter::command()],
             vec![GetTemplate::command(), RemoveTemplate::command()],
-            vec![
-                GetPreviewEnabled::command(),
-                TogglePreviewEnabled::command(),
-            ],
             vec![Unsubscribe::command()],
         ];
 
@@ -69,6 +64,16 @@ impl ShowFeedKeyboard {
 
             buttons.push(row);
         }
+        let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+        let button = InlineKeyboardButton::builder()
+            .text("Back")
+            .callback_data(ListSubscriptions::command())
+            .build();
+
+        row.push(button);
+
+        buttons.push(row);
 
         buttons.push(Close::button_row());
 
@@ -97,17 +102,6 @@ impl Command for ShowFeedKeyboard {
     }
 
     fn send_message(&self, send_message_params: SendMessageParams) {
-        match self.api().send_message_with_params(&send_message_params) {
-            Err(error) => {
-                error!(
-                    "Failed to send a message {:?} {:?}",
-                    error, send_message_params
-                );
-            }
-
-            Ok(_) => {
-                self.remove_message(&self.message);
-            }
-        }
+        self.send_message_and_remove(send_message_params, &self.message);
     }
 }

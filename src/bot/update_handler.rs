@@ -66,6 +66,7 @@ impl UpdateHandler {
         CommandProcessor::builder()
             .message(message)
             .command(command)
+            .callback(false)
             .build()
             .process()
     }
@@ -87,6 +88,7 @@ impl UpdateHandler {
         CommandProcessor::builder()
             .message(query.message.unwrap())
             .command(command)
+            .callback(true)
             .build()
             .process();
     }

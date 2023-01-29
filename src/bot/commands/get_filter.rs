@@ -1,7 +1,9 @@
 use super::Command;
 use super::Message;
 use super::Response;
+use super::ShowFeedKeyboard;
 use diesel::PgConnection;
+use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/get_filter";
@@ -10,6 +12,7 @@ static COMMAND: &str = "/get_filter";
 pub struct GetFilter {
     message: Message,
     args: String,
+    callback: bool,
 }
 
 impl GetFilter {
@@ -40,6 +43,18 @@ impl Command for GetFilter {
             Err(error_message) => error_message,
         };
 
-        Response::Simple(response)
+        if self.callback {
+            self.simple_keyboard(
+                response,
+                format!("{} {}", ShowFeedKeyboard::command(), self.args),
+                self.message.chat.id,
+            )
+        } else {
+            Response::Simple(response)
+        }
+    }
+
+    fn send_message(&self, send_message_params: SendMessageParams) {
+        self.send_message_and_remove(send_message_params, &self.message);
     }
 }

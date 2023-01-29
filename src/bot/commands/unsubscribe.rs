@@ -1,10 +1,12 @@
 use super::Command;
+use super::ListSubscriptions;
 use super::Message;
 use super::Response;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
 use diesel::PgConnection;
+use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/unsubscribe";
@@ -13,6 +15,7 @@ static COMMAND: &str = "/unsubscribe";
 pub struct Unsubscribe {
     message: Message,
     args: String,
+    callback: bool,
 }
 
 enum DeleteSubscriptionError {
@@ -80,7 +83,19 @@ impl Command for Unsubscribe {
             Err(error_message) => error_message,
         };
 
-        Response::Simple(response)
+        if self.callback {
+            self.simple_keyboard(
+                response,
+                ListSubscriptions::command().to_string(),
+                self.message.chat.id,
+            )
+        } else {
+            Response::Simple(response)
+        }
+    }
+
+    fn send_message(&self, send_message_params: SendMessageParams) {
+        self.send_message_and_remove(send_message_params, &self.message);
     }
 }
 

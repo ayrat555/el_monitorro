@@ -1,12 +1,8 @@
 use super::help::HelpCommand;
-use super::Close;
 use super::Command;
 use super::Help;
 use super::Response;
-use frankenstein::InlineKeyboardButton;
-use frankenstein::InlineKeyboardMarkup;
 use frankenstein::Message;
-use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
 use std::str::FromStr;
 use typed_builder::TypedBuilder;
@@ -63,31 +59,10 @@ impl HelpCommandInfo {
         self.execute(&self.message);
     }
 
-    fn command_info(&self) -> SendMessageParams {
+    fn command_info(&self) -> String {
         let command = HelpCommand::from_str(&self.args).unwrap();
-        let help_for_command = self.help_for_command(command);
 
-        let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
-        let mut row: Vec<InlineKeyboardButton> = Vec::new();
-
-        let button = InlineKeyboardButton::builder()
-            .text("Back")
-            .callback_data(Help::command().to_string())
-            .build();
-
-        row.push(button);
-        buttons.push(row);
-        buttons.push(Close::button_row());
-
-        let keyboard = InlineKeyboardMarkup::builder()
-            .inline_keyboard(buttons)
-            .build();
-
-        SendMessageParams::builder()
-            .chat_id(self.message.chat.id)
-            .text(help_for_command)
-            .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
-            .build()
+        self.help_for_command(command)
     }
 
     pub fn command() -> &'static str {
@@ -124,23 +99,16 @@ impl HelpCommandInfo {
 
 impl Command for HelpCommandInfo {
     fn response(&self) -> Response {
-        let params = self.command_info();
+        let help_for_command = self.command_info();
 
-        Response::Params(params)
+        self.simple_keyboard(
+            help_for_command,
+            Help::command().to_string(),
+            self.message.chat.id,
+        )
     }
 
     fn send_message(&self, send_message_params: SendMessageParams) {
-        match self.api().send_message_with_params(&send_message_params) {
-            Err(error) => {
-                error!(
-                    "Failed to send a message {:?} {:?}",
-                    error, send_message_params
-                );
-            }
-
-            Ok(_) => {
-                self.remove_message(&self.message);
-            }
-        }
+        self.send_message_and_remove(send_message_params, &self.message);
     }
 }

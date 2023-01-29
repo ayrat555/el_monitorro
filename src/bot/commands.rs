@@ -13,7 +13,10 @@ use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatType;
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
 use frankenstein::Message;
+use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
 use std::str::FromStr;
 use typed_builder::TypedBuilder;
@@ -267,6 +270,21 @@ pub trait Command {
         }
     }
 
+    fn send_message_and_remove(&self, send_message_params: SendMessageParams, message: &Message) {
+        match self.api().send_message_with_params(&send_message_params) {
+            Err(error) => {
+                error!(
+                    "Failed to send a message {:?} {:?}",
+                    error, send_message_params
+                );
+            }
+
+            Ok(_) => {
+                self.remove_message(&message);
+            }
+        }
+    }
+
     fn send_message(&self, send_message_params: SendMessageParams) {
         if let Err(error) = self.api().send_message_with_params(&send_message_params) {
             error!(
@@ -278,6 +296,33 @@ pub trait Command {
 
     fn remove_message(&self, message: &Message) {
         self.api().remove_message(message)
+    }
+
+    fn simple_keyboard(&self, message: String, back_command: String, chat_id: i64) -> Response {
+        let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+        let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+        let button = InlineKeyboardButton::builder()
+            .text("Back")
+            .callback_data(back_command)
+            .build();
+
+        row.push(button);
+        buttons.push(row);
+        buttons.push(Close::button_row());
+
+        let keyboard = InlineKeyboardMarkup::builder()
+            .inline_keyboard(buttons)
+            .build();
+
+        let params = SendMessageParams::builder()
+            .chat_id(chat_id)
+            .disable_web_page_preview(true)
+            .text(message)
+            .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
+            .build();
+
+        Response::Params(params)
     }
 
     fn fetch_db_connection(
@@ -348,6 +393,7 @@ pub trait Command {
 pub struct CommandProcessor {
     message: Message,
     command: BotCommand,
+    callback: bool,
 }
 
 impl CommandProcessor {
@@ -364,6 +410,7 @@ impl CommandProcessor {
             BotCommand::Unsubscribe(args) => Unsubscribe::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
@@ -394,12 +441,14 @@ impl CommandProcessor {
             BotCommand::GetFilter(args) => GetFilter::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::RemoveFilter(args) => RemoveFilter::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
@@ -412,12 +461,14 @@ impl CommandProcessor {
             BotCommand::GetTemplate(args) => GetTemplate::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
