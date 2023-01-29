@@ -1,5 +1,5 @@
 use super::Command;
-use super::ListSubscriptions;
+use super::ListSubscriptionsKeyboard;
 use super::Message;
 use super::Response;
 use crate::db::feeds;
@@ -87,7 +87,7 @@ impl Command for Unsubscribe {
         if self.callback {
             self.simple_keyboard(
                 response,
-                ListSubscriptions::command().to_string(),
+                ListSubscriptionsKeyboard::command().to_string(),
                 self.message.chat.id,
             )
         } else {

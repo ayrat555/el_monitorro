@@ -31,7 +31,6 @@ pub use get_timezone::GetTimezone;
 pub use help::Help;
 pub use help_command_info::HelpCommandInfo;
 pub use info::Info;
-pub use list_subscriptions::ListSubscriptions;
 pub use list_subscriptions_keyboard::ListSubscriptionsKeyboard;
 pub use remove_filter::RemoveFilter;
 pub use remove_global_filter::RemoveGlobalFilter;
@@ -60,7 +59,6 @@ pub mod get_timezone;
 pub mod help;
 pub mod help_command_info;
 pub mod info;
-pub mod list_subscriptions;
 pub mod list_subscriptions_keyboard;
 pub mod remove_filter;
 pub mod remove_global_filter;
@@ -150,7 +148,7 @@ impl FromStr for BotCommand {
             let args = parse_args(Unsubscribe::command(), command);
 
             BotCommand::Unsubscribe(args)
-        } else if command.starts_with(ListSubscriptions::command()) {
+        } else if command.starts_with(ListSubscriptionsKeyboard::command()) {
             BotCommand::ListSubscriptions
         } else if command.starts_with(Start::command()) {
             BotCommand::Start

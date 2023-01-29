@@ -2,7 +2,7 @@ use super::Close;
 use super::Command;
 use super::GetFilter;
 use super::GetTemplate;
-use super::ListSubscriptions;
+use super::ListSubscriptionsKeyboard;
 use super::RemoveFilter;
 use super::RemoveTemplate;
 use super::Response;
@@ -68,7 +68,7 @@ impl ShowFeedKeyboard {
 
         let button = InlineKeyboardButton::builder()
             .text("Back")
-            .callback_data(ListSubscriptions::command())
+            .callback_data(ListSubscriptionsKeyboard::command())
             .build();
 
         row.push(button);

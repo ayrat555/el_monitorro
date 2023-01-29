@@ -10,6 +10,8 @@ use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
+static COMMAND: &str = "/list_subscriptions";
+
 #[derive(TypedBuilder)]
 pub struct ListSubscriptionsKeyboard {
     message: Message,
@@ -62,6 +64,10 @@ impl ListSubscriptionsKeyboard {
             .text(message)
             .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
             .build()
+    }
+
+    pub fn command() -> &'static str {
+        COMMAND
     }
 }
 
