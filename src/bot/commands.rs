@@ -280,7 +280,7 @@ pub trait Command {
             }
 
             Ok(_) => {
-                self.remove_message(&message);
+                self.remove_message(message);
             }
         }
     }
