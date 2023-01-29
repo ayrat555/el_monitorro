@@ -50,17 +50,23 @@ impl ShowFeedKeyboard {
         let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
         let rows = [
-            vec![GetFilter::command(), RemoveFilter::command()],
-            vec![GetTemplate::command(), RemoveTemplate::command()],
-            vec![Unsubscribe::command()],
+            vec![
+                ("Show Filter", GetFilter::command()),
+                ("Remove Filter", RemoveFilter::command()),
+            ],
+            vec![
+                ("Show Template", GetTemplate::command()),
+                ("Remove Template", RemoveTemplate::command()),
+            ],
+            vec![("Unsubscribe", Unsubscribe::command())],
         ];
 
         for command_row in rows {
             let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
-            for command in command_row {
+            for (text, command) in command_row {
                 let button = InlineKeyboardButton::builder()
-                    .text(command.to_string())
+                    .text(text)
                     .callback_data(format!("{} {}", command, subscription.external_id))
                     .build();
 
@@ -72,7 +78,7 @@ impl ShowFeedKeyboard {
         let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
         let button = InlineKeyboardButton::builder()
-            .text("Back")
+            .text("◀ Back")
             .callback_data(ListSubscriptionsKeyboard::command())
             .build();
 

@@ -302,7 +302,7 @@ pub trait Command {
         let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
         let button = InlineKeyboardButton::builder()
-            .text("Back")
+            .text("◀ Back")
             .callback_data(back_command)
             .build();
 

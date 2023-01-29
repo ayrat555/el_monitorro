@@ -5,7 +5,7 @@ use frankenstein::InlineKeyboardButton;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/close";
-static BUTTON_NAME: &str = "Close";
+static BUTTON_NAME: &str = "✖ Close";
 
 #[derive(TypedBuilder)]
 pub struct Close {
