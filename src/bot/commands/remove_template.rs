@@ -18,14 +18,14 @@ pub struct RemoveTemplate {
 
 impl RemoveTemplate {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     fn remove_template(&self, db_connection: &mut PgConnection) -> String {
-        let (subscription, _feed) =
+        let subscription =
             match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
                 Err(message) => return message,
-                Ok(subscription_with_feed) => subscription_with_feed,
+                Ok(subscription) => subscription,
             };
 
         match telegram::set_template(db_connection, &subscription, None) {

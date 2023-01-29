@@ -15,7 +15,7 @@ pub struct SetGlobalFilter {
 
 impl SetGlobalFilter {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     fn set_global_template(&self, db_connection: &mut PgConnection) -> String {

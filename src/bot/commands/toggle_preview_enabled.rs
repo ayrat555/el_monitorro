@@ -14,7 +14,7 @@ pub struct TogglePreviewEnabled {
 
 impl TogglePreviewEnabled {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, Self::command());
     }
 
     fn toggle_preview_enabled(&self, db_connection: &mut PgConnection) -> String {

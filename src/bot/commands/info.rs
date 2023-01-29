@@ -17,7 +17,7 @@ pub struct Info {
 
 impl Info {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, Self::command());
     }
 
     fn info(&self, db_connection: &mut PgConnection) -> String {
@@ -71,16 +71,12 @@ impl Info {
 }
 
 impl Command for Info {
-    fn execute(&self, message: &Message) {
+    fn execute(&self, message: &Message, command: &str) {
         match Config::admin_telegram_id() {
             None => self.unknown_command(),
             Some(id) => {
                 if id == message.chat.id {
-                    info!(
-                        "{:?} wrote: {}",
-                        message.chat.id,
-                        message.text.as_ref().unwrap()
-                    );
+                    info!("{:?} wrote: {}", message.chat.id, command);
 
                     if let Response::Simple(text) = self.response() {
                         self.reply_to_message(message, text)

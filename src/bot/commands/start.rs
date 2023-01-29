@@ -23,7 +23,7 @@ pub struct Start {
 
 impl Start {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, Self::command());
     }
 
     pub fn command() -> &'static str {

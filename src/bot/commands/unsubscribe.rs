@@ -2,6 +2,7 @@ use super::Command;
 use super::ListSubscriptionsKeyboard;
 use super::Message;
 use super::Response;
+use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
 use diesel::PgConnection;
@@ -25,7 +26,7 @@ enum DeleteSubscriptionError {
 
 impl Unsubscribe {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     fn unsubscribe(&self, db_connection: &mut PgConnection) -> String {
@@ -42,11 +43,13 @@ impl Unsubscribe {
         &self,
         db_connection: &mut PgConnection,
     ) -> Result<String, DeleteSubscriptionError> {
-        let (_subscription, feed) =
+        let subscription =
             match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
-                Ok((subscription, feed)) => (subscription, feed),
+                Ok(subscription) => subscription,
                 Err(_) => return Err(DeleteSubscriptionError::FeedNotFound),
             };
+
+        let feed = feeds::find(db_connection, subscription.feed_id).unwrap();
 
         let telegram_subscription = NewTelegramSubscription {
             chat_id: self.message.chat.id,

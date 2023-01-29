@@ -15,7 +15,7 @@ pub struct SetFilter {
 
 impl SetFilter {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     pub fn set_filter(&self, db_connection: &mut PgConnection) -> String {
@@ -34,11 +34,11 @@ impl SetFilter {
             Ok(words) => words,
         };
 
-        let (subscription, _feed) =
-            match self.find_subscription(db_connection, self.message.chat.id, vec[0]) {
-                Err(message) => return message,
-                Ok(subscription_with_feed) => subscription_with_feed,
-            };
+        let subscription = match self.find_subscription(db_connection, self.message.chat.id, vec[0])
+        {
+            Err(message) => return message,
+            Ok(subscription) => subscription,
+        };
 
         match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
             Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")),

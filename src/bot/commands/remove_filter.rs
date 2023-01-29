@@ -18,11 +18,11 @@ pub struct RemoveFilter {
 
 impl RemoveFilter {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     pub fn remove_filter(&self, db_connection: &mut PgConnection) -> String {
-        let (subscription, _feed) =
+        let subscription =
             match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
                 Err(message) => return message,
                 Ok(subscription) => subscription,
