@@ -1,0 +1,118 @@
+use super::Close;
+use super::Command;
+use super::GetFilter;
+use super::GetTemplate;
+use super::ListSubscriptionsKeyboard;
+use super::RemoveFilter;
+use super::RemoveTemplate;
+use super::Response;
+use super::Unsubscribe;
+use diesel::PgConnection;
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
+use frankenstein::Message;
+use frankenstein::ReplyMarkup;
+use frankenstein::SendMessageParams;
+use typed_builder::TypedBuilder;
+
+static COMMAND: &str = "/feed_keyboard";
+
+#[derive(TypedBuilder)]
+pub struct ShowFeedKeyboard {
+    message: Message,
+    feed_url_or_external_id: String,
+}
+
+impl ShowFeedKeyboard {
+    pub fn run(&self) {
+        self.execute(&self.message);
+    }
+
+    pub fn command() -> &'static str {
+        COMMAND
+    }
+
+    fn feed_keyboard(&self, db_connection: &mut PgConnection) -> SendMessageParams {
+        let (subscription, feed) = match self.find_subscription(
+            db_connection,
+            self.message.chat.id,
+            &self.feed_url_or_external_id,
+        ) {
+            Err(error_message) => {
+                return SendMessageParams::builder()
+                    .chat_id(self.message.chat.id)
+                    .text(error_message)
+                    .build();
+            }
+            Ok((subscription, feed)) => (subscription, feed),
+        };
+
+        let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+
+        let rows = [
+            vec![
+                ("Show Filter", GetFilter::command()),
+                ("Remove Filter", RemoveFilter::command()),
+            ],
+            vec![
+                ("Show Template", GetTemplate::command()),
+                ("Remove Template", RemoveTemplate::command()),
+            ],
+            vec![("Unsubscribe", Unsubscribe::command())],
+        ];
+
+        for command_row in rows {
+            let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+            for (text, command) in command_row {
+                let button = InlineKeyboardButton::builder()
+                    .text(text)
+                    .callback_data(format!("{} {}", command, subscription.external_id))
+                    .build();
+
+                row.push(button);
+            }
+
+            buttons.push(row);
+        }
+        let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+        let button = InlineKeyboardButton::builder()
+            .text("◀ Back")
+            .callback_data(ListSubscriptionsKeyboard::command())
+            .build();
+
+        row.push(button);
+
+        buttons.push(row);
+
+        buttons.push(Close::button_row());
+
+        let keyboard = InlineKeyboardMarkup::builder()
+            .inline_keyboard(buttons)
+            .build();
+
+        SendMessageParams::builder()
+            .chat_id(self.message.chat.id)
+            .text(feed.link)
+            .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
+            .build()
+    }
+}
+
+impl Command for ShowFeedKeyboard {
+    fn response(&self) -> Response {
+        match self.fetch_db_connection() {
+            Ok(mut connection) => {
+                let params = self.feed_keyboard(&mut connection);
+
+                Response::Params(params)
+            }
+            Err(error_message) => Response::Simple(error_message),
+        }
+    }
+
+    fn send_message(&self, send_message_params: SendMessageParams) {
+        self.send_message_and_remove(send_message_params, &self.message);
+    }
+}

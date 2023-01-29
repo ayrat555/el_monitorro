@@ -34,11 +34,11 @@ impl SetFilter {
             Ok(words) => words,
         };
 
-        let subscription = match self.find_subscription(db_connection, self.message.chat.id, vec[0])
-        {
-            Err(message) => return message,
-            Ok(subscription) => subscription,
-        };
+        let (subscription, _feed) =
+            match self.find_subscription(db_connection, self.message.chat.id, vec[0]) {
+                Err(message) => return message,
+                Ok(subscription_with_feed) => subscription_with_feed,
+            };
 
         match telegram::set_filter(db_connection, &subscription, Some(filter_words.clone())) {
             Ok(_) => format!("The filter was updated:\n\n{}", filter_words.join(", ")),

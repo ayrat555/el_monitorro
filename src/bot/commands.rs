@@ -13,10 +13,14 @@ use diesel::r2d2::PooledConnection;
 use diesel::PgConnection;
 use frankenstein::Chat;
 use frankenstein::ChatType;
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
 use frankenstein::Message;
+use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
 use std::str::FromStr;
 use typed_builder::TypedBuilder;
+use uuid::Uuid;
 
 pub use close::Close;
 pub use get_filter::GetFilter;
@@ -28,7 +32,7 @@ pub use get_timezone::GetTimezone;
 pub use help::Help;
 pub use help_command_info::HelpCommandInfo;
 pub use info::Info;
-pub use list_subscriptions::ListSubscriptions;
+pub use list_subscriptions_keyboard::ListSubscriptionsKeyboard;
 pub use remove_filter::RemoveFilter;
 pub use remove_global_filter::RemoveGlobalFilter;
 pub use remove_global_template::RemoveGlobalTemplate;
@@ -39,6 +43,7 @@ pub use set_global_filter::SetGlobalFilter;
 pub use set_global_template::SetGlobalTemplate;
 pub use set_template::SetTemplate;
 pub use set_timezone::SetTimezone;
+pub use show_feed_keyboard::ShowFeedKeyboard;
 pub use start::Start;
 pub use subscribe::Subscribe;
 pub use toggle_preview_enabled::TogglePreviewEnabled;
@@ -55,7 +60,7 @@ pub mod get_timezone;
 pub mod help;
 pub mod help_command_info;
 pub mod info;
-pub mod list_subscriptions;
+pub mod list_subscriptions_keyboard;
 pub mod remove_filter;
 pub mod remove_global_filter;
 pub mod remove_global_template;
@@ -66,6 +71,7 @@ pub mod set_global_filter;
 pub mod set_global_template;
 pub mod set_template;
 pub mod set_timezone;
+pub mod show_feed_keyboard;
 pub mod start;
 pub mod subscribe;
 pub mod toggle_preview_enabled;
@@ -115,6 +121,7 @@ pub enum BotCommand {
     SetGlobalTemplate(String),
     SetTemplate(String),
     SetTimezone(String),
+    ShowFeedKeyboard(String),
     Start,
     Subscribe(String),
     TogglePreviewEnabled,
@@ -142,7 +149,7 @@ impl FromStr for BotCommand {
             let args = parse_args(Unsubscribe::command(), command);
 
             BotCommand::Unsubscribe(args)
-        } else if command.starts_with(ListSubscriptions::command()) {
+        } else if command.starts_with(ListSubscriptionsKeyboard::command()) {
             BotCommand::ListSubscriptions
         } else if command.starts_with(Start::command()) {
             BotCommand::Start
@@ -198,6 +205,10 @@ impl FromStr for BotCommand {
             let args = parse_args(SetContentFields::command(), command);
 
             BotCommand::SetContentFields(args)
+        } else if command.starts_with(ShowFeedKeyboard::command()) {
+            let args = parse_args(ShowFeedKeyboard::command(), command);
+
+            BotCommand::ShowFeedKeyboard(args)
         } else if command.starts_with(Close::command()) {
             BotCommand::Close
         } else if command.starts_with(GetPreviewEnabled::command()) {
@@ -258,6 +269,21 @@ pub trait Command {
         }
     }
 
+    fn send_message_and_remove(&self, send_message_params: SendMessageParams, message: &Message) {
+        match self.api().send_message_with_params(&send_message_params) {
+            Err(error) => {
+                error!(
+                    "Failed to send a message {:?} {:?}",
+                    error, send_message_params
+                );
+            }
+
+            Ok(_) => {
+                self.remove_message(message);
+            }
+        }
+    }
+
     fn send_message(&self, send_message_params: SendMessageParams) {
         if let Err(error) = self.api().send_message_with_params(&send_message_params) {
             error!(
@@ -269,6 +295,33 @@ pub trait Command {
 
     fn remove_message(&self, message: &Message) {
         self.api().remove_message(message)
+    }
+
+    fn simple_keyboard(&self, message: String, back_command: String, chat_id: i64) -> Response {
+        let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+        let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+        let button = InlineKeyboardButton::builder()
+            .text("◀ Back")
+            .callback_data(back_command)
+            .build();
+
+        row.push(button);
+        buttons.push(row);
+        buttons.push(Close::button_row());
+
+        let keyboard = InlineKeyboardMarkup::builder()
+            .inline_keyboard(buttons)
+            .build();
+
+        let params = SendMessageParams::builder()
+            .chat_id(chat_id)
+            .disable_web_page_preview(true)
+            .text(message)
+            .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
+            .build();
+
+        Response::Params(params)
     }
 
     fn fetch_db_connection(
@@ -292,8 +345,29 @@ pub trait Command {
         &self,
         db_connection: &mut PgConnection,
         chat_id: i64,
+        feed_url_or_external_id: &str,
+    ) -> Result<(TelegramSubscription, Feed), String> {
+        match Uuid::from_str(feed_url_or_external_id) {
+            Ok(uuid) => match telegram::find_subscription_by_external_id(db_connection, uuid) {
+                Some(subscription) => {
+                    let feed = feeds::find(db_connection, subscription.feed_id).unwrap();
+
+                    Ok((subscription, feed))
+                }
+                None => Err("Subscription does not exist".to_string()),
+            },
+            Err(_) => {
+                self.find_subscription_by_feed_url(db_connection, chat_id, feed_url_or_external_id)
+            }
+        }
+    }
+
+    fn find_subscription_by_feed_url(
+        &self,
+        db_connection: &mut PgConnection,
+        chat_id: i64,
         feed_url: &str,
-    ) -> Result<TelegramSubscription, String> {
+    ) -> Result<(TelegramSubscription, Feed), String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
         let feed = self.find_feed(db_connection, feed_url)?;
 
@@ -302,15 +376,21 @@ pub trait Command {
             None => return not_exists_error,
         };
 
-        let telegram_subscription = NewTelegramSubscription {
-            chat_id: chat.id,
-            feed_id: feed.id,
-        };
-
-        match telegram::find_subscription(db_connection, telegram_subscription) {
-            Some(subscription) => Ok(subscription),
+        match self.find_subscription_by_chat_id_and_feed_id(db_connection, chat.id, feed.id) {
+            Some(subscription) => Ok((subscription, feed)),
             None => not_exists_error,
         }
+    }
+
+    fn find_subscription_by_chat_id_and_feed_id(
+        &self,
+        db_connection: &mut PgConnection,
+        chat_id: i64,
+        feed_id: i64,
+    ) -> Option<TelegramSubscription> {
+        let telegram_subscription = NewTelegramSubscription { chat_id, feed_id };
+
+        telegram::find_subscription(db_connection, telegram_subscription)
     }
 
     fn find_feed(&self, db_connection: &mut PgConnection, feed_url: &str) -> Result<Feed, String> {
@@ -339,6 +419,7 @@ pub trait Command {
 pub struct CommandProcessor {
     message: Message,
     command: BotCommand,
+    callback: bool,
 }
 
 impl CommandProcessor {
@@ -355,10 +436,11 @@ impl CommandProcessor {
             BotCommand::Unsubscribe(args) => Unsubscribe::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
-            BotCommand::ListSubscriptions => ListSubscriptions::builder()
+            BotCommand::ListSubscriptions => ListSubscriptionsKeyboard::builder()
                 .message(self.message.clone())
                 .build()
                 .run(),
@@ -385,12 +467,14 @@ impl CommandProcessor {
             BotCommand::GetFilter(args) => GetFilter::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::RemoveFilter(args) => RemoveFilter::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
@@ -403,12 +487,14 @@ impl CommandProcessor {
             BotCommand::GetTemplate(args) => GetTemplate::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
                 .message(self.message.clone())
                 .args(args.to_string())
+                .callback(self.callback)
                 .build()
                 .run(),
 
@@ -473,6 +559,12 @@ impl CommandProcessor {
 
             BotCommand::TogglePreviewEnabled => TogglePreviewEnabled::builder()
                 .message(self.message.clone())
+                .build()
+                .run(),
+
+            BotCommand::ShowFeedKeyboard(args) => ShowFeedKeyboard::builder()
+                .message(self.message.clone())
+                .feed_url_or_external_id(args.to_string())
                 .build()
                 .run(),
         };

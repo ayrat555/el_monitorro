@@ -7,7 +7,7 @@ use super::GetPreviewEnabled;
 use super::GetTemplate;
 use super::GetTimezone;
 use super::HelpCommandInfo;
-use super::ListSubscriptions;
+use super::ListSubscriptionsKeyboard;
 use super::RemoveFilter;
 use super::RemoveGlobalFilter;
 use super::RemoveGlobalTemplate;
@@ -71,7 +71,7 @@ impl fmt::Display for HelpCommand {
             HelpCommand::Help => write!(f, "{}", Help::command()),
             HelpCommand::Subscribe => write!(f, "{}", Subscribe::command()),
             HelpCommand::Unsubscribe => write!(f, "{}", Unsubscribe::command()),
-            HelpCommand::ListSubscriptions => write!(f, "{}", ListSubscriptions::command()),
+            HelpCommand::ListSubscriptions => write!(f, "{}", ListSubscriptionsKeyboard::command()),
             HelpCommand::SetTimezone => write!(f, "{}", SetTimezone::command()),
             HelpCommand::GetTimezone => write!(f, "{}", GetTimezone::command()),
             HelpCommand::SetFilter => write!(f, "{}", SetFilter::command()),
@@ -104,7 +104,7 @@ impl FromStr for HelpCommand {
             HelpCommand::Subscribe
         } else if command.starts_with(Unsubscribe::command()) {
             HelpCommand::Unsubscribe
-        } else if command.starts_with(ListSubscriptions::command()) {
+        } else if command.starts_with(ListSubscriptionsKeyboard::command()) {
             HelpCommand::ListSubscriptions
         } else if command.starts_with(Start::command()) {
             HelpCommand::Start
@@ -227,13 +227,6 @@ impl Command for Help {
     }
 
     fn send_message(&self, send_message_params: SendMessageParams) {
-        if let Err(error) = self.api().send_message_with_params(&send_message_params) {
-            error!(
-                "Failed to send a message {:?} {:?}",
-                error, send_message_params
-            );
-        }
-
-        self.remove_message(&self.message);
+        self.send_message_and_remove(send_message_params, &self.message);
     }
 }

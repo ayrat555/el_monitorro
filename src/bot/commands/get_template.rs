@@ -1,7 +1,9 @@
 use super::Command;
 use super::Message;
 use super::Response;
+use super::ShowFeedKeyboard;
 use diesel::PgConnection;
+use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/get_template";
@@ -10,6 +12,7 @@ static COMMAND: &str = "/get_template";
 pub struct GetTemplate {
     message: Message,
     args: String,
+    callback: bool,
 }
 
 impl GetTemplate {
@@ -20,7 +23,7 @@ impl GetTemplate {
     fn get_template(&self, db_connection: &mut PgConnection) -> String {
         match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
             Err(message) => message,
-            Ok(subscription) => match subscription.template {
+            Ok((subscription, _feed)) => match subscription.template {
                 None => "You did not set a template for this subcription".to_string(),
                 Some(template) => template,
             },
@@ -39,6 +42,18 @@ impl Command for GetTemplate {
             Err(error_message) => error_message,
         };
 
-        Response::Simple(response)
+        if self.callback {
+            self.simple_keyboard(
+                response,
+                format!("{} {}", ShowFeedKeyboard::command(), self.args),
+                self.message.chat.id,
+            )
+        } else {
+            Response::Simple(response)
+        }
+    }
+
+    fn send_message(&self, send_message_params: SendMessageParams) {
+        self.send_message_and_remove(send_message_params, &self.message);
     }
 }

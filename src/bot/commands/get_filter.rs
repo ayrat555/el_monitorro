@@ -1,7 +1,9 @@
 use super::Command;
 use super::Message;
 use super::Response;
+use super::ShowFeedKeyboard;
 use diesel::PgConnection;
+use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/get_filter";
@@ -10,6 +12,7 @@ static COMMAND: &str = "/get_filter";
 pub struct GetFilter {
     message: Message,
     args: String,
+    callback: bool,
 }
 
 impl GetFilter {
@@ -17,13 +20,30 @@ impl GetFilter {
         self.execute(&self.message);
     }
 
-    fn get_filter(&self, db_connection: &mut PgConnection) -> String {
-        match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
-            Err(message) => message,
-            Ok(subscription) => match subscription.filter_words {
-                None => "You did not set a filter for this subcription".to_string(),
-                Some(filter_words) => filter_words.join(", "),
-            },
+    fn get_filter(&self, db_connection: &mut PgConnection) -> Response {
+        let (subscription, _feed) =
+            match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
+                Ok(subscription_and_feed) => subscription_and_feed,
+                Err(error) => return Response::Simple(error),
+            };
+
+        let response = match subscription.filter_words {
+            None => "You did not set a filter for this subcription".to_string(),
+            Some(filter_words) => filter_words.join(", "),
+        };
+
+        if self.callback {
+            self.simple_keyboard(
+                response,
+                format!(
+                    "{} {}",
+                    ShowFeedKeyboard::command(),
+                    subscription.external_id
+                ),
+                self.message.chat.id,
+            )
+        } else {
+            Response::Simple(response)
         }
     }
 
@@ -34,12 +54,14 @@ impl GetFilter {
 
 impl Command for GetFilter {
     fn response(&self) -> Response {
-        let response = match self.fetch_db_connection() {
+        match self.fetch_db_connection() {
             Ok(mut connection) => self.get_filter(&mut connection),
 
-            Err(error_message) => error_message,
-        };
+            Err(error_message) => Response::Simple(error_message),
+        }
+    }
 
-        Response::Simple(response)
+    fn send_message(&self, send_message_params: SendMessageParams) {
+        self.send_message_and_remove(send_message_params, &self.message);
     }
 }

@@ -1,8 +1,10 @@
 use super::Command;
 use super::Message;
 use super::Response;
+use super::ShowFeedKeyboard;
 use crate::db::telegram;
 use diesel::PgConnection;
+use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/remove_filter";
@@ -11,6 +13,7 @@ static COMMAND: &str = "/remove_filter";
 pub struct RemoveFilter {
     message: Message,
     args: String,
+    callback: bool,
 }
 
 impl RemoveFilter {
@@ -19,7 +22,7 @@ impl RemoveFilter {
     }
 
     pub fn remove_filter(&self, db_connection: &mut PgConnection) -> String {
-        let subscription =
+        let (subscription, _feed) =
             match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
                 Err(message) => return message,
                 Ok(subscription) => subscription,
@@ -43,6 +46,18 @@ impl Command for RemoveFilter {
             Err(error_message) => error_message,
         };
 
-        Response::Simple(response)
+        if self.callback {
+            self.simple_keyboard(
+                response,
+                format!("{} {}", ShowFeedKeyboard::command(), self.args),
+                self.message.chat.id,
+            )
+        } else {
+            Response::Simple(response)
+        }
+    }
+
+    fn send_message(&self, send_message_params: SendMessageParams) {
+        self.send_message_and_remove(send_message_params, &self.message);
     }
 }
