@@ -56,7 +56,10 @@ pub struct HelpCommandInfo {
 
 impl HelpCommandInfo {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(
+            &self.message,
+            &format!("{} - {}", Self::command(), self.args),
+        );
     }
 
     fn command_info(&self) -> String {

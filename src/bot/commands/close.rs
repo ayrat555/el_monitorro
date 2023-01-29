@@ -14,7 +14,7 @@ pub struct Close {
 
 impl Close {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, Self::command());
     }
 
     pub fn command() -> &'static str {
@@ -32,8 +32,11 @@ impl Close {
 }
 
 impl Command for Close {
-    fn execute(&self, message: &Message) {
-        info!("{:?} closed a keyboard", message.chat.id);
+    fn execute(&self, message: &Message, command: &str) {
+        info!(
+            "{:?} wrote: closed a keyboard - {}",
+            message.chat.id, command
+        );
 
         self.remove_message(&self.message);
     }

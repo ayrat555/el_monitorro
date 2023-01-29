@@ -245,12 +245,8 @@ pub enum Response {
 pub trait Command {
     fn response(&self) -> Response;
 
-    fn execute(&self, message: &Message) {
-        info!(
-            "{:?} wrote: {}",
-            message.chat.id,
-            message.text.as_ref().unwrap()
-        );
+    fn execute(&self, message: &Message, command: &str) {
+        info!("{:?} wrote: {}", message.chat.id, command);
 
         match self.response() {
             Response::Simple(raw_message) => self.reply_to_message(message, raw_message),
@@ -346,14 +342,10 @@ pub trait Command {
         db_connection: &mut PgConnection,
         chat_id: i64,
         feed_url_or_external_id: &str,
-    ) -> Result<(TelegramSubscription, Feed), String> {
+    ) -> Result<TelegramSubscription, String> {
         match Uuid::from_str(feed_url_or_external_id) {
             Ok(uuid) => match telegram::find_subscription_by_external_id(db_connection, uuid) {
-                Some(subscription) => {
-                    let feed = feeds::find(db_connection, subscription.feed_id).unwrap();
-
-                    Ok((subscription, feed))
-                }
+                Some(subscription) => Ok(subscription),
                 None => Err("Subscription does not exist".to_string()),
             },
             Err(_) => {
@@ -367,17 +359,12 @@ pub trait Command {
         db_connection: &mut PgConnection,
         chat_id: i64,
         feed_url: &str,
-    ) -> Result<(TelegramSubscription, Feed), String> {
+    ) -> Result<TelegramSubscription, String> {
         let not_exists_error = Err("Subscription does not exist".to_string());
         let feed = self.find_feed(db_connection, feed_url)?;
 
-        let chat = match telegram::find_chat(db_connection, chat_id) {
-            Some(chat) => chat,
-            None => return not_exists_error,
-        };
-
-        match self.find_subscription_by_chat_id_and_feed_id(db_connection, chat.id, feed.id) {
-            Some(subscription) => Ok((subscription, feed)),
+        match self.find_subscription_by_chat_id_and_feed_id(db_connection, chat_id, feed.id) {
+            Some(subscription) => Ok(subscription),
             None => not_exists_error,
         }
     }

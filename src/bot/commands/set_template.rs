@@ -17,7 +17,7 @@ pub struct SetTemplate {
 
 impl SetTemplate {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     fn set_template(&self, db_connection: &mut PgConnection) -> String {
@@ -39,10 +39,10 @@ impl SetTemplate {
             None => return "You don't have any subcriptions".to_string(),
         };
 
-        let (subscription, _feed) =
+        let subscription =
             match self.find_subscription(db_connection, self.message.chat.id, feed_url) {
                 Err(message) => return message,
-                Ok((subscription, feed)) => (subscription, feed),
+                Ok(subscription) => subscription,
             };
 
         let example = match render_template_example(template) {

@@ -23,7 +23,7 @@ pub struct UnknownCommand {
 
 impl UnknownCommand {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("unknown command {}", self.args));
     }
 
     pub fn command() -> &'static str {
@@ -32,9 +32,9 @@ impl UnknownCommand {
 }
 
 impl Command for UnknownCommand {
-    fn execute(&self, message: &Message) {
+    fn execute(&self, message: &Message, command: &str) {
         if message.chat.type_field != ChatType::Channel {
-            info!("{:?} wrote: {}", message.chat.id, self.args);
+            info!("{:?} wrote: {}", message.chat.id, command);
         }
 
         let response = match self.message.chat.type_field {

@@ -7,6 +7,7 @@ use super::RemoveFilter;
 use super::RemoveTemplate;
 use super::Response;
 use super::Unsubscribe;
+use crate::db::feeds;
 use diesel::PgConnection;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
@@ -25,7 +26,10 @@ pub struct ShowFeedKeyboard {
 
 impl ShowFeedKeyboard {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(
+            &self.message,
+            &format!("{} {}", Self::command(), self.feed_url_or_external_id),
+        );
     }
 
     pub fn command() -> &'static str {
@@ -33,7 +37,7 @@ impl ShowFeedKeyboard {
     }
 
     fn feed_keyboard(&self, db_connection: &mut PgConnection) -> SendMessageParams {
-        let (subscription, feed) = match self.find_subscription(
+        let subscription = match self.find_subscription(
             db_connection,
             self.message.chat.id,
             &self.feed_url_or_external_id,
@@ -44,8 +48,10 @@ impl ShowFeedKeyboard {
                     .text(error_message)
                     .build();
             }
-            Ok((subscription, feed)) => (subscription, feed),
+            Ok(subscription) => subscription,
         };
+
+        let feed = feeds::find(db_connection, subscription.feed_id).unwrap();
 
         let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 

@@ -15,7 +15,7 @@ pub struct SetTimezone {
 
 impl SetTimezone {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     fn set_timezone(&self, db_connection: &mut PgConnection) -> String {

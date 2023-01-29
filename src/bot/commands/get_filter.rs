@@ -17,13 +17,13 @@ pub struct GetFilter {
 
 impl GetFilter {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     fn get_filter(&self, db_connection: &mut PgConnection) -> Response {
-        let (subscription, _feed) =
+        let subscription =
             match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
-                Ok(subscription_and_feed) => subscription_and_feed,
+                Ok(subscription) => subscription,
                 Err(error) => return Response::Simple(error),
             };
 

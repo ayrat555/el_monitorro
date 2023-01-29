@@ -14,7 +14,7 @@ pub struct GetGlobalTemplate {
 
 impl GetGlobalTemplate {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, Self::command());
     }
 
     fn get_global_template(&self, db_connection: &mut PgConnection) -> String {

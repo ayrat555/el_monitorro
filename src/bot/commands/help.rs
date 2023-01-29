@@ -150,7 +150,7 @@ impl FromStr for HelpCommand {
 
 impl Help {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, Self::command());
     }
 
     pub fn command() -> &'static str {

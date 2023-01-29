@@ -19,7 +19,7 @@ pub struct ListSubscriptionsKeyboard {
 
 impl ListSubscriptionsKeyboard {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, Self::command());
     }
 
     fn feeds_keyboard_params(&self, db_connection: &mut PgConnection) -> SendMessageParams {

@@ -17,13 +17,13 @@ pub struct GetTemplate {
 
 impl GetTemplate {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     fn get_template(&self, db_connection: &mut PgConnection) -> String {
         match self.find_subscription(db_connection, self.message.chat.id, &self.args) {
             Err(message) => message,
-            Ok((subscription, _feed)) => match subscription.template {
+            Ok(subscription) => match subscription.template {
                 None => "You did not set a template for this subcription".to_string(),
                 Some(template) => template,
             },

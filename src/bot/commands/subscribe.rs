@@ -40,7 +40,7 @@ impl From<diesel::result::Error> for SubscriptionError {
 
 impl Subscribe {
     pub fn run(&self) {
-        self.execute(&self.message);
+        self.execute(&self.message, &format!("{} {}", Self::command(), self.args));
     }
 
     fn subscribe(&self, db_connection: &mut PgConnection) -> String {
