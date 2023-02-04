@@ -18,7 +18,7 @@ dotenv = "0.15"
 pretty_env_logger = "0.4"
 fang = { version = "0.10.1", features = ["blocking"], default-features = false }
 feed-rs = "1"
-frankenstein = { version = "0.22.1", default-features = false, features = ["telegram-trait"] }
+frankenstein = { version = "0.23.0", default-features = false, features = ["telegram-trait"] }
 handlebars = "4"
 hex = "0.4"
 htmlescape = "0.3"
