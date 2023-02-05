@@ -25,6 +25,7 @@ use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
 pub use close::Close;
+pub use commands_keyboard::CommandsKeyboard;
 pub use get_filter::GetFilter;
 pub use get_global_filter::GetGlobalFilter;
 pub use get_global_template::GetGlobalTemplate;
@@ -53,6 +54,7 @@ pub use unknown_command::UnknownCommand;
 pub use unsubscribe::Unsubscribe;
 
 pub mod close;
+pub mod commands_keyboard;
 pub mod get_filter;
 pub mod get_global_filter;
 pub mod get_global_template;
@@ -103,6 +105,7 @@ impl From<Chat> for NewTelegramChat {
 #[derive(Debug)]
 pub enum BotCommand {
     Close,
+    CommandsKeyboard,
     GetFilter(String),
     GetGlobalFilter,
     GetGlobalTemplate,
@@ -137,6 +140,8 @@ impl FromStr for BotCommand {
     fn from_str(command: &str) -> Result<Self, Self::Err> {
         let bot_command = if !command.starts_with('/') {
             BotCommand::UnknownCommand(command.to_string())
+        } else if command.starts_with(CommandsKeyboard::command()) {
+            BotCommand::CommandsKeyboard
         } else if command.starts_with(HelpCommandInfo::command()) {
             let args = parse_args(HelpCommandInfo::command(), command);
 
@@ -542,6 +547,11 @@ impl CommandProcessor {
 
     fn process_regular_command(&self) {
         match BotCommand::from_str(&self.text).unwrap() {
+            BotCommand::CommandsKeyboard => CommandsKeyboard::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
             BotCommand::Subscribe(args) => Subscribe::builder()
                 .message(self.message.clone())
                 .args(args.to_string())

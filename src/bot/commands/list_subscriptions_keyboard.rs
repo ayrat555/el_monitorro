@@ -1,5 +1,6 @@
 use super::Close;
 use super::Command;
+use super::CommandsKeyboard;
 use super::Response;
 use crate::db::telegram;
 use diesel::PgConnection;
@@ -60,6 +61,15 @@ impl ListSubscriptionsKeyboard {
             buttons.push(row);
         }
 
+        let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+        let button = InlineKeyboardButton::builder()
+            .text("◀ Back")
+            .callback_data(CommandsKeyboard::command())
+            .build();
+
+        row.push(button);
+        buttons.push(row);
         buttons.push(Close::button_row());
 
         let keyboard = InlineKeyboardMarkup::builder()
