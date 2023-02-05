@@ -4,6 +4,19 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.12.0 (2023-02-05)
+
+- Add inline keyboard for help command ([#288](https://github.com/ayrat555/el_monitorro/pull/288))
+- Add command to close/remove keyboards and messages ([#289](https://github.com/ayrat555/el_monitorro/pull/289))
+- Support `author` in templates ([#294](https://github.com/ayrat555/el_monitorro/pull/294))
+- Support authors from dublincore ([#295](https://github.com/ayrat555/el_monitorro/pull/295))
+- Add `preview_enabled` to chats ([#296](https://github.com/ayrat555/el_monitorro/pull/296))
+- Feed keyboards ([#298](https://github.com/ayrat555/el_monitorro/pull/298))
+- Process commands in conversational style ([#301](https://github.com/ayrat555/el_monitorro/pull/301))
+- CommandsKeyboard improvements ([#302](https://github.com/ayrat555/el_monitorro/pull/302))
+- Display only read-only commands for feed keyboards in public chats ([#303](https://github.com/ayrat555/el_monitorro/pull/303))
+- Update rust version and dependencies
+
 ## 0.11.0 (2022-09-24)
 
 ### Improved
