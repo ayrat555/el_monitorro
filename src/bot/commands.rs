@@ -548,6 +548,8 @@ impl CommandProcessor {
             .chat_id(self.message.chat.id)
             .build();
 
+        info!("{:?} wrote: {}", self.message.chat.id, self.text);
+
         if let Err(error) = telegram_client::api().reply_with_text_message(&message_params) {
             log::error!("Failed to send a message: {error:?}")
         }
