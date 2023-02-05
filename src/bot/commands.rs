@@ -557,10 +557,20 @@ impl CommandProcessor {
 
     fn process_regular_command(&self) {
         match BotCommand::from_str(&self.text).unwrap() {
-            BotCommand::CommandsKeyboard => CommandsKeyboard::builder()
-                .message(self.message.clone())
-                .build()
-                .run(),
+            BotCommand::CommandsKeyboard => {
+                if let ChatType::Private = self.message.chat.type_field {
+                    CommandsKeyboard::builder()
+                        .message(self.message.clone())
+                        .build()
+                        .run()
+                } else {
+                    UnknownCommand::builder()
+                        .message(self.message.clone())
+                        .args("/commands".to_string())
+                        .build()
+                        .run()
+                }
+            }
 
             BotCommand::Subscribe(args) => Subscribe::builder()
                 .message(self.message.clone())
