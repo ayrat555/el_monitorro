@@ -31,7 +31,7 @@ pub struct CommandsKeyboard {
 
 impl CommandsKeyboard {
     pub fn run(&self) {
-        self.execute(&self.message, &Self::command());
+        self.execute(&self.message, Self::command());
     }
 
     pub fn command() -> &'static str {
