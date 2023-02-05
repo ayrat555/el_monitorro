@@ -1,6 +1,12 @@
 use super::Command;
+use super::CommandsKeyboard;
 use super::Message;
 use super::Response;
+use frankenstein::ChatType;
+use frankenstein::InlineKeyboardButton;
+use frankenstein::InlineKeyboardMarkup;
+use frankenstein::ReplyMarkup;
+use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static START: &str =
@@ -33,6 +39,34 @@ impl Start {
 
 impl Command for Start {
     fn response(&self) -> Response {
-        Response::Simple(START.to_string())
+        let response = START.to_string();
+
+        if let ChatType::Private = self.message.chat.type_field {
+            let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+            let mut row: Vec<InlineKeyboardButton> = Vec::new();
+
+            let button = InlineKeyboardButton::builder()
+                .text("Commands")
+                .callback_data(CommandsKeyboard::command())
+                .build();
+
+            row.push(button);
+            buttons.push(row);
+
+            let keyboard = InlineKeyboardMarkup::builder()
+                .inline_keyboard(buttons)
+                .build();
+
+            let params = SendMessageParams::builder()
+                .chat_id(self.message.chat.id)
+                .disable_web_page_preview(true)
+                .text(response)
+                .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
+                .build();
+
+            Response::Params(params)
+        } else {
+            Response::Simple(START.to_string())
+        }
     }
 }
