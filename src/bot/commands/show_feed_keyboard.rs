@@ -11,6 +11,7 @@ use super::SetTemplate;
 use super::Unsubscribe;
 use crate::db::feeds;
 use diesel::PgConnection;
+use frankenstein::ChatType;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
 use frankenstein::Message;
@@ -57,19 +58,33 @@ impl ShowFeedKeyboard {
 
         let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
-        let rows = [
-            vec![
-                ("Show Filter", GetFilter::command()),
-                ("Set Filter", SetFilter::command()),
-                ("Remove Filter", RemoveFilter::command()),
-            ],
-            vec![
-                ("Show Template", GetTemplate::command()),
-                ("Set Template", SetTemplate::command()),
-                ("Remove Template", RemoveTemplate::command()),
-            ],
-            vec![("Unsubscribe", Unsubscribe::command())],
-        ];
+        let rows = if let ChatType::Private = self.message.chat.type_field {
+            [
+                vec![
+                    ("Show Filter", GetFilter::command()),
+                    ("Set Filter", SetFilter::command()),
+                    ("Remove Filter", RemoveFilter::command()),
+                ],
+                vec![
+                    ("Show Template", GetTemplate::command()),
+                    ("Set Template", SetTemplate::command()),
+                    ("Remove Template", RemoveTemplate::command()),
+                ],
+                vec![("Unsubscribe", Unsubscribe::command())],
+            ]
+        } else {
+            [
+                vec![
+                    ("Show Filter", GetFilter::command()),
+                    ("Remove Filter", RemoveFilter::command()),
+                ],
+                vec![
+                    ("Show Template", GetTemplate::command()),
+                    ("Remove Template", RemoveTemplate::command()),
+                ],
+                vec![("Unsubscribe", Unsubscribe::command())],
+            ]
+        };
 
         for command_row in rows {
             let mut row: Vec<InlineKeyboardButton> = Vec::new();
