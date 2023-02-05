@@ -6,6 +6,7 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramChat;
 use crate::db::telegram::NewTelegramSubscription;
+use crate::models::telegram_chat::TelegramChat;
 use crate::models::Feed;
 use crate::models::TelegramSubscription;
 use diesel::r2d2::ConnectionManager;
@@ -268,13 +269,13 @@ impl FromStr for ArgBotCommand {
 impl fmt::Display for ArgBotCommand {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ArgBotCommand::SetContentFields => write!(f, "Send me content fields"),
-            ArgBotCommand::SetFilter(_) => write!(f, "Send me filter words"),
-            ArgBotCommand::SetGlobalFilter => write!(f, "Send me global filter words"),
-            ArgBotCommand::SetGlobalTemplate => write!(f, "Send me global template"),
-            ArgBotCommand::SetTemplate(_) => write!(f, "Send me template"),
-            ArgBotCommand::SetTimezone => write!(f, "Send me timezone in minutes"),
-            ArgBotCommand::Subscribe => write!(f, "Send me a feed url"),
+            ArgBotCommand::SetContentFields => write!(f, "OK. Send me content fields"),
+            ArgBotCommand::SetFilter(_) => write!(f, "OK. Send me filter words"),
+            ArgBotCommand::SetGlobalFilter => write!(f, "OK. Send me global filter words"),
+            ArgBotCommand::SetGlobalTemplate => write!(f, "OK. Send me global template"),
+            ArgBotCommand::SetTemplate(_) => write!(f, "OK. Send me template"),
+            ArgBotCommand::SetTimezone => write!(f, "OK. Send me timezone in minutes"),
+            ArgBotCommand::Subscribe => write!(f, "OK. Send me a feed url"),
         }
     }
 }
@@ -477,7 +478,7 @@ impl CommandProcessor {
         }
     }
 
-    pub fn process_private_chat_command(&mut self) {
+    fn process_private_chat_command(&mut self) {
         let mut connection = crate::db::pool().get().unwrap();
 
         match telegram::find_chat(&mut connection, self.message.chat.id) {
@@ -487,17 +488,7 @@ impl CommandProcessor {
                         telegram::create_chat(&mut connection, (*self.message.chat.clone()).into())
                             .unwrap();
 
-                    telegram::set_command(&mut connection, &chat, Some(self.text.clone())).unwrap();
-
-                    let message_params = SimpleMessageParams::builder()
-                        .message(command.to_string())
-                        .chat_id(self.message.chat.id)
-                        .build();
-
-                    if let Err(_error) =
-                        telegram_client::api().reply_with_text_message(&message_params)
-                    {
-                    }
+                    self.save_command(&mut connection, &chat, command);
                 }
                 Err(_) => {
                     self.process_regular_command();
@@ -507,30 +498,45 @@ impl CommandProcessor {
             Some(chat) => match &chat.command {
                 None => match ArgBotCommand::from_str(&self.text) {
                     Ok(command) => {
-                        telegram::set_command(&mut connection, &chat, Some(self.text.clone()))
-                            .unwrap();
-
-                        let message_params = SimpleMessageParams::builder()
-                            .message(command.to_string())
-                            .chat_id(self.message.chat.id)
-                            .build();
-
-                        if let Err(_error) =
-                            telegram_client::api().reply_with_text_message(&message_params)
-                        {
-                        }
+                        self.save_command(&mut connection, &chat, command);
                     }
                     Err(_) => self.process_regular_command(),
                 },
                 Some(command) => {
-                    let full_command = format!("{command} {}", self.text);
-                    self.text = full_command;
+                    if let Ok(command) = ArgBotCommand::from_str(&self.text) {
+                        return self.save_command(&mut connection, &chat, command);
+                    }
 
-                    self.process_regular_command();
+                    if let Ok(BotCommand::UnknownCommand(_)) = BotCommand::from_str(&self.text) {
+                        let full_command = format!("{command} {}", self.text);
+                        self.text = full_command;
+
+                        self.process_regular_command();
+                    } else {
+                        self.process_regular_command();
+                    }
 
                     telegram::set_command(&mut connection, &chat, None).unwrap();
                 }
             },
+        }
+    }
+
+    fn save_command(
+        &self,
+        connection: &mut PgConnection,
+        chat: &TelegramChat,
+        command: ArgBotCommand,
+    ) {
+        telegram::set_command(connection, chat, Some(self.text.clone())).unwrap();
+
+        let message_params = SimpleMessageParams::builder()
+            .message(command.to_string())
+            .chat_id(self.message.chat.id)
+            .build();
+
+        if let Err(error) = telegram_client::api().reply_with_text_message(&message_params) {
+            log::error!("Failed to send a message: {error:?}")
         }
     }
 
