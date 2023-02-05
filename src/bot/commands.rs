@@ -554,7 +554,7 @@ impl CommandProcessor {
 
             BotCommand::Subscribe(args) => Subscribe::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -562,7 +562,7 @@ impl CommandProcessor {
 
             BotCommand::Unsubscribe(args) => Unsubscribe::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
@@ -576,7 +576,7 @@ impl CommandProcessor {
 
             BotCommand::SetTimezone(args) => SetTimezone::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -587,47 +587,47 @@ impl CommandProcessor {
 
             BotCommand::SetFilter(args) => SetFilter::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::GetFilter(args) => GetFilter::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::RemoveFilter(args) => RemoveFilter::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::SetTemplate(args) => SetTemplate::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::GetTemplate(args) => GetTemplate::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::SetGlobalTemplate(args) => SetGlobalTemplate::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -643,7 +643,7 @@ impl CommandProcessor {
 
             BotCommand::SetGlobalFilter(args) => SetGlobalFilter::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -661,19 +661,19 @@ impl CommandProcessor {
 
             BotCommand::SetContentFields(args) => SetContentFields::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::UnknownCommand(args) => UnknownCommand::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::HelpCommandInfo(args) => HelpCommandInfo::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -691,7 +691,7 @@ impl CommandProcessor {
 
             BotCommand::ShowFeedKeyboard(args) => ShowFeedKeyboard::builder()
                 .message(self.message.clone())
-                .feed_url_or_external_id(args.to_string())
+                .feed_url_or_external_id(args)
                 .build()
                 .run(),
         };
