@@ -204,7 +204,7 @@ impl Help {
 
         SendMessageParams::builder()
             .chat_id(self.message.chat.id)
-            .text("For private chats use keyboards to interact with the bot. For channels and groups, you will have to type commands directly. Select a command:")
+            .text("In private chats use keyboards to interact with the bot. In channels and groups you will have to type commands directly. Select a command:")
             .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
             .build()
     }
