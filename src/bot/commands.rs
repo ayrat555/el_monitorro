@@ -239,6 +239,7 @@ pub enum ArgBotCommand {
     SetTemplate(String),
     SetTimezone,
     Subscribe,
+    Cancel,
 }
 
 impl FromStr for ArgBotCommand {
@@ -265,6 +266,8 @@ impl FromStr for ArgBotCommand {
             Ok(ArgBotCommand::SetGlobalTemplate)
         } else if command.starts_with(SetContentFields::command()) {
             Ok(ArgBotCommand::SetContentFields)
+        } else if command.starts_with("/cancel") {
+            Ok(ArgBotCommand::Cancel)
         } else {
             Err(())
         }
@@ -281,6 +284,7 @@ impl fmt::Display for ArgBotCommand {
             ArgBotCommand::SetTemplate(_) => write!(f, "OK. Send me template"),
             ArgBotCommand::SetTimezone => write!(f, "OK. Send me timezone in minutes"),
             ArgBotCommand::Subscribe => write!(f, "OK. Send me a feed url"),
+            ArgBotCommand::Cancel => write!(f, "The command was cancelled"),
         }
     }
 }
@@ -533,7 +537,11 @@ impl CommandProcessor {
         chat: &TelegramChat,
         command: ArgBotCommand,
     ) {
-        telegram::set_command(connection, chat, Some(self.text.clone())).unwrap();
+        match command {
+            ArgBotCommand::Cancel => telegram::set_command(connection, chat, None).unwrap(),
+
+            _ => telegram::set_command(connection, chat, Some(self.text.clone())).unwrap(),
+        };
 
         let message_params = SimpleMessageParams::builder()
             .message(command.to_string())
