@@ -17,4 +17,5 @@ pub struct TelegramChat {
     pub template: Option<String>,
     pub filter_words: Option<Vec<String>>,
     pub preview_enabled: bool,
+    pub command: Option<String>,
 }

@@ -6,6 +6,7 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramChat;
 use crate::db::telegram::NewTelegramSubscription;
+use crate::models::telegram_chat::TelegramChat;
 use crate::models::Feed;
 use crate::models::TelegramSubscription;
 use diesel::r2d2::ConnectionManager;
@@ -18,11 +19,13 @@ use frankenstein::InlineKeyboardMarkup;
 use frankenstein::Message;
 use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
+use std::fmt;
 use std::str::FromStr;
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
 pub use close::Close;
+pub use commands_keyboard::CommandsKeyboard;
 pub use get_filter::GetFilter;
 pub use get_global_filter::GetGlobalFilter;
 pub use get_global_template::GetGlobalTemplate;
@@ -51,6 +54,7 @@ pub use unknown_command::UnknownCommand;
 pub use unsubscribe::Unsubscribe;
 
 pub mod close;
+pub mod commands_keyboard;
 pub mod get_filter;
 pub mod get_global_filter;
 pub mod get_global_template;
@@ -101,6 +105,7 @@ impl From<Chat> for NewTelegramChat {
 #[derive(Debug)]
 pub enum BotCommand {
     Close,
+    CommandsKeyboard,
     GetFilter(String),
     GetGlobalFilter,
     GetGlobalTemplate,
@@ -135,6 +140,8 @@ impl FromStr for BotCommand {
     fn from_str(command: &str) -> Result<Self, Self::Err> {
         let bot_command = if !command.starts_with('/') {
             BotCommand::UnknownCommand(command.to_string())
+        } else if command.starts_with(CommandsKeyboard::command()) {
+            BotCommand::CommandsKeyboard
         } else if command.starts_with(HelpCommandInfo::command()) {
             let args = parse_args(HelpCommandInfo::command(), command);
 
@@ -220,6 +227,65 @@ impl FromStr for BotCommand {
         };
 
         Ok(bot_command)
+    }
+}
+
+#[derive(Debug)]
+pub enum ArgBotCommand {
+    SetContentFields,
+    SetFilter(String),
+    SetGlobalFilter,
+    SetGlobalTemplate,
+    SetTemplate(String),
+    SetTimezone,
+    Subscribe,
+    Cancel,
+}
+
+impl FromStr for ArgBotCommand {
+    type Err = ();
+
+    fn from_str(command: &str) -> Result<Self, Self::Err> {
+        if !command.starts_with('/') {
+            Err(())
+        } else if command.starts_with(Subscribe::command()) {
+            Ok(ArgBotCommand::Subscribe)
+        } else if command.starts_with(SetTimezone::command()) {
+            Ok(ArgBotCommand::SetTimezone)
+        } else if command.starts_with(SetFilter::command()) {
+            let args = parse_args(SetFilter::command(), command);
+
+            Ok(ArgBotCommand::SetFilter(args))
+        } else if command.starts_with(SetTemplate::command()) {
+            let args = parse_args(SetTemplate::command(), command);
+
+            Ok(ArgBotCommand::SetTemplate(args))
+        } else if command.starts_with(SetGlobalFilter::command()) {
+            Ok(ArgBotCommand::SetGlobalFilter)
+        } else if command.starts_with(SetGlobalTemplate::command()) {
+            Ok(ArgBotCommand::SetGlobalTemplate)
+        } else if command.starts_with(SetContentFields::command()) {
+            Ok(ArgBotCommand::SetContentFields)
+        } else if command.starts_with("/cancel") {
+            Ok(ArgBotCommand::Cancel)
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl fmt::Display for ArgBotCommand {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            ArgBotCommand::SetContentFields => write!(f, "OK. Send me content fields"),
+            ArgBotCommand::SetFilter(_) => write!(f, "OK. Send me filter words"),
+            ArgBotCommand::SetGlobalFilter => write!(f, "OK. Send me global filter words"),
+            ArgBotCommand::SetGlobalTemplate => write!(f, "OK. Send me global template"),
+            ArgBotCommand::SetTemplate(_) => write!(f, "OK. Send me template"),
+            ArgBotCommand::SetTimezone => write!(f, "OK. Send me timezone in minutes"),
+            ArgBotCommand::Subscribe => write!(f, "OK. Send me a feed url"),
+            ArgBotCommand::Cancel => write!(f, "The command was cancelled"),
+        }
     }
 }
 
@@ -405,16 +471,100 @@ pub trait Command {
 #[derive(TypedBuilder)]
 pub struct CommandProcessor {
     message: Message,
-    command: BotCommand,
+
+    #[builder(setter(into))]
+    text: String,
+
     callback: bool,
 }
 
 impl CommandProcessor {
-    pub fn process(&self) {
-        match &self.command {
+    pub fn process(&mut self) {
+        if let ChatType::Private = self.message.chat.type_field {
+            self.process_private_chat_command();
+        } else {
+            self.process_regular_command();
+        }
+    }
+
+    fn process_private_chat_command(&mut self) {
+        let mut connection = crate::db::pool().get().unwrap();
+
+        match telegram::find_chat(&mut connection, self.message.chat.id) {
+            None => match ArgBotCommand::from_str(&self.text) {
+                Ok(command) => {
+                    let chat =
+                        telegram::create_chat(&mut connection, (*self.message.chat.clone()).into())
+                            .unwrap();
+
+                    self.save_command(&mut connection, &chat, command);
+                }
+                Err(_) => {
+                    self.process_regular_command();
+                }
+            },
+
+            Some(chat) => match &chat.command {
+                None => match ArgBotCommand::from_str(&self.text) {
+                    Ok(command) => {
+                        self.save_command(&mut connection, &chat, command);
+                    }
+                    Err(_) => self.process_regular_command(),
+                },
+                Some(command) => {
+                    if let Ok(command) = ArgBotCommand::from_str(&self.text) {
+                        return self.save_command(&mut connection, &chat, command);
+                    }
+
+                    if let Ok(BotCommand::UnknownCommand(_)) = BotCommand::from_str(&self.text) {
+                        let full_command = format!("{command} {}", self.text);
+                        self.text = full_command;
+
+                        self.process_regular_command();
+                    } else {
+                        self.process_regular_command();
+                    }
+
+                    telegram::set_command(&mut connection, &chat, None).unwrap();
+                }
+            },
+        }
+    }
+
+    fn save_command(
+        &self,
+        connection: &mut PgConnection,
+        chat: &TelegramChat,
+        command: ArgBotCommand,
+    ) {
+        match command {
+            ArgBotCommand::Cancel => telegram::set_command(connection, chat, None).unwrap(),
+
+            _ => telegram::set_command(connection, chat, Some(self.text.clone())).unwrap(),
+        };
+
+        let message_params = SimpleMessageParams::builder()
+            .message(command.to_string())
+            .chat_id(self.message.chat.id)
+            .build();
+
+        info!("{:?} wrote: {}", self.message.chat.id, self.text);
+
+        if let Err(error) = telegram_client::api().reply_with_text_message(&message_params) {
+            log::error!("Failed to send a message: {error:?}")
+        }
+    }
+
+    fn process_regular_command(&self) {
+        match BotCommand::from_str(&self.text).unwrap() {
+            BotCommand::CommandsKeyboard => CommandsKeyboard::builder()
+                .message(self.message.clone())
+                .build()
+                .run(),
+
             BotCommand::Subscribe(args) => Subscribe::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -422,7 +572,7 @@ impl CommandProcessor {
 
             BotCommand::Unsubscribe(args) => Unsubscribe::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
@@ -436,7 +586,7 @@ impl CommandProcessor {
 
             BotCommand::SetTimezone(args) => SetTimezone::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -447,47 +597,47 @@ impl CommandProcessor {
 
             BotCommand::SetFilter(args) => SetFilter::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::GetFilter(args) => GetFilter::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::RemoveFilter(args) => RemoveFilter::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::SetTemplate(args) => SetTemplate::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::GetTemplate(args) => GetTemplate::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::RemoveTemplate(args) => RemoveTemplate::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .callback(self.callback)
                 .build()
                 .run(),
 
             BotCommand::SetGlobalTemplate(args) => SetGlobalTemplate::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -503,7 +653,7 @@ impl CommandProcessor {
 
             BotCommand::SetGlobalFilter(args) => SetGlobalFilter::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -521,19 +671,19 @@ impl CommandProcessor {
 
             BotCommand::SetContentFields(args) => SetContentFields::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::UnknownCommand(args) => UnknownCommand::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
             BotCommand::HelpCommandInfo(args) => HelpCommandInfo::builder()
                 .message(self.message.clone())
-                .args(args.to_string())
+                .args(args)
                 .build()
                 .run(),
 
@@ -551,7 +701,7 @@ impl CommandProcessor {
 
             BotCommand::ShowFeedKeyboard(args) => ShowFeedKeyboard::builder()
                 .message(self.message.clone())
-                .feed_url_or_external_id(args.to_string())
+                .feed_url_or_external_id(args)
                 .build()
                 .run(),
         };

@@ -71,6 +71,16 @@ pub fn set_utc_offset_minutes(
         .get_result::<TelegramChat>(conn)
 }
 
+pub fn set_command(
+    conn: &mut PgConnection,
+    chat: &TelegramChat,
+    command: Option<String>,
+) -> Result<TelegramChat, Error> {
+    diesel::update(chat)
+        .set(telegram_chats::command.eq(command))
+        .get_result::<TelegramChat>(conn)
+}
+
 pub fn set_global_template(
     conn: &mut PgConnection,
     chat: &TelegramChat,

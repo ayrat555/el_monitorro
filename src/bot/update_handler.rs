@@ -1,10 +1,8 @@
-use super::commands::BotCommand;
 use super::commands::CommandProcessor;
 use crate::bot::telegram_client;
 use crate::config::Config;
 use frankenstein::Update;
 use frankenstein::UpdateContent;
-use std::str::FromStr;
 use std::thread;
 
 pub struct UpdateHandler {}
@@ -61,11 +59,9 @@ impl UpdateHandler {
             return;
         }
 
-        let command = BotCommand::from_str(&text.unwrap()).unwrap();
-
         CommandProcessor::builder()
             .message(message)
-            .command(command)
+            .text(text.unwrap())
             .callback(false)
             .build()
             .process()
@@ -83,11 +79,9 @@ impl UpdateHandler {
             return;
         }
 
-        let command = BotCommand::from_str(&text.unwrap()).unwrap();
-
         CommandProcessor::builder()
             .message(query.message.unwrap())
-            .command(command)
+            .text(text.unwrap())
             .callback(true)
             .build()
             .process();

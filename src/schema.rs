@@ -44,6 +44,7 @@ table! {
         template -> Nullable<Text>,
         filter_words -> Nullable<Array<Text>>,
         preview_enabled -> Bool,
+        command -> Nullable<Text>,
     }
 }
 

@@ -6,6 +6,8 @@ use super::ListSubscriptionsKeyboard;
 use super::RemoveFilter;
 use super::RemoveTemplate;
 use super::Response;
+use super::SetFilter;
+use super::SetTemplate;
 use super::Unsubscribe;
 use crate::db::feeds;
 use diesel::PgConnection;
@@ -58,10 +60,12 @@ impl ShowFeedKeyboard {
         let rows = [
             vec![
                 ("Show Filter", GetFilter::command()),
+                ("Set Filter", SetFilter::command()),
                 ("Remove Filter", RemoveFilter::command()),
             ],
             vec![
                 ("Show Template", GetTemplate::command()),
+                ("Set Template", SetTemplate::command()),
                 ("Remove Template", RemoveTemplate::command()),
             ],
             vec![("Unsubscribe", Unsubscribe::command())],
