@@ -301,17 +301,19 @@ mod tests {
     use crate::db;
     use crate::db::{feed_items, feeds};
     use diesel::Connection;
-    use mockito::mock;
 
     #[test]
     fn it_saves_rss_items() {
         let response = std::fs::read_to_string("./tests/support/rss_feed_example.xml").unwrap();
         let path = "/feed";
-        let _m = mock("GET", path)
+        let mut server = mockito::Server::new();
+
+        let _m = server
+            .mock("GET", path)
             .with_status(200)
             .with_body(response)
             .create();
-        let link = format!("{}{}", mockito::server_url(), path);
+        let link = format!("{}{}", server.url(), path);
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<(), (), _>(|connection| {

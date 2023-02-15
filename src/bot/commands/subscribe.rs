@@ -159,15 +159,15 @@ mod subscribe_tests {
     use frankenstein::Chat;
     use frankenstein::ChatType;
     use frankenstein::Message;
-    use mockito::mock;
     use mockito::Mock;
 
-    fn set_deliver_server_response() -> Mock {
+    fn set_deliver_server_response(server: &mut mockito::Server) -> Mock {
         let response_string = "{\"ok\":true,\"result\":{\"message_id\":2746,\"from\":{\"id\":1276618370,\"is_bot\":true,\"first_name\":\"test_el_bot\",\"username\":\"el_mon_test_bot\"},\"date\":1618207352,\"chat\":{\"id\":275808073,\"type\":\"private\",\"username\":\"Ayrat555\",\"first_name\":\"Ayrat\",\"last_name\":\"Badykov\"},\"text\":\"Hello!\"}}";
 
-        std::env::set_var("TELEGRAM_BASE_URL", format!("{}/", mockito::server_url()));
+        std::env::set_var("TELEGRAM_BASE_URL", format!("{}/", server.url()));
 
-        mockito::mock("POST", "/sendMessage")
+        server
+            .mock("POST", "/sendMessage")
             .with_status(200)
             .with_body(response_string)
             .create()
@@ -177,16 +177,18 @@ mod subscribe_tests {
     fn creates_new_subscription() {
         let mut db_connection = db::establish_test_connection();
         let message = create_message();
+        let mut server = mockito::Server::new();
 
         let path = "/feed";
         let response = feed_example();
-        let _m = mock("GET", path)
+        let _m = server
+            .mock("GET", path)
             .with_status(200)
             .with_body(response)
             .create();
-        let feed_url = format!("{}{}", mockito::server_url(), path);
+        let feed_url = format!("{}{}", server.url(), path);
 
-        let _m = set_deliver_server_response();
+        let _m = set_deliver_server_response(&mut server);
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
             let result = Subscribe::builder()
@@ -232,13 +234,15 @@ mod subscribe_tests {
     fn create_subscription_fails_to_create_chat_when_rss_url_is_not_rss() {
         let mut db_connection = db::establish_test_connection();
         let message = create_message();
+        let mut server = mockito::Server::new();
 
         let path = "/not_feed";
-        let _m = mock("GET", path)
+        let _m = server
+            .mock("GET", path)
             .with_status(200)
             .with_body("hello")
             .create();
-        let feed_url = format!("{}{}", mockito::server_url(), path);
+        let feed_url = format!("{}{}", server.url(), path);
 
         db_connection.test_transaction::<(), (), _>(|db_connection| {
             let result = Subscribe::builder()
@@ -260,16 +264,18 @@ mod subscribe_tests {
     fn create_subscription_fails_to_create_a_subscription_if_it_already_exists() {
         let mut db_connection = db::establish_test_connection();
         let message = create_message();
+        let mut server = mockito::Server::new();
 
         let path = "/feed";
         let response = feed_example();
-        let _m = mock("GET", path)
+        let _m = server
+            .mock("GET", path)
             .with_status(200)
             .with_body(response)
             .create();
-        let feed_url = format!("{}{}", mockito::server_url(), path);
+        let feed_url = format!("{}{}", server.url(), path);
 
-        let _m = set_deliver_server_response();
+        let _m = set_deliver_server_response(&mut server);
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
             Subscribe::builder()
@@ -299,30 +305,34 @@ mod subscribe_tests {
         let message = create_message();
 
         let response = feed_example();
+        let mut server = mockito::Server::new();
 
         let path1 = "/feed1";
-        let _m1 = mock("GET", path1)
+        let _m1 = server
+            .mock("GET", path1)
             .with_status(200)
             .with_body(&response)
             .create();
 
         let path2 = "/feed2";
-        let _m2 = mock("GET", path2)
+        let _m2 = server
+            .mock("GET", path2)
             .with_status(200)
             .with_body(&response)
             .create();
 
         let path3 = "/feed3";
-        let _m3 = mock("GET", path3)
+        let _m3 = server
+            .mock("GET", path3)
             .with_status(200)
             .with_body(&response)
             .create();
 
-        let feed_url1 = format!("{}{}", mockito::server_url(), path1);
-        let feed_url2 = format!("{}{}", mockito::server_url(), path2);
-        let feed_url3 = format!("{}{}", mockito::server_url(), path3);
+        let feed_url1 = format!("{}{}", server.url(), path1);
+        let feed_url2 = format!("{}{}", server.url(), path2);
+        let feed_url3 = format!("{}{}", server.url(), path3);
 
-        let _m = set_deliver_server_response();
+        let _m = set_deliver_server_response(&mut server);
 
         std::env::set_var("SUBSCRIPTION_LIMIT", "2");
 
