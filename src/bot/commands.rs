@@ -324,6 +324,7 @@ pub trait Command {
         let message_params = SimpleMessageParams::builder()
             .message(text)
             .chat_id(message.chat.id)
+            .message_thread_id(message.message_thread_id)
             .build();
 
         if let Err(error) = self.api().reply_with_text_message(&message_params) {
@@ -359,7 +360,7 @@ pub trait Command {
         self.api().remove_message(message)
     }
 
-    fn simple_keyboard(&self, message: String, back_command: String, chat_id: i64) -> Response {
+    fn simple_keyboard(&self, text: String, back_command: String, message: &Message) -> Response {
         let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
         let mut row: Vec<InlineKeyboardButton> = Vec::new();
 
@@ -376,12 +377,14 @@ pub trait Command {
             .inline_keyboard(buttons)
             .build();
 
-        let params = SendMessageParams::builder()
-            .chat_id(chat_id)
+        let mut params = SendMessageParams::builder()
+            .chat_id(message.chat.id)
             .disable_web_page_preview(true)
-            .text(message)
+            .text(text)
             .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
             .build();
+
+        params.message_thread_id = message.message_thread_id;
 
         Response::Params(params)
     }

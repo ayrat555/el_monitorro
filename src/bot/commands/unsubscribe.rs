@@ -78,7 +78,7 @@ impl Command for Unsubscribe {
             self.simple_keyboard(
                 response,
                 ListSubscriptionsKeyboard::command().to_string(),
-                self.message.chat.id,
+                &self.message,
             )
         } else {
             Response::Simple(response)

@@ -104,11 +104,7 @@ impl Command for HelpCommandInfo {
     fn response(&self) -> Response {
         let help_for_command = self.command_info();
 
-        self.simple_keyboard(
-            help_for_command,
-            Help::command().to_string(),
-            self.message.chat.id,
-        )
+        self.simple_keyboard(help_for_command, Help::command().to_string(), &self.message)
     }
 
     fn send_message(&self, send_message_params: SendMessageParams) {

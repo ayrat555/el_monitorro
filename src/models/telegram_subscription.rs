@@ -17,4 +17,5 @@ pub struct TelegramSubscription {
     pub filter_words: Option<Vec<String>>,
     pub has_updates: bool,
     pub external_id: Uuid,
+    pub thread_id: Option<i64>,
 }
