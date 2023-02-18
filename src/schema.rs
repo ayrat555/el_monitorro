@@ -59,7 +59,7 @@ table! {
         filter_words -> Nullable<Array<Text>>,
         has_updates -> Bool,
         external_id -> Uuid,
-        thread_id -> Nullable<Int8>,
+        thread_id -> Nullable<Int4>,
     }
 }
 

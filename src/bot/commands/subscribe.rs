@@ -75,6 +75,7 @@ impl Subscribe {
             let new_telegram_subscription = NewTelegramSubscription {
                 chat_id: chat.id,
                 feed_id: feed.id,
+                thread_id: self.message.message_thread_id,
             };
 
             self.check_if_subscription_exists(db_connection, new_telegram_subscription)?;
