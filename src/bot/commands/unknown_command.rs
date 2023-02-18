@@ -59,12 +59,14 @@ impl Command for UnknownCommand {
                 .inline_keyboard(buttons)
                 .build();
 
-            let params = SendMessageParams::builder()
+            let mut params = SendMessageParams::builder()
                 .chat_id(self.message.chat.id)
                 .text(text)
                 .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
                 .reply_to_message_id(message.message_id)
                 .build();
+
+            params.message_thread_id = message.message_thread_id;
 
             self.send_message(params)
         }

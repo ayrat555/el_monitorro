@@ -2,7 +2,7 @@ use crate::schema::telegram_subscriptions;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-#[derive(Queryable, Identifiable, Debug)]
+#[derive(Queryable, Identifiable, Debug, Clone)]
 #[diesel(table_name = telegram_subscriptions)]
 #[diesel(primary_key(chat_id, feed_id))]
 pub struct TelegramSubscription {
@@ -17,4 +17,5 @@ pub struct TelegramSubscription {
     pub filter_words: Option<Vec<String>>,
     pub has_updates: bool,
     pub external_id: Uuid,
+    pub thread_id: Option<i32>,
 }

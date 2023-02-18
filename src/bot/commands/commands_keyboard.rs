@@ -91,11 +91,15 @@ impl CommandsKeyboard {
             .inline_keyboard(buttons)
             .build();
 
-        SendMessageParams::builder()
+        let mut params = SendMessageParams::builder()
             .chat_id(self.message.chat.id)
             .text("Select a command")
             .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
-            .build()
+            .build();
+
+        params.message_thread_id = self.message.message_thread_id;
+
+        params
     }
 }
 

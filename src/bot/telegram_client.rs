@@ -62,6 +62,8 @@ pub struct SimpleMessageParams {
     reply_message_id: Option<i32>,
     #[builder(default = false)]
     preview_enabled: bool,
+    #[builder(default, setter(into))]
+    message_thread_id: Option<i32>,
 }
 
 impl Api {
@@ -116,19 +118,17 @@ impl Api {
         &self,
         simple_params: &SimpleMessageParams,
     ) -> Result<(), Error> {
-        let message_params = SendMessageParams::builder()
+        let mut message_params = SendMessageParams::builder()
             .chat_id(simple_params.chat_id)
             .text(simple_params.message.clone())
             .disable_web_page_preview(!simple_params.preview_enabled)
-            .parse_mode(ParseMode::Html);
+            .parse_mode(ParseMode::Html)
+            .build();
 
-        let send_message_params = match simple_params.reply_message_id {
-            None => message_params.build(),
+        message_params.reply_to_message_id = simple_params.reply_message_id;
+        message_params.message_thread_id = simple_params.message_thread_id;
 
-            Some(message_id_value) => message_params.reply_to_message_id(message_id_value).build(),
-        };
-
-        self.send_message_with_params(&send_message_params)
+        self.send_message_with_params(&message_params)
     }
 
     pub fn send_message_with_params(

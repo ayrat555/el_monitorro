@@ -46,7 +46,7 @@ impl Command for GetTemplate {
             self.simple_keyboard(
                 response,
                 format!("{} {}", ShowFeedKeyboard::command(), self.args),
-                self.message.chat.id,
+                &self.message,
             )
         } else {
             Response::Simple(response)

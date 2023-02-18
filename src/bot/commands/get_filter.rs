@@ -40,7 +40,7 @@ impl GetFilter {
                     ShowFeedKeyboard::command(),
                     subscription.external_id
                 ),
-                self.message.chat.id,
+                &self.message,
             )
         } else {
             Response::Simple(response)
