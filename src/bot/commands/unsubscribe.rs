@@ -120,10 +120,10 @@ mod unsubscribe_tests {
             let chat = telegram::create_chat(connection, new_chat).unwrap();
             let feed = feeds::create(connection, &link, "rss".to_string()).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let new_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
             telegram::create_subscription(connection, new_subscription).unwrap();
 
