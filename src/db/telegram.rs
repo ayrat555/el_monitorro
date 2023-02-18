@@ -1045,8 +1045,8 @@ mod tests {
             super::mark_subscription_delivered(connection, &subscription1).unwrap();
 
             let new_subscription2 = NewTelegramSubscription::builder()
-                .chat_id(chat1.id)
-                .feed_id(feed2.id)
+                .chat_id(chat2.id)
+                .feed_id(feed1.id)
                 .build();
 
             let subscription2 = super::create_subscription(connection, new_subscription2).unwrap();
