@@ -444,7 +444,10 @@ pub trait Command {
         chat_id: i64,
         feed_id: i64,
     ) -> Option<TelegramSubscription> {
-        let telegram_subscription = NewTelegramSubscription { chat_id, feed_id };
+        let telegram_subscription = NewTelegramSubscription::builder()
+            .chat_id(chat_id)
+            .feed_id(feed_id)
+            .build();
 
         telegram::find_subscription(db_connection, telegram_subscription)
     }

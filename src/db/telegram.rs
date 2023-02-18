@@ -12,6 +12,7 @@ use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::BigInt;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
+use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
 #[derive(Insertable, Clone, Debug)]
@@ -25,11 +26,14 @@ pub struct NewTelegramChat {
     pub last_name: Option<String>,
 }
 
-#[derive(Insertable, Clone, Copy, Debug)]
+#[derive(Insertable, Clone, Copy, Debug, TypedBuilder)]
 #[diesel(table_name = telegram_subscriptions)]
 pub struct NewTelegramSubscription {
     pub chat_id: i64,
     pub feed_id: i64,
+
+    #[builder(default)]
+    pub thread_id: Option<i32>,
 }
 
 pub fn create_chat(

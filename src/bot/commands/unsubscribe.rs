@@ -51,10 +51,10 @@ impl Unsubscribe {
 
         let feed = feeds::find(db_connection, subscription.feed_id).unwrap();
 
-        let telegram_subscription = NewTelegramSubscription {
-            chat_id: self.message.chat.id,
-            feed_id: feed.id,
-        };
+        let telegram_subscription = NewTelegramSubscription::builder()
+            .chat_id(self.message.chat.id)
+            .feed_id(feed.id)
+            .build();
 
         match telegram::remove_subscription(db_connection, telegram_subscription) {
             Ok(_) => Ok(feed.link),
