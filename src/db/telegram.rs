@@ -454,13 +454,13 @@ mod tests {
             let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
             let chat = super::create_chat(connection, new_chat).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
             let new_subscription =
-                super::create_subscription(connection, new_subscription).unwrap();
+                super::create_subscription(connection, telegram_subscription).unwrap();
 
             assert_eq!(new_subscription.feed_id, feed.id);
             assert_eq!(new_subscription.chat_id, chat.id);
@@ -479,23 +479,23 @@ mod tests {
             let feed = feeds::create(connection, "Link", "atom".to_string()).unwrap();
             let chat = super::create_chat(connection, new_chat).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+        let telegram_subscription = NewTelegramSubscription::builder()
+            .chat_id(chat.id)
+            .feed_id(feed.id)
+            .build();
 
             let new_subscription =
-                super::create_subscription(connection, new_subscription).unwrap();
+                super::create_subscription(connection, telegram_subscription).unwrap();
 
             assert_eq!(new_subscription.feed_id, feed.id);
             assert_eq!(new_subscription.chat_id, chat.id);
 
             let result = super::create_subscription(
                 connection,
-                NewTelegramSubscription {
-                    feed_id: feed.id,
-                    chat_id: chat.id,
-                },
+                NewTelegramSubscription::builder()
+                    .chat_id(chat.id)
+                    .feed_id(feed.id)
+                    .build(),
             );
 
             match result.err().unwrap() {
@@ -519,10 +519,10 @@ mod tests {
 
             let result = super::create_subscription(
                 connection,
-                NewTelegramSubscription {
-                    feed_id: feed.id,
-                    chat_id: 42,
-                },
+                NewTelegramSubscription::builder()
+                    .chat_id(42)
+                    .feed_id(feed.id)
+                    .build(),
             );
 
             match result.err().unwrap() {
@@ -547,23 +547,23 @@ mod tests {
             let feed = feeds::create(connection, "Link11111", "rss".to_string()).unwrap();
             let chat = super::create_chat(connection, new_chat).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
             let new_subscription =
-                super::create_subscription(connection, new_subscription).unwrap();
+                super::create_subscription(connection, telegram_subscription).unwrap();
 
             assert_eq!(new_subscription.feed_id, feed.id);
             assert_eq!(new_subscription.chat_id, chat.id);
 
             let result = super::find_subscription(
                 connection,
-                NewTelegramSubscription {
-                    feed_id: feed.id,
-                    chat_id: chat.id,
-                },
+                NewTelegramSubscription::builder()
+                    .chat_id(chat.id)
+                    .feed_id(feed.id)
+                    .build(),
             )
             .unwrap();
 
@@ -581,10 +581,10 @@ mod tests {
         connection.test_transaction::<(), Error, _>(|connection| {
             let result = super::find_subscription(
                 connection,
-                NewTelegramSubscription {
-                    feed_id: 42,
-                    chat_id: 42,
-                },
+                NewTelegramSubscription::builder()
+                    .chat_id(42)
+                    .feed_id(42)
+                    .build(),
             );
 
             assert!(result.is_none());
@@ -602,12 +602,12 @@ mod tests {
             let chat = super::create_chat(connection, new_chat).unwrap();
             let feed = feeds::create(connection, "Link99", "rss".to_string()).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
-            super::create_subscription(connection, new_subscription).unwrap();
+            super::create_subscription(connection, telegram_subscription).unwrap();
 
             let result = super::fetch_chats_with_subscriptions(connection, 1, 1).unwrap();
 
@@ -642,19 +642,19 @@ mod tests {
             let feed = feeds::create(connection, "Link98", "atom".to_string()).unwrap();
             let chat1 = super::create_chat(connection, build_new_chat_with_id(10)).unwrap();
 
-            let new_subscription1 = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat1.id,
-            };
+            let new_subscription1 = NewTelegramSubscription::builder()
+                .chat_id(chat1.id)
+                .feed_id(feed.id)
+                .build();
 
             super::create_subscription(connection, new_subscription1).unwrap();
 
             let chat2 = super::create_chat(connection, build_new_chat_with_id(20)).unwrap();
 
-            let new_subscription2 = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat2.id,
-            };
+            let new_subscription2 = NewTelegramSubscription::builder()
+                .chat_id(chat2.id)
+                .feed_id(feed.id)
+                .build();
 
             super::create_subscription(connection, new_subscription2).unwrap();
 
@@ -679,17 +679,17 @@ mod tests {
             let feed2 = feeds::create(connection, "Link96", "atom".to_string()).unwrap();
             let chat = super::create_chat(connection, build_new_chat()).unwrap();
 
-            let new_subscription1 = NewTelegramSubscription {
-                feed_id: feed1.id,
-                chat_id: chat.id,
-            };
+            let new_subscription1 = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed1.id)
+                .build();
 
             super::create_subscription(connection, new_subscription1).unwrap();
 
-            let new_subscription2 = NewTelegramSubscription {
-                feed_id: feed2.id,
-                chat_id: chat.id,
-            };
+            let new_subscription2 = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed2.id)
+                .build();
 
             super::create_subscription(connection, new_subscription2).unwrap();
 
@@ -715,12 +715,12 @@ mod tests {
             let feed = feeds::create(connection, "Link", "atom".to_string()).unwrap();
             let chat = super::create_chat(connection, new_chat).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
-            super::create_subscription(connection, new_subscription).unwrap();
+            super::create_subscription(connection, telegram_subscription).unwrap();
 
             let result = super::count_subscriptions_for_chat(connection, chat.id);
 
@@ -742,19 +742,19 @@ mod tests {
             let feed2 = feeds::create(connection, "Link79", "atom".to_string()).unwrap();
             let chat = super::create_chat(connection, new_chat).unwrap();
 
-            let new_subscription1 = NewTelegramSubscription {
-                feed_id: feed1.id,
-                chat_id: chat.id,
-            };
+            let new_telegram_subscription1 = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed1.id)
+                .build();
 
-            super::create_subscription(connection, new_subscription1).unwrap();
+            super::create_subscription(connection, new_telegram_subscription1).unwrap();
 
-            let new_subscription2 = NewTelegramSubscription {
-                feed_id: feed2.id,
-                chat_id: chat.id,
-            };
+            let new_telegram_subscription2 = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed2.id)
+                .build();
 
-            super::create_subscription(connection, new_subscription2).unwrap();
+            super::create_subscription(connection, new_telegram_subscription2).unwrap();
 
             let result = super::find_unread_subscriptions_for_chat(connection, chat.id).unwrap();
 
@@ -776,12 +776,12 @@ mod tests {
 
             let chat2 = super::create_chat(connection, build_new_chat_with_id(89)).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat1.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat1.id)
+                .feed_id(feed.id)
+                .build();
 
-            super::create_subscription(connection, new_subscription).unwrap();
+            super::create_subscription(connection, telegram_subscription).unwrap();
 
             let result = super::find_unread_subscriptions_for_chat(connection, chat2.id).unwrap();
 
@@ -801,12 +801,13 @@ mod tests {
             let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
             let chat = super::create_chat(connection, new_chat).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
-            let subscription = super::create_subscription(connection, new_subscription).unwrap();
+            let subscription =
+                super::create_subscription(connection, telegram_subscription).unwrap();
 
             assert!(subscription.last_delivered_at.is_none());
 
@@ -833,14 +834,14 @@ mod tests {
             let feed = feeds::create(connection, "Link", "rss".to_string()).unwrap();
             let chat = super::create_chat(connection, new_chat).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
-            super::create_subscription(connection, new_subscription).unwrap();
+            super::create_subscription(connection, telegram_subscription).unwrap();
 
-            let result = super::remove_subscription(connection, new_subscription).unwrap();
+            let result = super::remove_subscription(connection, telegram_subscription).unwrap();
 
             assert_eq!(result, 1);
 
@@ -934,12 +935,13 @@ mod tests {
             let chat = super::create_chat(connection, new_chat).unwrap();
             let feed = feeds::create(connection, "Link two", "rss".to_string()).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
-            let subscription = super::create_subscription(connection, new_subscription).unwrap();
+            let subscription =
+                super::create_subscription(connection, telegram_subscription).unwrap();
 
             assert_eq!(subscription.template, None);
 
@@ -965,12 +967,13 @@ mod tests {
             let chat = super::create_chat(connection, new_chat).unwrap();
             let feed = feeds::create(connection, "Link one", "rss".to_string()).unwrap();
 
-            let new_subscription = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat.id,
-            };
+            let telegram_subscription = NewTelegramSubscription::builder()
+                .chat_id(chat.id)
+                .feed_id(feed.id)
+                .build();
 
-            let subscription = super::create_subscription(connection, new_subscription).unwrap();
+            let subscription =
+                super::create_subscription(connection, telegram_subscription).unwrap();
 
             assert_eq!(subscription.filter_words, None);
 
@@ -997,17 +1000,17 @@ mod tests {
             let chat1 = super::create_chat(connection, new_chat1).unwrap();
             let chat2 = super::create_chat(connection, new_chat2).unwrap();
 
-            let new_subscription1 = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat1.id,
-            };
+            let new_subscription1 = NewTelegramSubscription::builder()
+                .chat_id(chat1.id)
+                .feed_id(feed.id)
+                .build();
 
             super::create_subscription(connection, new_subscription1).unwrap();
 
-            let new_subscription2 = NewTelegramSubscription {
-                feed_id: feed.id,
-                chat_id: chat2.id,
-            };
+            let new_subscription2 = NewTelegramSubscription::builder()
+                .chat_id(chat2.id)
+                .feed_id(feed.id)
+                .build();
 
             super::create_subscription(connection, new_subscription2).unwrap();
 
@@ -1033,26 +1036,26 @@ mod tests {
             let chat1 = super::create_chat(connection, new_chat1).unwrap();
             let chat2 = super::create_chat(connection, new_chat2).unwrap();
 
-            let new_subscription1 = NewTelegramSubscription {
-                feed_id: feed1.id,
-                chat_id: chat1.id,
-            };
+            let new_subscription1 = NewTelegramSubscription::builder()
+                .chat_id(chat1.id)
+                .feed_id(feed1.id)
+                .build();
 
             let subscription1 = super::create_subscription(connection, new_subscription1).unwrap();
             super::mark_subscription_delivered(connection, &subscription1).unwrap();
 
-            let new_subscription2 = NewTelegramSubscription {
-                feed_id: feed1.id,
-                chat_id: chat2.id,
-            };
+            let new_subscription2 = NewTelegramSubscription::builder()
+                .chat_id(chat1.id)
+                .feed_id(feed2.id)
+                .build();
 
             let subscription2 = super::create_subscription(connection, new_subscription2).unwrap();
             super::mark_subscription_delivered(connection, &subscription2).unwrap();
 
-            let new_subscription3 = NewTelegramSubscription {
-                feed_id: feed2.id,
-                chat_id: chat2.id,
-            };
+            let new_subscription3 = NewTelegramSubscription::builder()
+                .chat_id(chat2.id)
+                .feed_id(feed2.id)
+                .build();
 
             let subscription3 = super::create_subscription(connection, new_subscription3).unwrap();
             super::mark_subscription_delivered(connection, &subscription3).unwrap();
