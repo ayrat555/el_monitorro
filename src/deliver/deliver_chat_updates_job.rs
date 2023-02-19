@@ -20,13 +20,14 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use typed_builder::TypedBuilder;
 
-const TELEGRAM_ERRORS: [&str; 15] = [
+const TELEGRAM_ERRORS: [&str; 16] = [
     "Bad Request: CHAT_WRITE_FORBIDDEN",
     "Bad Request: TOPIC_CLOSED",
     "Bad Request: chat not found",
     "Bad Request: group chat was upgraded to a supergroup chat",
     "Bad Request: group chat was upgraded to a supergroup chat, migrate to chat id",
     "Bad Request: have no rights to send a message",
+    "Bad Request: not enough rights to send text messages to the chat",
     "Bad Request: need administrator rights in the channel chat",
     "Forbidden: bot is not a member of the channel chat",
     "Forbidden: bot is not a member of the supergroup chat",
