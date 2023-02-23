@@ -1,4 +1,4 @@
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use el_monitorro::bot;
 use el_monitorro::config::Config;
 use fang::Queue;
