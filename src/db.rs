@@ -9,7 +9,7 @@ use once_cell::sync::OnceCell;
 use diesel::connection::Connection;
 
 #[cfg(test)]
-use dotenv::dotenv;
+use dotenvy::dotenv;
 
 pub mod feed_items;
 pub mod feeds;
