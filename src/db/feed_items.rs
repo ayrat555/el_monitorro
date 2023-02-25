@@ -20,6 +20,72 @@ pub struct NewFeedItem {
     pub content_hash: String,
 }
 
+pub trait ContentHashable {
+    fn content_fields(&self, feed: &Feed) -> Vec<String>;
+
+    fn hash(&self, feed: &Feed) -> String {
+        let content_string = self.content_fields(feed).join("");
+
+        let mut hasher = Sha256::new();
+        hasher.update(content_string.as_bytes());
+
+        let result = hasher.finalize();
+        hex::encode(result)
+    }
+
+    fn content_field_names(&self, feed: &Feed) -> Vec<String> {
+        feed.content_fields
+            .clone()
+            .unwrap_or_else(|| vec!["link".to_string(), "title".to_string()])
+    }
+}
+
+impl ContentHashable for FetchedFeedItem {
+    fn content_fields(&self, feed: &Feed) -> Vec<String> {
+        let mut content_values = vec![];
+
+        for field in self.content_field_names(feed) {
+            match field.as_str() {
+                "link" => content_values.push(self.link.clone()),
+                "title" => content_values.push(self.title.clone()),
+
+                "publication_date" => content_values.push(self.publication_date.to_string()),
+                "guid" => content_values.push(self.guid.clone().unwrap_or("".to_string())),
+                "description" => {
+                    content_values.push(self.description.clone().unwrap_or("".to_string()))
+                }
+                "author" => content_values.push(self.author.clone().unwrap_or("".to_string())),
+                &_ => (),
+            }
+        }
+
+        content_values
+    }
+}
+
+impl ContentHashable for FeedItem {
+    fn content_fields(&self, feed: &Feed) -> Vec<String> {
+        let mut content_values = vec![];
+
+        for field in self.content_field_names(feed) {
+            match field.as_str() {
+                "link" => content_values.push(self.link.clone()),
+                "title" => content_values.push(self.title.clone()),
+
+                "publication_date" => content_values.push(self.publication_date.to_string()),
+                "guid" => content_values.push(self.guid.clone().unwrap_or("".to_string())),
+                "description" => {
+                    content_values.push(self.description.clone().unwrap_or("".to_string()))
+                }
+                "author" => content_values.push(self.author.clone().unwrap_or("".to_string())),
+                &_ => (),
+            }
+        }
+
+        content_values
+    }
+}
+
 pub fn create(
     conn: &mut PgConnection,
     feed: &Feed,
@@ -28,7 +94,7 @@ pub fn create(
     let new_feed_items = fetched_items
         .into_iter()
         .map(|fetched_feed_item| {
-            let hash = calculate_content_hash(feed, &fetched_feed_item);
+            let hash = fetched_feed_item.hash(feed);
 
             NewFeedItem {
                 feed_id: feed.id,
@@ -104,43 +170,6 @@ pub fn get_latest_item(conn: &mut PgConnection, feed_id: i64) -> Option<FeedItem
         Ok(record) => Some(record),
         _ => None,
     }
-}
-
-pub fn calculate_content_hash(feed: &Feed, fetched_feed_item: &FetchedFeedItem) -> String {
-    let mut content_hash: String = "".to_string();
-    let content_fields = feed
-        .content_fields
-        .clone()
-        .unwrap_or_else(|| vec!["link".to_string(), "title".to_string()]);
-
-    for field in content_fields {
-        match field.as_str() {
-            "link" => content_hash.push_str(&fetched_feed_item.link),
-            "title" => content_hash.push_str(&fetched_feed_item.title),
-            "publication_date" => {
-                content_hash.push_str(&fetched_feed_item.publication_date.to_string())
-            }
-            "guid" => {
-                content_hash.push_str(fetched_feed_item.guid.as_ref().unwrap_or(&"".to_string()))
-            }
-            "description" => content_hash.push_str(
-                fetched_feed_item
-                    .description
-                    .as_ref()
-                    .unwrap_or(&"".to_string()),
-            ),
-            "author" => {
-                content_hash.push_str(fetched_feed_item.author.as_ref().unwrap_or(&"".to_string()))
-            }
-            &_ => (),
-        }
-    }
-
-    let mut hasher = Sha256::new();
-    hasher.update(content_hash.as_bytes());
-
-    let result = hasher.finalize();
-    hex::encode(result)
 }
 
 #[cfg(test)]
