@@ -1,7 +1,10 @@
 use crate::bot::telegram_client;
 use crate::bot::SimpleMessageParams;
 use crate::db;
-use crate::db::{feed_items, feeds, telegram};
+use crate::db::feed_items;
+use crate::db::feed_items::ContentHashable;
+use crate::db::feeds;
+use crate::db::telegram;
 use crate::models::feed::Feed;
 use crate::sync::reader::atom::AtomReader;
 use crate::sync::reader::json::JsonReader;
@@ -146,7 +149,8 @@ impl SyncFeedJob {
             }
             Some(last_item_in_db) => {
                 if last_fetched_item.publication_date >= last_item_in_db.publication_date
-                    && last_fetched_item.link != last_item_in_db.link
+                    && last_fetched_item.content_fields(&feed)
+                        != last_item_in_db.content_fields(&feed)
                 {
                     self.create_feed_items(db_connection, feed, fetched_feed)?;
                 } else {
