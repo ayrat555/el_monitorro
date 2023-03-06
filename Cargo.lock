@@ -526,7 +526,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "thiserror",
- "typed-builder",
+ "typed-builder 0.13.0",
  "url",
  "uuid",
 ]
@@ -586,7 +586,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "thiserror",
- "typed-builder",
+ "typed-builder 0.12.0",
  "typetag",
  "uuid",
 ]
@@ -641,7 +641,7 @@ checksum = "11e801ae80266b93ec80d848707a8199f1757ac4b973f797b5a953420839255f"
 dependencies = [
  "serde",
  "thiserror",
- "typed-builder",
+ "typed-builder 0.12.0",
 ]
 
 [[package]]
@@ -1877,6 +1877,17 @@ name = "typed-builder"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6179333b981641242a768f30f371c9baccbfcc03749627000c500ab88bf4528b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "typed-builder"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd5c107dcbf45d40f13749fe0a83dc58a41af3a01c3fc605806f39d3b5ec8f1a"
 dependencies = [
  "proc-macro2",
  "quote",
