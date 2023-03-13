@@ -35,4 +35,4 @@ url = "2"
 uuid = { version = "1.1", features = ["v4"] }
 
 [dev-dependencies]
-mockito = "0.32"
+mockito = "1.0"
