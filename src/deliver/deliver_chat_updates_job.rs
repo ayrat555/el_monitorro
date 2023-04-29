@@ -285,9 +285,14 @@ impl<'a> DeliverChatUpdates<'a> {
     }
 
     fn check_filter_words(&self, text: &str, words: &Vec<String>) -> bool {
-        let ac = AhoCorasickBuilder::new().build(words);
+        match AhoCorasickBuilder::new().build(words) {
+            Ok(ac) => ac.find(text).is_some(),
+            Err(error) => {
+                log::error!("Failed to build aho-corasick: {error}");
 
-        ac.find(text).is_some()
+                true
+            }
+        }
     }
 }
 

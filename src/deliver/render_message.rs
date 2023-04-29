@@ -211,7 +211,8 @@ fn remove_html(string_with_maybe_html: &str) -> String {
         .match_kind(MatchKind::LeftmostFirst)
         .build([
             "&#32;", "&", "<", ">", "\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}",
-        ]);
+        ])
+        .unwrap();
 
     ac.replace_all(
         &string_without_html,
