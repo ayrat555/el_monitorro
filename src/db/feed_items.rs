@@ -36,7 +36,7 @@ pub trait ContentHashable {
     fn content_field_names(&self, feed: &Feed) -> Vec<String> {
         feed.content_fields
             .clone()
-            .unwrap_or_else(|| vec!["link".to_string(), "title".to_string()])
+            .unwrap_or_else(|| vec!["link".to_string()])
     }
 }
 
