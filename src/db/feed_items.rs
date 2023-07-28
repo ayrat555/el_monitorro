@@ -233,7 +233,7 @@ mod tests {
     }
 
     #[test]
-    fn generates_content_hash_from_link_and_title_by_default() {
+    fn generates_content_hash_from_link_by_default() {
         let mut connection = db::establish_test_connection();
 
         connection.test_transaction::<_, Error, _>(|connection| {
@@ -253,7 +253,6 @@ mod tests {
 
             let mut content: String = "".to_string();
             content.push_str(&feed_item.link);
-            content.push_str(&feed_item.title);
 
             let expected_hash = calculate_hash(&content);
 
