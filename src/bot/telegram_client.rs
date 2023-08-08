@@ -1,6 +1,8 @@
 use crate::config::Config;
 use crate::http_client;
+use core::fmt::Debug;
 use fang::FangError;
+use fang::ToFangError;
 use frankenstein::AllowedUpdate;
 use frankenstein::DeleteMessageParams;
 use frankenstein::ErrorResponse;
@@ -28,7 +30,7 @@ pub struct Api {
     pub http_client: HttpClient,
 }
 
-#[derive(Debug)]
+#[derive(Debug, ToFangError)]
 pub enum Error {
     HttpError(HttpError),
     ApiError(ErrorResponse),
@@ -43,14 +45,6 @@ pub struct HttpError {
 impl Default for Api {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl From<Error> for FangError {
-    fn from(error: Error) -> Self {
-        let description = format!("telegram error: {error:?}");
-
-        Self { description }
     }
 }
 
