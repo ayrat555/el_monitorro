@@ -541,8 +541,7 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "fang"
 version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f1f1f5613f9e50155d8cfa8af17bfb2373da33cb6b2283674a32203b5ccfbfa"
+source = "git+https://github.com/ayrat555/fang?branch=fix_new_task_struct#3211171ac834320c4849c2e61431e8a34473a2c9"
 dependencies = [
  "chrono",
  "cron",
@@ -565,10 +564,11 @@ dependencies = [
 [[package]]
 name = "fang-derive-error"
 version = "0.1.0"
-source = "git+https://github.com/ayrat555/fang.git?branch=ft/derive-macro-fang-error#2aae0aa63911bb9622e279d02e3fe15f08bafa10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9f5641b79902b8b40295f05db8a94277897f58f23645dc32057a0b8423496f2"
 dependencies = [
  "quote",
- "syn 2.0.28",
+ "syn 2.0.29",
 ]
 
 [[package]]
@@ -1516,7 +1516,6 @@ name = "rustix"
 version = "0.38.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19ed4fa021d81c8392ce04db050a3da9a60299050b7ae1cf482d862b54a7218f"
-
 dependencies = [
  "bitflags 2.4.0",
  "errno",
@@ -1566,7 +1565,6 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-
 version = "1.0.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ad697f7e0b65af4983a4ce8f56ed5b357e8d3c36651bf6a7e13639c17b8e670"
