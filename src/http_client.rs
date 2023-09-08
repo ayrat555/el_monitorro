@@ -2,10 +2,10 @@ use crate::config::Config;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
 use isahc::HttpClient;
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 use std::time::Duration;
 
-static CLIENT: OnceCell<HttpClient> = OnceCell::new();
+static CLIENT: OnceLock<HttpClient> = OnceLock::new();
 
 pub fn client() -> &'static HttpClient {
     CLIENT.get_or_init(init_client)

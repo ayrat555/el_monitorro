@@ -13,12 +13,12 @@ use frankenstein::Update;
 use isahc::prelude::*;
 use isahc::HttpClient;
 use isahc::Request;
-use once_cell::sync::OnceCell;
 use std::collections::VecDeque;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use typed_builder::TypedBuilder;
 
-static API: OnceCell<Api> = OnceCell::new();
+static API: OnceLock<Api> = OnceLock::new();
 
 #[derive(Clone, Debug)]
 pub struct Api {
