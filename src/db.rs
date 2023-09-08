@@ -3,7 +3,7 @@ use chrono::prelude::*;
 use chrono::{DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::r2d2;
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 
 #[cfg(test)]
 use diesel::connection::Connection;
@@ -15,7 +15,7 @@ pub mod feed_items;
 pub mod feeds;
 pub mod telegram;
 
-static POOL: OnceCell<r2d2::Pool<r2d2::ConnectionManager<PgConnection>>> = OnceCell::new();
+static POOL: OnceLock<r2d2::Pool<r2d2::ConnectionManager<PgConnection>>> = OnceLock::new();
 
 #[cfg(test)]
 pub fn establish_test_connection() -> PgConnection {
