@@ -539,14 +539,14 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "fang"
 version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f1f1f5613f9e50155d8cfa8af17bfb2373da33cb6b2283674a32203b5ccfbfa"
+source = "git+https://github.com/ayrat555/fang?branch=fix_new_task_struct#3211171ac834320c4849c2e61431e8a34473a2c9"
 dependencies = [
  "chrono",
  "cron",
  "diesel",
  "diesel-derive-enum",
  "dotenvy",
+ "fang-derive-error",
  "hex",
  "log",
  "serde",
@@ -557,6 +557,16 @@ dependencies = [
  "typed-builder 0.14.0",
  "typetag",
  "uuid",
+]
+
+[[package]]
+name = "fang-derive-error"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9f5641b79902b8b40295f05db8a94277897f58f23645dc32057a0b8423496f2"
+dependencies = [
+ "quote",
+ "syn 2.0.29",
 ]
 
 [[package]]
