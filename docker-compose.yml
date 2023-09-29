@@ -1,6 +1,35 @@
+#### Create a volume 'x' and substitute the name 'x' of the volume created for 'your_volume'
+
+
+#### PostgreSQL string connection should have 'db' as host because the link is called db
+#### Example:
+###  DATABASE_URL="postgresql://postgres:postgres@db/el_monitorro"
+
 services:
   bot:
-    image: ayratbadykov/el_monitorro:dev
-    network_mode: host
+    image: ayratbadykov/el_monitorro:latest
+    depends_on:
+      - db
     env_file: .env
     restart: always
+    links:
+      - db:database
+  db:
+    image: postgres:13.4
+    container_name: postgres
+    healthcheck:
+      test: /usr/bin/pg_isready -d postgres://postgres:postgres@127.0.0.1/el_monitorro
+      interval: 5s
+      timeout: 10s
+      retries: 120
+    ports:
+      - 5432:5432
+    volumes:
+      - your_volume:/var/lib/postgresql/data #### Change the name 'your_volume' if needed
+    environment:
+      - POSTGRES_DB=el_monitorro
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+volumes:
+  your_volume:  #### Change the name 'your_volume' if needed
+    external: true
