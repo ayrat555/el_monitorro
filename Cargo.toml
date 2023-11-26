@@ -9,7 +9,7 @@ rust-version = "1.62"
 
 [dependencies]
 thiserror = "1.0"
-aho-corasick = "1.0"
+aho-corasick = "1.1"
 atom_syndication = "0.12"
 chrono = "0.4"
 diesel = { version = "2", features = ["postgres","r2d2"] }
@@ -18,19 +18,19 @@ pretty_env_logger = "0.5"
 fang = { version = "0.10.4", features = ["blocking"], default-features = false }
 feed-rs = "1.3"
 frankenstein = { version = "0.29.1", default-features = false, features = ["telegram-trait"] }
-handlebars = "4.4"
+handlebars = "4.5"
 hex = "0.4"
 htmlescape = "0.3"
-isahc = "1"
+isahc = "1.7"
 log = "0.4"
 nanohtml2text = "0.1.4"
-rayon = "1.7"
-rss = "2"
+rayon = "1.8"
+rss = "2.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
-typed-builder = "0.16"
-url = "2"
+typed-builder = "0.18"
+url = "2.5"
 uuid = { version = "1.4", features = ["v4"] }
 
 [dev-dependencies]
