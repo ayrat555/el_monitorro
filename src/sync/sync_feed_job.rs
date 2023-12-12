@@ -13,6 +13,7 @@ use crate::sync::reader::FeedReaderError;
 use crate::sync::reader::ReadFeed;
 use crate::sync::FetchedFeed;
 use chrono::Duration;
+use chrono::Utc;
 use diesel::pg::PgConnection;
 use diesel::result::Error;
 use fang::typetag;
@@ -148,10 +149,15 @@ impl SyncFeedJob {
                 self.create_feed_items(db_connection, feed, fetched_feed)?;
             }
             Some(last_item_in_db) => {
-                if last_fetched_item.publication_date >= last_item_in_db.publication_date
-                    && last_fetched_item.content_fields(&feed)
-                        != last_item_in_db.content_fields(&feed)
-                {
+                let api_item_older =
+                    last_fetched_item.publication_date >= last_item_in_db.publication_date;
+
+                let db_item_in_future = last_item_in_db.publication_date > Utc::now();
+
+                let not_same_item = last_fetched_item.content_fields(&feed)
+                    != last_item_in_db.content_fields(&feed);
+
+                if (api_item_older || db_item_in_future) && not_same_item {
                     self.create_feed_items(db_connection, feed, fetched_feed)?;
                 } else {
                     self.set_synced_at(
