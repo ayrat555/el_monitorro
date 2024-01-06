@@ -306,7 +306,7 @@ fn parse_args(command: &str, command_with_args: &str) -> String {
 
 pub enum Response {
     Simple(String),
-    Params(SendMessageParams),
+    Params(Box<SendMessageParams>),
 }
 
 pub trait Command {
@@ -317,7 +317,7 @@ pub trait Command {
 
         match self.response() {
             Response::Simple(raw_message) => self.reply_to_message(message, raw_message),
-            Response::Params(params) => self.send_message(params),
+            Response::Params(params) => self.send_message(*params),
         }
     }
 
@@ -389,7 +389,7 @@ pub trait Command {
 
         params.message_thread_id = message.message_thread_id;
 
-        Response::Params(params)
+        Response::Params(Box::new(params))
     }
 
     fn fetch_db_connection(

@@ -67,7 +67,7 @@ impl Command for Start {
                 .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
                 .build();
 
-            Response::Params(params)
+            Response::Params(Box::new(params))
         } else {
             Response::Simple(START.to_string())
         }

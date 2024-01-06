@@ -107,6 +107,6 @@ impl Command for CommandsKeyboard {
     fn response(&self) -> Response {
         let params = self.keyboard();
 
-        Response::Params(params)
+        Response::Params(Box::new(params))
     }
 }

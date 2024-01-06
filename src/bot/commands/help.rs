@@ -231,7 +231,7 @@ impl Command for Help {
     fn response(&self) -> Response {
         let params = self.help_keyboard_params();
 
-        Response::Params(params)
+        Response::Params(Box::new(params))
     }
 
     fn send_message(&self, send_message_params: SendMessageParams) {

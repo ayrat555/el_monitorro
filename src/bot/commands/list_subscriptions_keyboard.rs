@@ -88,7 +88,7 @@ impl Command for ListSubscriptionsKeyboard {
             Ok(mut connection) => {
                 let params = self.feeds_keyboard_params(&mut connection);
 
-                Response::Params(params)
+                Response::Params(Box::new(params))
             }
             Err(error_message) => Response::Simple(error_message),
         }
