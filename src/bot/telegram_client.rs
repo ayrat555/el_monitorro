@@ -5,8 +5,10 @@ use frankenstein::AllowedUpdate;
 use frankenstein::DeleteMessageParams;
 use frankenstein::ErrorResponse;
 use frankenstein::GetUpdatesParams;
+use frankenstein::LinkPreviewOptions;
 use frankenstein::Message;
 use frankenstein::ParseMode;
+use frankenstein::ReplyParameters;
 use frankenstein::SendMessageParams;
 use frankenstein::TelegramApi;
 use frankenstein::Update;
@@ -118,15 +120,24 @@ impl Api {
         &self,
         simple_params: &SimpleMessageParams,
     ) -> Result<(), Error> {
+        let preview_params = LinkPreviewOptions::builder()
+            .is_disabled(!simple_params.preview_enabled)
+            .build();
+
         let mut message_params = SendMessageParams::builder()
             .chat_id(simple_params.chat_id)
             .text(simple_params.message.clone())
-            .disable_web_page_preview(!simple_params.preview_enabled)
+            .link_preview_options(preview_params)
             .parse_mode(ParseMode::Html)
             .build();
 
-        message_params.reply_to_message_id = simple_params.reply_message_id;
         message_params.message_thread_id = simple_params.message_thread_id;
+
+        if let Some(message_id) = simple_params.reply_message_id {
+            let reply_params = ReplyParameters::builder().message_id(message_id).build();
+
+            message_params.reply_parameters = Some(reply_params);
+        }
 
         self.send_message_with_params(&message_params)
     }

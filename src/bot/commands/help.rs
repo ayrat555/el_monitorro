@@ -24,6 +24,7 @@ use super::TogglePreviewEnabled;
 use super::Unsubscribe;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
+use frankenstein::LinkPreviewOptions;
 use frankenstein::Message;
 use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
@@ -202,11 +203,13 @@ impl Help {
             .inline_keyboard(buttons)
             .build();
 
+        let preview_params = LinkPreviewOptions::builder().is_disabled(true).build();
+
         let mut params = SendMessageParams::builder()
             .chat_id(self.message.chat.id)
             .text("In private chats use keyboards to interact with the bot. Send /commands to display the keyboard. \n\nIn channels and groups you will have to type commands directly.\n\nJoin https://t.me/el_monitorro with your feedback, suggestions, found bugs, etc.\n\nSelect a command:")
             .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
-            .disable_web_page_preview(true)
+            .link_preview_options(preview_params)
             .build();
 
         params.message_thread_id = self.message.message_thread_id;
