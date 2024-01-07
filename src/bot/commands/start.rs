@@ -5,6 +5,7 @@ use super::Response;
 use frankenstein::ChatType;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
+use frankenstein::LinkPreviewOptions;
 use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
@@ -57,14 +58,16 @@ impl Command for Start {
                 .inline_keyboard(buttons)
                 .build();
 
+            let preview_params = LinkPreviewOptions::builder().is_disabled(true).build();
+
             let params = SendMessageParams::builder()
                 .chat_id(self.message.chat.id)
-                .disable_web_page_preview(true)
+                .link_preview_options(preview_params)
                 .text(response)
                 .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
                 .build();
 
-            Response::Params(params)
+            Response::Params(Box::new(params))
         } else {
             Response::Simple(START.to_string())
         }

@@ -16,6 +16,7 @@ use frankenstein::Chat;
 use frankenstein::ChatType;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
+use frankenstein::LinkPreviewOptions;
 use frankenstein::Message;
 use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
@@ -305,7 +306,7 @@ fn parse_args(command: &str, command_with_args: &str) -> String {
 
 pub enum Response {
     Simple(String),
-    Params(SendMessageParams),
+    Params(Box<SendMessageParams>),
 }
 
 pub trait Command {
@@ -316,7 +317,7 @@ pub trait Command {
 
         match self.response() {
             Response::Simple(raw_message) => self.reply_to_message(message, raw_message),
-            Response::Params(params) => self.send_message(params),
+            Response::Params(params) => self.send_message(*params),
         }
     }
 
@@ -377,16 +378,18 @@ pub trait Command {
             .inline_keyboard(buttons)
             .build();
 
+        let preview_params = LinkPreviewOptions::builder().is_disabled(true).build();
+
         let mut params = SendMessageParams::builder()
             .chat_id(message.chat.id)
-            .disable_web_page_preview(true)
+            .link_preview_options(preview_params)
             .text(text)
             .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
             .build();
 
         params.message_thread_id = message.message_thread_id;
 
-        Response::Params(params)
+        Response::Params(Box::new(params))
     }
 
     fn fetch_db_connection(

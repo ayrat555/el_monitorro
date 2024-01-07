@@ -6,6 +6,7 @@ use super::Response;
 use frankenstein::ChatType;
 use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
+use frankenstein::LinkPreviewOptions;
 use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
@@ -59,11 +60,13 @@ impl Command for UnknownCommand {
                 .inline_keyboard(buttons)
                 .build();
 
+            let preview_params = LinkPreviewOptions::builder().is_disabled(true).build();
+
             let mut params = SendMessageParams::builder()
                 .chat_id(self.message.chat.id)
                 .text(text)
                 .reply_markup(ReplyMarkup::InlineKeyboardMarkup(keyboard))
-                .reply_to_message_id(message.message_id)
+                .link_preview_options(preview_params)
                 .build();
 
             params.message_thread_id = message.message_thread_id;

@@ -1,6 +1,7 @@
 use super::commands::CommandProcessor;
 use crate::bot::telegram_client;
 use crate::config::Config;
+use frankenstein::MaybeInaccessibleMessage;
 use frankenstein::Update;
 use frankenstein::UpdateContent;
 use std::thread;
@@ -79,12 +80,14 @@ impl UpdateHandler {
             return;
         }
 
-        CommandProcessor::builder()
-            .message(query.message.unwrap())
-            .text(text.unwrap())
-            .callback(true)
-            .build()
-            .process();
+        if let MaybeInaccessibleMessage::Message(message) = query.message.unwrap() {
+            CommandProcessor::builder()
+                .message(message)
+                .text(text.unwrap())
+                .callback(true)
+                .build()
+                .process();
+        }
     }
 
     fn owner_telegram_id() -> Option<i64> {

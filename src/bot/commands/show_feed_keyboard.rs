@@ -135,7 +135,7 @@ impl Command for ShowFeedKeyboard {
             Ok(mut connection) => {
                 let params = self.feed_keyboard(&mut connection);
 
-                Response::Params(params)
+                Response::Params(Box::new(params))
             }
             Err(error_message) => Response::Simple(error_message),
         }
