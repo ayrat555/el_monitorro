@@ -4,6 +4,14 @@ description = "Changelog"
 weight = 3
 +++
 
+## 0.14.0 (2024-01-13)
+
+- Docker compose  by @pxp9 in https://github.com/ayrat555/el_monitorro/pull/352
+- update rust and deps by @ayrat555 in https://github.com/ayrat555/el_monitorro/pull/353
+- fix: handle invalid publication dates by @ayrat555 in https://github.com/ayrat555/el_monitorro/pull/354
+- update frankenstein to 0.29.2 by @ayrat555 in https://github.com/ayrat555/el_monitorro/pull/355
+- Frankenstein 0.30.0 by @ayrat555 in https://github.com/ayrat555/el_monitorro/pull/356
+
 ## 0.12.1 (2023-09-29)
 
 - chore(cargo): bump thiserror from 1.0.35 to 1.0.36 by @dependabot in https://github.com/ayrat555/el_monitorro/pull/268
