@@ -167,84 +167,84 @@
 <h1 id="usage">Usage</h1>
 <h3 id="commands">Commands</h3>
 <pre class="z-code"><code><span class="z-text z-plain">/start - show the bot&#39;s description and contact information
-
-/subscribe url - subscribe to feed
-
-/unsubscribe url - unsubscribe from feed
-
-/list_subscriptions - list your subscriptions
-
-/help - show available commands
-
-/set_timezone - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600
-
-/get_timezone - get your timezone
-
-/set_template url template - set a template for all received items for the specified subscription. All new updates will be converted to the format defined by this subscription. Supported fields you can use for templates:
-- bot_feed_name - name of the feed
-- bot_feed_link - url of the feed
-- bot_item_name - name of the item
-- bot_item_link - url of the item
-- bot_item_description - description of the item
-- bot_date - publication date of the feed
-
-Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
-
-
-    {{bot_item_name}}
-
-
-    {{bot_date}}
-
-
-    {{bot_item_link}}
-
-Also, there are some helpers for templates:
-- `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}
-- `create_link` helper. This helper creates an html link. For example, {{create_link bot_item_name bot_item_link}} or {{create_link &quot;custom_name&quot; bot_item_link}}
-- `italic` helper. Usage: {{italic bot_item_description}}
-- `bold` helper. Usage:  {{bold bot_item_name}}
-
-/get_template url - get a template for the subscription
-
-/remove_template url - remove the template
-
-/set_global_template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.
-
-/remove_global_template - remove global template
-
-/get_global_template - get global template
-
-/get_filter url - get a filter for the subscription
-
-/set_filter url filter - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You&#39;ll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`
-
-/remove_filter url - remove filter
-
-/set_global_filter filter - set global filter
-
-/get_global_filter - get a global filter
-
-/remove_global_filter - remove global filter
-
-/info - shows the number of subscriptions and chats. it&#39;s available only for the admin (`ADMIN_TELEGRAM_ID`)
-
-/set_content_fields url fields - changes content hash fields of the specified feed. it&#39;s available only for the admin (`ADMIN_TELEGRAM_ID`).
-Example: /set_content_fields https://www.badykov.com/feed.xml author,title
-
-By default content hash is calculated from title and url.
-
-Available fields:
-    - link
-    - title
-    - publication_date
-    - guid
-    - description
-    - author
-
-/toggle_preview_enabled - disable or enable previews
-
-/get_preview_enabled - check if previews are enabled for the current chat. by default, previews are enabled
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/subscribe url - subscribe to feed
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/unsubscribe url - unsubscribe from feed
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/list_subscriptions - list your subscriptions
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/help - show available commands
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/set_timezone - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, offset is equal to 600
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/get_timezone - get your timezone
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/set_template url template - set a template for all received items for the specified subscription. All new updates will be converted to the format defined by this subscription. Supported fields you can use for templates:
+</span><span class="z-text z-plain">- bot_feed_name - name of the feed
+</span><span class="z-text z-plain">- bot_feed_link - url of the feed
+</span><span class="z-text z-plain">- bot_item_name - name of the item
+</span><span class="z-text z-plain">- bot_item_link - url of the item
+</span><span class="z-text z-plain">- bot_item_description - description of the item
+</span><span class="z-text z-plain">- bot_date - publication date of the feed
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">Example: /set_template https://www.badykov.com/feed.xml {{bot_feed_name}}
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">    {{bot_item_name}}
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">    {{bot_date}}
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">    {{bot_item_link}}
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">Also, there are some helpers for templates:
+</span><span class="z-text z-plain">- `substring` helper that can be used to limit the number of characters. For example, {{substring bot_item_description 100}}
+</span><span class="z-text z-plain">- `create_link` helper. This helper creates an html link. For example, {{create_link bot_item_name bot_item_link}} or {{create_link &quot;custom_name&quot; bot_item_link}}
+</span><span class="z-text z-plain">- `italic` helper. Usage: {{italic bot_item_description}}
+</span><span class="z-text z-plain">- `bold` helper. Usage:  {{bold bot_item_name}}
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/get_template url - get a template for the subscription
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/remove_template url - remove the template
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/set_global_template - set global template. This template will be used for all subscriptions. If the subscription has its own template, the subscription template will be used. See /set_template for available fields.
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/remove_global_template - remove global template
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/get_global_template - get global template
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/get_filter url - get a filter for the subscription
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/set_filter url filter - set filter, for example, /set_filter https://www.badykov.com/feed.xml telegram,bots. You&#39;ll start receiving posts only containing words in the filter. Use `!word` to stop receiving messages containing the specified `word`. You can combine regular filter words with ! filter words. For example, `!bot,telegram`
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/remove_filter url - remove filter
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/set_global_filter filter - set global filter
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/get_global_filter - get a global filter
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/remove_global_filter - remove global filter
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/info - shows the number of subscriptions and chats. it&#39;s available only for the admin (`ADMIN_TELEGRAM_ID`)
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/set_content_fields url fields - changes content hash fields of the specified feed. it&#39;s available only for the admin (`ADMIN_TELEGRAM_ID`).
+</span><span class="z-text z-plain">Example: /set_content_fields https://www.badykov.com/feed.xml author,title
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">By default content hash is calculated from title and url.
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">Available fields:
+</span><span class="z-text z-plain">    - link
+</span><span class="z-text z-plain">    - title
+</span><span class="z-text z-plain">    - publication_date
+</span><span class="z-text z-plain">    - guid
+</span><span class="z-text z-plain">    - description
+</span><span class="z-text z-plain">    - author
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/toggle_preview_enabled - disable or enable previews
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">/get_preview_enabled - check if previews are enabled for the current chat. by default, previews are enabled
 </span></code></pre>
 <h3 id="common-info">Common info</h3>
 <ul>
@@ -264,7 +264,7 @@ Available fields:
 <li>Set postgres db url (<code>DATABASE_URL</code>) and telegram bot token (<code>TELEGRAM_BOT_TOKEN</code>) to <code>.env</code> file in the root directory. For example:</li>
 </ol>
 <pre class="z-code"><code><span class="z-text z-plain">DATABASE_URL=postgres://admin:pass@localhost/el_monitorro
-TELEGRAM_BOT_TOKEN=MYTOKEN
+</span><span class="z-text z-plain">TELEGRAM_BOT_TOKEN=MYTOKEN
 </span></code></pre>
 <ol start="2">
 <li>Setup database by running:</li>
@@ -334,8 +334,8 @@ TELEGRAM_BOT_TOKEN=MYTOKEN
 <li><code>BOT_BINARY</code> - depending on this variable, docker container will run one of four binaries. Possible values are <code>commands</code>, <code>sync</code>, <code>deliver</code>, <code>cleaner</code>. To run all services in the main binary, set:</li>
 </ul>
 <pre class="z-code"><code><span class="z-text z-plain">RUN_MIGRATION=true
-BOT_BINARY=commands
-ALL_BINARIES=true
+</span><span class="z-text z-plain">BOT_BINARY=commands
+</span><span class="z-text z-plain">ALL_BINARIES=true
 </span></code></pre>
 <p>Run the docker container:</p>
 <pre data-lang="sh" class="language-sh z-code"><code class="language-sh" data-lang="sh"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">docker</span></span><span class="z-meta z-function-call z-arguments z-shell"> run<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> --</span>env-file</span> ./.env<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> --</span>network</span> host<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>t</span> ayratbadykov/el_monitorro:latest</span>
