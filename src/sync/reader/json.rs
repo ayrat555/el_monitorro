@@ -22,7 +22,7 @@ impl ReadFeed for JsonReader {
         match parser::parse(data) {
             Ok(feed) => {
                 let mut fetched_feed = FetchedFeed::from(feed);
-                fetched_feed.link = self.url.clone();
+                fetched_feed.link.clone_from(&self.url);
 
                 Ok(fetched_feed)
             }

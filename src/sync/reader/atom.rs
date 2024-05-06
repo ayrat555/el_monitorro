@@ -16,7 +16,7 @@ impl ReadFeed for AtomReader {
                 let mut feed = FetchedFeed::from(atom_feed);
 
                 if feed.link.is_empty() {
-                    feed.link = self.url.clone();
+                    feed.link.clone_from(&self.url);
                 }
 
                 Ok(feed)
