@@ -1,7 +1,7 @@
 ####################################################################################################
 ## Builder
 ####################################################################################################
-FROM rust:1.77.2-bullseye AS builder
+FROM rust:1.78.0-bullseye AS builder
 RUN apt update && apt install -y libssl-dev pkg-config libz-dev libcurl4 postgresql
 RUN update-ca-certificates
 
