@@ -16,9 +16,9 @@ diesel = { version = "2", features = ["postgres","r2d2"] }
 dotenvy = "0.15"
 pretty_env_logger = "0.5"
 fang = { version = "0.11.0-rc1", features = ["blocking-postgres"], default-features = false}
-feed-rs = "1.4"
+feed-rs = "2.1"
 frankenstein = { version = "0.32.1", default-features = false, features = ["telegram-trait"] }
-handlebars = "5.1"
+handlebars = "6.0"
 hex = "0.4"
 htmlescape = "0.3"
 isahc = "1.7"
@@ -31,7 +31,7 @@ serde_json = "1"
 sha2 = "0.10"
 typed-builder = "0.19"
 url = "2.5"
-uuid = { version = "1.8", features = ["v4"] }
+uuid = { version = "1.10", features = ["v4"] }
 
 [dev-dependencies]
 mockito = "1"
