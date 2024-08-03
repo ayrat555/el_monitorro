@@ -582,8 +582,7 @@ dependencies = [
 [[package]]
 name = "frankenstein"
 version = "0.32.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0335ae5f57aca42a718950acd623b071432c44a6f0e0fcfbe742ec27de93f628"
+source = "git+https://github.com/ayrat555/frankenstein?branch=ayrat555/fix-star-count#61e895657380a3c55d12984b490569d0d1f2c1f8"
 dependencies = [
  "serde",
  "thiserror",
