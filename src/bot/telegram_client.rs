@@ -32,14 +32,8 @@ pub struct Api {
 
 #[derive(Debug)]
 pub enum Error {
-    HttpError(HttpError),
-    ApiError(ErrorResponse),
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct HttpError {
-    pub code: u16,
-    pub message: String,
+    Http { code: u16, message: String },
+    Api(ErrorResponse),
 }
 
 impl Default for Api {
@@ -174,9 +168,7 @@ impl From<isahc::http::Error> for Error {
     fn from(error: isahc::http::Error) -> Self {
         let message = format!("{error:?}");
 
-        let error = HttpError { code: 500, message };
-
-        Error::HttpError(error)
+        Self::Http { code: 500, message }
     }
 }
 
@@ -184,9 +176,7 @@ impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
         let message = format!("{error:?}");
 
-        let error = HttpError { code: 500, message };
-
-        Error::HttpError(error)
+        Self::Http { code: 500, message }
     }
 }
 
@@ -194,9 +184,7 @@ impl From<isahc::Error> for Error {
     fn from(error: isahc::Error) -> Self {
         let message = format!("{error:?}");
 
-        let error = HttpError { code: 500, message };
-
-        Error::HttpError(error)
+        Self::Http { code: 500, message }
     }
 }
 
@@ -228,28 +216,28 @@ impl TelegramApi for Api {
         let mut bytes = Vec::new();
         response.copy_to(&mut bytes)?;
 
-        let parsed_result: Result<T2, serde_json::Error> = serde_json::from_slice(&bytes);
+        serde_json::from_slice(&bytes).map_err(|_| {
+            match serde_json::from_slice::<ErrorResponse>(&bytes) {
+                Ok(result) => {
+                    log::error!(
+                        "Failed to parse a  response {result:?} - {:?}",
+                        std::str::from_utf8(&bytes)
+                    );
+                    Error::Api(result)
+                }
+                Err(error) => {
+                    log::error!(
+                        "Failed to parse an error response {error:?} - {:?}",
+                        std::str::from_utf8(&bytes)
+                    );
 
-        match parsed_result {
-            Ok(result) => Ok(result),
-            Err(serde_error) => {
-                log::error!("Failed to parse a response {serde_error:?}");
-
-                let parsed_error: Result<ErrorResponse, serde_json::Error> =
-                    serde_json::from_slice(&bytes);
-
-                match parsed_error {
-                    Ok(result) => Err(Error::ApiError(result)),
-                    Err(error) => {
-                        let message = format!("{:?} {error:?}", std::str::from_utf8(&bytes));
-
-                        let error = HttpError { code: 500, message };
-
-                        Err(Error::HttpError(error))
+                    Error::Http {
+                        code: 500,
+                        message: format!("{error:?}"),
                     }
                 }
             }
-        }
+        })
     }
 
     // isahc doesn't support multipart uploads
@@ -261,12 +249,8 @@ impl TelegramApi for Api {
         _params: T1,
         _files: Vec<(&str, PathBuf)>,
     ) -> Result<T2, Error> {
-        let error = HttpError {
-            code: 500,
-            message: "isahc doesn't support form data requests".to_string(),
-        };
-
-        Err(Error::HttpError(error))
+        let message = "isahc doesn't support form data requests".to_string();
+        Err(Error::Http { code: 500, message })
     }
 }
 
