@@ -10,7 +10,7 @@ rust-version = "1.70"
 [dependencies]
 thiserror = "1.0"
 aho-corasick = "1.1"
-atom_syndication = "0.12"
+atom_syndication = "=0.12.4"
 chrono = "0.4"
 diesel = { version = "2", features = ["postgres","r2d2"] }
 dotenvy = "0.15"
