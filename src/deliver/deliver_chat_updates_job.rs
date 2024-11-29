@@ -64,7 +64,7 @@ pub struct DeliverChatUpdates<'a> {
     api: &'a Api,
 }
 
-impl<'a> DeliverChatUpdates<'a> {
+impl DeliverChatUpdates<'_> {
     pub fn deliver(&mut self) -> Result<(), DeliverJobError> {
         let feed_items = telegram::find_undelivered_feed_items(
             self.db_connection,
