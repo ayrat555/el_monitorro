@@ -38,7 +38,7 @@ impl From<AtomFeed> for FetchedFeed {
         let mut items = feed
             .entries()
             .iter()
-            .filter(|item| item.links().is_empty())
+            .filter(|item| !item.links().is_empty())
             .map(|item| {
                 let base_date = match item.published() {
                     None => Some(item.updated()),
