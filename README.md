@@ -101,7 +101,7 @@ Available fields:
 
 - Feed updates check interval is 1 minute.
 - Unread items delivery interval is 1 minute.
-- The number of subscriptions is limited to 20.
+- The number of subscriptions is limited to 5 for private chats, to 1 for groups and channels
 
 The bot works in private chats, groups and channels. A couple of channels created with el monitorro:
 
