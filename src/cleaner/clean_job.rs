@@ -1,12 +1,12 @@
 use super::RemoveOldItemsJob;
-use crate::db::feeds;
 use crate::Config;
-use fang::typetag;
+use crate::db::feeds;
 use fang::FangError;
 use fang::PgConnection;
 use fang::Queueable;
 use fang::Runnable;
 use fang::Scheduled;
+use fang::typetag;
 use serde::{Deserialize, Serialize};
 
 const FEEDS_PER_PAGE: i64 = 500;

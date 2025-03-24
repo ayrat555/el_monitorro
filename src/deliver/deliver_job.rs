@@ -1,11 +1,11 @@
 use super::DeliverChatUpdatesJob;
-use crate::db::telegram;
 use crate::Config;
-use fang::typetag;
+use crate::db::telegram;
 use fang::FangError;
 use fang::Queueable;
 use fang::Runnable;
 use fang::Scheduled;
+use fang::typetag;
 use serde::{Deserialize, Serialize};
 
 const CHATS_PER_PAGE: i64 = 100;

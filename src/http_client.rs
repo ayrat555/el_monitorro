@@ -1,7 +1,7 @@
 use crate::config::Config;
+use isahc::HttpClient;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
-use isahc::HttpClient;
 use std::sync::OnceLock;
 use std::time::Duration;
 

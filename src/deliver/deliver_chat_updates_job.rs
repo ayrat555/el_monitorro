@@ -1,7 +1,7 @@
 use super::MessageRenderer;
+use crate::bot::SimpleMessageParams;
 use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
-use crate::bot::SimpleMessageParams;
 use crate::db::feeds;
 use crate::db::telegram;
 use crate::models::Feed;
@@ -11,11 +11,11 @@ use crate::models::TelegramSubscription;
 use aho_corasick::AhoCorasickBuilder;
 use chrono::{DateTime, Utc};
 use diesel::result::Error;
-use fang::typetag;
 use fang::FangError;
 use fang::PgConnection;
 use fang::Queueable;
 use fang::Runnable;
+use fang::typetag;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use typed_builder::TypedBuilder;
@@ -111,7 +111,10 @@ impl DeliverChatUpdates<'_> {
         }
 
         if feed_items_count == MESSAGES_LIMIT && undelivered_count > MESSAGES_LIMIT as i64 {
-            let message = format!("You have {undelivered_count} unread items, below {feed_items_count} last items for {}", self.feed.link);
+            let message = format!(
+                "You have {undelivered_count} unread items, below {feed_items_count} last items for {}",
+                self.feed.link
+            );
 
             self.send_text_message(message)?;
         }

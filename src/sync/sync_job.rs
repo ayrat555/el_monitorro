@@ -1,12 +1,12 @@
 use super::SyncFeedJob;
+use crate::Config;
 use crate::db;
 use crate::db::feeds;
-use crate::Config;
-use fang::typetag;
 use fang::FangError;
 use fang::Queueable;
 use fang::Runnable;
 use fang::Scheduled;
+use fang::typetag;
 use serde::{Deserialize, Serialize};
 
 const FEEDS_PER_PAGE: i64 = 100;
