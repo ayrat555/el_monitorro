@@ -1,7 +1,7 @@
-use super::help::HelpCommand;
 use super::Command;
 use super::Help;
 use super::Response;
+use super::help::HelpCommand;
 use frankenstein::Message;
 use frankenstein::SendMessageParams;
 use std::str::FromStr;
@@ -15,8 +15,7 @@ static HELP: &str = "/help - show available commands";
 static SET_TIMEZONE: &str = "/set_timezone timezone_minutes - set your timezone. All received dates will be converted to this timezone. It should be offset in minutes from UTC. For example, if you live in UTC +10 timezone, your offset is equal to 60 x 10 = 600";
 static GET_TIMEZONE: &str = "/get_timezone - get your timezone";
 static GET_TEMPLATE: &str = "/get_template feed_url - get the template for the subscription";
-static SET_TEMPLATE: &str =
-    "/set_template url template - set a template for all received feed items for the specified subscription. All new updates will be converted to the format defined by this subscription. Supported fields you can use for templates:\n\
+static SET_TEMPLATE: &str = "/set_template url template - set a template for all received feed items for the specified subscription. All new updates will be converted to the format defined by this subscription. Supported fields you can use for templates:\n\
      - bot_feed_name - name of the feed\n\
      - bot_feed_link - url of the feed\n\
      - bot_item_name - name of the item\n\
@@ -33,7 +32,7 @@ static SET_TEMPLATE: &str =
 
 static REMOVE_TEMPLATE: &str =
     "/remove_template feed_url - remove the template for the subscription";
-static SET_GLOBAL_TEMPLATE: &str =  "/set_global_template - set the global template. This template will be used for all subscriptions. If the subscription has its own template, it will be used instead. See /set_template for available fields.";
+static SET_GLOBAL_TEMPLATE: &str = "/set_global_template - set the global template. This template will be used for all subscriptions. If the subscription has its own template, it will be used instead. See /set_template for available fields.";
 static GET_GLOBAL_TEMPLATE: &str = "/get_global_template - get global template";
 static REMOVE_GLOBAL_TEMPLATE: &str = "/get_global_template - get the global template";
 static GET_FILTER: &str = "/get_filter url - get the filter for the subscription";

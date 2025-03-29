@@ -1,8 +1,8 @@
 use crate::db::feed_items;
-use fang::typetag;
 use fang::FangError;
 use fang::Queueable;
 use fang::Runnable;
+use fang::typetag;
 use serde::{Deserialize, Serialize};
 
 const MESSAGES_LIMIT_PER_FEED: i64 = 1000;

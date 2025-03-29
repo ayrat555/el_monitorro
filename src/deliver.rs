@@ -6,5 +6,5 @@ pub mod render_message;
 
 pub use deliver_chat_updates_job::DeliverChatUpdatesJob;
 pub use deliver_job::DeliverJob;
-pub use render_message::render_template_example;
 pub use render_message::MessageRenderer;
+pub use render_message::render_template_example;

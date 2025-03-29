@@ -10,8 +10,7 @@ use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
 use typed_builder::TypedBuilder;
 
-static START: &str =
-        "El Monitorro is feed reader as a Telegram bot.\n\
+static START: &str = "El Monitorro is feed reader as a Telegram bot.\n\
          It supports RSS, Atom and JSON feeds.\n\n\
          Use /help to see available commands.\n\n\
          Synchronization information.\n\

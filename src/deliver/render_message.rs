@@ -1,13 +1,13 @@
 use aho_corasick::AhoCorasickBuilder;
 use aho_corasick::MatchKind;
-use chrono::offset::FixedOffset;
-use chrono::prelude::*;
 use chrono::DateTime;
 use chrono::Utc;
-use handlebars::handlebars_helper;
-use handlebars::to_json;
+use chrono::offset::FixedOffset;
+use chrono::prelude::*;
 use handlebars::Handlebars;
 use handlebars::JsonValue;
+use handlebars::handlebars_helper;
+use handlebars::to_json;
 use htmlescape::decode_html;
 use serde_json::value::Map;
 use typed_builder::TypedBuilder;

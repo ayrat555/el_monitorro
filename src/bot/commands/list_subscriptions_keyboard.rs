@@ -29,7 +29,7 @@ impl ListSubscriptionsKeyboard {
                 return SendMessageParams::builder()
                     .chat_id(self.message.chat.id)
                     .text("Failed to get your subscriptions")
-                    .build()
+                    .build();
             }
         };
 
