@@ -7,8 +7,8 @@ use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
 use crate::deliver::DeliverChatUpdatesJob;
 use crate::models::telegram_subscription::TelegramSubscription;
-use crate::sync::SyncFeedJob;
 use crate::sync::reader;
+use crate::sync::SyncFeedJob;
 use diesel::Connection;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
@@ -165,7 +165,9 @@ mod subscribe_tests {
     fn set_deliver_server_response(server: &mut mockito::Server) -> Mock {
         let response_string = "{\"ok\":true,\"result\":{\"message_id\":2746,\"from\":{\"id\":1276618370,\"is_bot\":true,\"first_name\":\"test_el_bot\",\"username\":\"el_mon_test_bot\"},\"date\":1618207352,\"chat\":{\"id\":275808073,\"type\":\"private\",\"username\":\"Ayrat555\",\"first_name\":\"Ayrat\",\"last_name\":\"Badykov\"},\"text\":\"Hello!\"}}";
 
-        std::env::set_var("TELEGRAM_BASE_URL", format!("{}/", server.url()));
+        unsafe {
+            std::env::set_var("TELEGRAM_BASE_URL", format!("{}/", server.url()));
+        }
 
         server
             .mock("POST", "/sendMessage")
@@ -335,7 +337,9 @@ mod subscribe_tests {
 
         let _m = set_deliver_server_response(&mut server);
 
-        std::env::set_var("SUBSCRIPTION_LIMIT", "2");
+        unsafe {
+            std::env::set_var("SUBSCRIPTION_LIMIT", "2");
+        }
 
         db_connection.test_transaction::<(), super::SubscriptionError, _>(|db_connection| {
             for rss_url in [feed_url1, feed_url2] {
