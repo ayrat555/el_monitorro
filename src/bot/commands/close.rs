@@ -1,7 +1,7 @@
 use super::Command;
 use super::Message;
 use super::Response;
-use frankenstein::InlineKeyboardButton;
+use frankenstein::types::InlineKeyboardButton;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/close";

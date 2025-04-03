@@ -6,7 +6,7 @@ use crate::db::feeds;
 use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
 use diesel::PgConnection;
-use frankenstein::SendMessageParams;
+use frankenstein::methods::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/unsubscribe";
@@ -99,9 +99,9 @@ mod unsubscribe_tests {
     use crate::db::telegram::NewTelegramChat;
     use crate::db::telegram::NewTelegramSubscription;
     use diesel::connection::Connection;
-    use frankenstein::Chat;
-    use frankenstein::ChatType;
-    use frankenstein::Message;
+    use frankenstein::types::Chat;
+    use frankenstein::types::ChatType;
+    use frankenstein::types::Message;
 
     #[test]
     fn removes_subscription() {

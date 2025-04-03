@@ -11,12 +11,12 @@ use super::SetTemplate;
 use super::Unsubscribe;
 use crate::db::feeds;
 use diesel::PgConnection;
-use frankenstein::ChatType;
-use frankenstein::InlineKeyboardButton;
-use frankenstein::InlineKeyboardMarkup;
-use frankenstein::Message;
-use frankenstein::ReplyMarkup;
-use frankenstein::SendMessageParams;
+use frankenstein::methods::SendMessageParams;
+use frankenstein::types::ChatType;
+use frankenstein::types::InlineKeyboardButton;
+use frankenstein::types::InlineKeyboardMarkup;
+use frankenstein::types::Message;
+use frankenstein::types::ReplyMarkup;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/feed_keyboard";

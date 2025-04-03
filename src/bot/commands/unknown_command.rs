@@ -3,12 +3,12 @@ use super::Command;
 use super::Help;
 use super::Message;
 use super::Response;
-use frankenstein::ChatType;
-use frankenstein::InlineKeyboardButton;
-use frankenstein::InlineKeyboardMarkup;
-use frankenstein::LinkPreviewOptions;
-use frankenstein::ReplyMarkup;
-use frankenstein::SendMessageParams;
+use frankenstein::methods::SendMessageParams;
+use frankenstein::types::ChatType;
+use frankenstein::types::InlineKeyboardButton;
+use frankenstein::types::InlineKeyboardMarkup;
+use frankenstein::types::LinkPreviewOptions;
+use frankenstein::types::ReplyMarkup;
 use typed_builder::TypedBuilder;
 
 static UNKNOWN_COMMAND_GROUP: &str = "Remove admin access from the bot in this group otherwise it will be replying to every message.";

@@ -3,7 +3,7 @@ use super::Message;
 use super::Response;
 use super::ShowFeedKeyboard;
 use diesel::PgConnection;
-use frankenstein::SendMessageParams;
+use frankenstein::methods::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/get_filter";
