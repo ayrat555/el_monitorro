@@ -1,7 +1,7 @@
-use super::help::HelpCommand;
 use super::Command;
 use super::Help;
 use super::Response;
+use super::help::HelpCommand;
 use frankenstein::methods::SendMessageParams;
 use frankenstein::types::Message;
 use std::str::FromStr;

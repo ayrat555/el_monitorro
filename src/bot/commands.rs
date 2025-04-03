@@ -1,6 +1,6 @@
+use crate::bot::SimpleMessageParams;
 use crate::bot::telegram_client;
 use crate::bot::telegram_client::Api;
-use crate::bot::SimpleMessageParams;
 use crate::config::Config;
 use crate::db::feeds;
 use crate::db::telegram;
@@ -9,9 +9,9 @@ use crate::db::telegram::NewTelegramSubscription;
 use crate::models::Feed;
 use crate::models::TelegramChat;
 use crate::models::TelegramSubscription;
+use diesel::PgConnection;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::PooledConnection;
-use diesel::PgConnection;
 use frankenstein::methods::SendMessageParams;
 use frankenstein::types::Chat;
 use frankenstein::types::ChatType;
