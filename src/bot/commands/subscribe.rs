@@ -7,8 +7,8 @@ use crate::db::telegram;
 use crate::db::telegram::NewTelegramSubscription;
 use crate::deliver::DeliverChatUpdatesJob;
 use crate::models::telegram_subscription::TelegramSubscription;
-use crate::sync::SyncFeedJob;
 use crate::sync::reader;
+use crate::sync::SyncFeedJob;
 use diesel::Connection;
 use diesel::PgConnection;
 use typed_builder::TypedBuilder;
@@ -157,9 +157,9 @@ mod subscribe_tests {
     use crate::db::feeds;
     use crate::db::telegram;
     use diesel::connection::Connection;
-    use frankenstein::Chat;
-    use frankenstein::ChatType;
-    use frankenstein::Message;
+    use frankenstein::types::Chat;
+    use frankenstein::types::ChatType;
+    use frankenstein::types::Message;
     use mockito::Mock;
 
     fn set_deliver_server_response(server: &mut mockito::Server) -> Mock {

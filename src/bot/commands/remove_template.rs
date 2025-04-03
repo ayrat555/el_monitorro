@@ -4,7 +4,7 @@ use super::Response;
 use super::ShowFeedKeyboard;
 use crate::db::telegram;
 use diesel::PgConnection;
-use frankenstein::SendMessageParams;
+use frankenstein::methods::SendMessageParams;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/remove_template";

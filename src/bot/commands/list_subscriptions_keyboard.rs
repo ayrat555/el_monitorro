@@ -3,11 +3,11 @@ use super::Command;
 use super::Response;
 use crate::db::telegram;
 use diesel::PgConnection;
-use frankenstein::InlineKeyboardButton;
-use frankenstein::InlineKeyboardMarkup;
-use frankenstein::Message;
-use frankenstein::ReplyMarkup;
-use frankenstein::SendMessageParams;
+use frankenstein::methods::SendMessageParams;
+use frankenstein::types::InlineKeyboardButton;
+use frankenstein::types::InlineKeyboardMarkup;
+use frankenstein::types::Message;
+use frankenstein::types::ReplyMarkup;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/list_subscriptions";

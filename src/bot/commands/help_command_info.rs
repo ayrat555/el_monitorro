@@ -1,9 +1,9 @@
+use super::help::HelpCommand;
 use super::Command;
 use super::Help;
 use super::Response;
-use super::help::HelpCommand;
-use frankenstein::Message;
-use frankenstein::SendMessageParams;
+use frankenstein::methods::SendMessageParams;
+use frankenstein::types::Message;
 use std::str::FromStr;
 use typed_builder::TypedBuilder;
 
