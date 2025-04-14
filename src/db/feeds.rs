@@ -75,10 +75,10 @@ pub fn set_synced_at(
 }
 
 pub fn find(conn: &mut PgConnection, id: i64) -> Option<Feed> {
-    match feeds::table.filter(feeds::id.eq(id)).first::<Feed>(conn) {
-        Ok(record) => Some(record),
-        _ => None,
-    }
+    feeds::table
+        .filter(feeds::id.eq(id))
+        .first::<Feed>(conn)
+        .ok()
 }
 
 pub fn find_by_link(conn: &mut PgConnection, link: &str) -> Option<Feed> {
