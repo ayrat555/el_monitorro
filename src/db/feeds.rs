@@ -82,13 +82,10 @@ pub fn find(conn: &mut PgConnection, id: i64) -> Option<Feed> {
 }
 
 pub fn find_by_link(conn: &mut PgConnection, link: &str) -> Option<Feed> {
-    match feeds::table
+    feeds::table
         .filter(feeds::link.eq(link))
         .first::<Feed>(conn)
-    {
-        Ok(record) => Some(record),
-        _ => None,
-    }
+        .ok()
 }
 
 pub fn remove_feed(conn: &mut PgConnection, feed_id: i64) -> Result<usize, Error> {
