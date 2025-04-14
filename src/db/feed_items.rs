@@ -120,7 +120,7 @@ pub fn find(conn: &mut PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
     feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
         .get_results::<FeedItem>(conn)
-        .ok
+        .ok()
 }
 
 pub fn delete_old_feed_items(
@@ -163,7 +163,7 @@ pub fn get_latest_item(conn: &mut PgConnection, feed_id: i64) -> Option<FeedItem
         .order(feed_items::created_at.desc())
         .limit(1)
         .get_result::<FeedItem>(conn)
-        .ok
+        .ok()
 }
 
 #[cfg(test)]
