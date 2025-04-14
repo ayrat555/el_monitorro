@@ -157,9 +157,9 @@ mod subscribe_tests {
     use crate::db::feeds;
     use crate::db::telegram;
     use diesel::connection::Connection;
-    use frankenstein::Chat;
-    use frankenstein::ChatType;
-    use frankenstein::Message;
+    use frankenstein::types::Chat;
+    use frankenstein::types::ChatType;
+    use frankenstein::types::Message;
     use mockito::Mock;
 
     fn set_deliver_server_response(server: &mut mockito::Server) -> Mock {

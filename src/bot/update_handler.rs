@@ -1,9 +1,9 @@
 use super::commands::CommandProcessor;
 use crate::bot::telegram_client;
 use crate::config::Config;
-use frankenstein::MaybeInaccessibleMessage;
-use frankenstein::Update;
-use frankenstein::UpdateContent;
+use frankenstein::types::MaybeInaccessibleMessage;
+use frankenstein::updates::Update;
+use frankenstein::updates::UpdateContent;
 use std::thread;
 
 pub struct UpdateHandler {}

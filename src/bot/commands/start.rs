@@ -2,12 +2,12 @@ use super::Command;
 use super::CommandsKeyboard;
 use super::Message;
 use super::Response;
-use frankenstein::ChatType;
-use frankenstein::InlineKeyboardButton;
-use frankenstein::InlineKeyboardMarkup;
-use frankenstein::LinkPreviewOptions;
-use frankenstein::ReplyMarkup;
-use frankenstein::SendMessageParams;
+use frankenstein::methods::SendMessageParams;
+use frankenstein::types::ChatType;
+use frankenstein::types::InlineKeyboardButton;
+use frankenstein::types::InlineKeyboardMarkup;
+use frankenstein::types::LinkPreviewOptions;
+use frankenstein::types::ReplyMarkup;
 use typed_builder::TypedBuilder;
 
 static START: &str = "El Monitorro is feed reader as a Telegram bot.\n\

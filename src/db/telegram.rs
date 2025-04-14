@@ -56,13 +56,10 @@ pub fn create_chat(
 }
 
 pub fn find_chat(conn: &mut PgConnection, chat_id: i64) -> Option<TelegramChat> {
-    match telegram_chats::table
+    telegram_chats::table
         .filter(telegram_chats::id.eq(chat_id))
         .first::<TelegramChat>(conn)
-    {
-        Ok(record) => Some(record),
-        _ => None,
-    }
+        .ok()
 }
 
 pub fn set_utc_offset_minutes(
@@ -148,27 +145,21 @@ pub fn find_subscription(
     conn: &mut PgConnection,
     subscription: NewTelegramSubscription,
 ) -> Option<TelegramSubscription> {
-    match telegram_subscriptions::table
+    telegram_subscriptions::table
         .filter(telegram_subscriptions::chat_id.eq(subscription.chat_id))
         .filter(telegram_subscriptions::feed_id.eq(subscription.feed_id))
         .first::<TelegramSubscription>(conn)
-    {
-        Ok(record) => Some(record),
-        _ => None,
-    }
+        .ok()
 }
 
 pub fn find_subscription_by_external_id(
     conn: &mut PgConnection,
     external_id: Uuid,
 ) -> Option<TelegramSubscription> {
-    match telegram_subscriptions::table
+    telegram_subscriptions::table
         .filter(telegram_subscriptions::external_id.eq(external_id))
         .first::<TelegramSubscription>(conn)
-    {
-        Ok(record) => Some(record),
-        _ => None,
-    }
+        .ok()
 }
 
 pub fn remove_subscription(
