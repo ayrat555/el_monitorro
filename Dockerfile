@@ -1,7 +1,7 @@
 ####################################################################################################
 ## Builder
 ####################################################################################################
-FROM rust:1.85.1-bookworm AS builder
+FROM rust:1.86.0-bookworm AS builder
 RUN apt update && apt install -y libssl-dev pkg-config libz-dev libcurl4 postgresql
 RUN update-ca-certificates
 
