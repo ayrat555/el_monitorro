@@ -117,13 +117,10 @@ pub fn create(
 }
 
 pub fn find(conn: &mut PgConnection, feed_id: i64) -> Option<Vec<FeedItem>> {
-    match feed_items::table
+    feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
         .get_results::<FeedItem>(conn)
-    {
-        Ok(record) => Some(record),
-        _ => None,
-    }
+        .ok()
 }
 
 pub fn delete_old_feed_items(
@@ -161,15 +158,12 @@ pub fn delete_old_feed_items(
 }
 
 pub fn get_latest_item(conn: &mut PgConnection, feed_id: i64) -> Option<FeedItem> {
-    match feed_items::table
+    feed_items::table
         .filter(feed_items::feed_id.eq(feed_id))
         .order(feed_items::created_at.desc())
         .limit(1)
         .get_result::<FeedItem>(conn)
-    {
-        Ok(record) => Some(record),
-        _ => None,
-    }
+        .ok()
 }
 
 #[cfg(test)]
