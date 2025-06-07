@@ -61,7 +61,7 @@ impl UpdateHandler {
         }
 
         CommandProcessor::builder()
-            .message(message)
+            .message(*message)
             .text(text.unwrap())
             .callback(false)
             .build()
@@ -82,7 +82,7 @@ impl UpdateHandler {
 
         if let MaybeInaccessibleMessage::Message(message) = query.message.unwrap() {
             CommandProcessor::builder()
-                .message(message)
+                .message(*message)
                 .text(text.unwrap())
                 .callback(true)
                 .build()
