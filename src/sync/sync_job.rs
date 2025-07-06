@@ -71,10 +71,7 @@ impl Runnable for SyncJob {
             total_number += unsynced_feed_ids.len();
         }
 
-        log::info!(
-            "Finished enqueuing feeds for sync. Total Number:  {}",
-            total_number
-        );
+        log::info!("Finished enqueuing feeds for sync. Total Number:  {total_number}");
 
         feeds::increment_and_reset_skips(&mut connection)?;
 

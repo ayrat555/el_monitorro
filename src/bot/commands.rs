@@ -329,17 +329,14 @@ pub trait Command {
             .build();
 
         if let Err(error) = self.api().reply_with_text_message(&message_params) {
-            error!("Failed to reply to a message {:?} {:?}", error, message);
+            error!("Failed to reply to a message {error:?} {message:?}");
         }
     }
 
     fn send_message_and_remove(&self, send_message_params: SendMessageParams, message: &Message) {
         match self.api().send_message_with_params(&send_message_params) {
             Err(error) => {
-                error!(
-                    "Failed to send a message {:?} {:?}",
-                    error, send_message_params
-                );
+                error!("Failed to send a message {error:?} {send_message_params:?}");
             }
 
             Ok(_) => {
@@ -350,10 +347,7 @@ pub trait Command {
 
     fn send_message(&self, send_message_params: SendMessageParams) {
         if let Err(error) = self.api().send_message_with_params(&send_message_params) {
-            error!(
-                "Failed to send a message {:?} {:?}",
-                error, send_message_params
-            );
+            error!("Failed to send a message {error:?} {send_message_params:?}");
         }
     }
 
@@ -398,7 +392,7 @@ pub trait Command {
         match crate::db::pool().get() {
             Ok(connection) => Ok(connection),
             Err(err) => {
-                error!("Failed to fetch a connection from the pool {:?}", err);
+                error!("Failed to fetch a connection from the pool {err:?}");
 
                 Err("Failed to process your command. Please contact @Ayrat555".to_string())
             }

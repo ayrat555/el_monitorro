@@ -24,7 +24,7 @@ impl Info {
         let total_feeds = match feeds::count_feeds_with_subscriptions(db_connection) {
             Ok(res) => res,
             Err(err) => {
-                log::error!("Failed to fetch total feeds count {:?}", err);
+                log::error!("Failed to fetch total feeds count {err:?}");
                 return "Failed to fetch total feeds count".to_string();
             }
         };
@@ -32,7 +32,7 @@ impl Info {
         let total_chats = match telegram::count_chats_with_subscriptions(db_connection) {
             Ok(res) => res,
             Err(err) => {
-                log::error!("Failed to fetch total chats count {:?}", err);
+                log::error!("Failed to fetch total chats count {err:?}");
                 return "Failed to fetch total chats count".to_string();
             }
         };
@@ -46,7 +46,7 @@ impl Info {
             let result = match telegram::count_chats_of_type(db_connection, kind) {
                 Ok(res) => res,
                 Err(err) => {
-                    log::error!("Failed to fetch {} chats count {:?}", kind, err);
+                    log::error!("Failed to fetch {kind} chats count {err:?}");
                     return "Failed to fetch chats count".to_string();
                 }
             };

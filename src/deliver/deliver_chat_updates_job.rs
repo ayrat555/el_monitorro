@@ -154,7 +154,7 @@ impl DeliverChatUpdates<'_> {
     }
 
     fn handle_error(&mut self, error: String) -> DeliverJobError {
-        log::error!("Failed to deliver updates: {}", error);
+        log::error!("Failed to deliver updates: {error}");
 
         if self.bot_blocked(&error) {
             match telegram::remove_chat(self.db_connection, self.chat.id) {
