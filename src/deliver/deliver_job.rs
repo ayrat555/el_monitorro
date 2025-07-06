@@ -65,7 +65,7 @@ impl Runnable for DeliverJob {
             }
         }
 
-        log::info!("Started checking delivery for {} chats", total_chat_number,);
+        log::info!("Started checking delivery for {total_chat_number} chats");
 
         Ok(())
     }

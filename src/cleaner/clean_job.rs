@@ -57,8 +57,7 @@ impl CleanJob {
         }
 
         log::info!(
-            "Finished enqueuing feeds for deletion of old feed items. Total Number:  {}",
-            total_number
+            "Finished enqueuing feeds for deletion of old feed items. Total Number:  {total_number}"
         );
 
         Ok(())
@@ -68,8 +67,8 @@ impl CleanJob {
         log::info!("Started removing feeds without subscriptions");
 
         match feeds::delete_feeds_without_subscriptions(conn) {
-            Ok(count) => log::info!("Removed {} feeds without subscriptions", count),
-            Err(error) => log::error!("Failed to remove feeds without subscriptions {:?}", error),
+            Ok(count) => log::info!("Removed {count} feeds without subscriptions"),
+            Err(error) => log::error!("Failed to remove feeds without subscriptions {error:?}"),
         };
     }
 }

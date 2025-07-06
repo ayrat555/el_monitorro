@@ -104,7 +104,7 @@ impl Api {
             }
 
             Err(err) => {
-                log::error!("Failed to fetch updates {:?}", err);
+                log::error!("Failed to fetch updates {err:?}");
                 None
             }
         }
@@ -143,10 +143,7 @@ impl Api {
         match self.send_message(send_message_params) {
             Ok(_) => Ok(()),
             Err(err) => {
-                error!(
-                    "Failed to send message {:?}: {:?}",
-                    err, send_message_params
-                );
+                error!("Failed to send message {err:?}: {send_message_params:?}");
                 Err(err)
             }
         }
@@ -159,7 +156,7 @@ impl Api {
             .build();
 
         if let Err(err) = self.delete_message(&params) {
-            error!("Failed to delete a message {:?}: {:?}", err, params);
+            error!("Failed to delete a message {err:?}: {params:?}");
         }
     }
 }

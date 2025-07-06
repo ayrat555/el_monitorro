@@ -98,7 +98,7 @@ impl MessageRenderer {
 
         match reg.render_template(&template, &data) {
             Err(error) => {
-                log::error!("Failed to render template {:?}", error);
+                log::error!("Failed to render template {error:?}");
                 Err(RENDER_ERROR.to_string())
             }
             Ok(result) => Ok(truncate_and_check(&result)),
