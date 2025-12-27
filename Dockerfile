@@ -29,7 +29,7 @@ RUN cargo build --release
 ####################################################################################################
 ## Final image
 ####################################################################################################
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 RUN apt update && apt install -y postgresql
 
