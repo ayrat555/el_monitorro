@@ -241,8 +241,8 @@ impl SyncFeedJob {
         db_connection: &mut PgConnection,
         feed: Feed,
     ) -> Result<(), FeedSyncError> {
-        let created_at_or_last_synced_at = if feed.synced_at.is_some() {
-            feed.synced_at.unwrap()
+        if let Some(synced_at) = feed.synced_at {
+            synced_at
         } else {
             feed.created_at
         };
